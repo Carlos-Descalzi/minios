@@ -1,0 +1,10 @@
+Descartando los bloques del dispositivo: hecho                            
+Se está creando un sistema de ficheros con 10240 bloques de 1k y 2560 nodos-i
+UUID del sistema de ficheros: 5ec28c43-51d4-44f1-9298-96cb22f8e7fe
+Respaldos del superbloque guardados en los bloques: 
+	8193
+
+Reservando las tablas de grupo: hecho                            
+Escribiendo las tablas de nodos-i: hecho                            
+Escribiendo superbloques y la información contable del sistema de archivos: hecho
+
