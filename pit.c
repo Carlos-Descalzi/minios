@@ -53,7 +53,7 @@ uint16_t pit_get_count(){
     return count;
 }
 void pit_set_freq(uint16_t freq){
-    uint32_t div = 119180 / freq;
+    uint32_t div = 0xFFFF;//119180 / freq; TODO Fix
 
     outb(PORT_CMD, 0x36);
     outb(PORT_CH0, div & 0xFF);

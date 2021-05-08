@@ -1,4 +1,5 @@
 #include "isr.h"
+#include "debug.h"
 
 typedef struct {
     uint16_t offset1;
@@ -19,7 +20,8 @@ typedef struct {
 
 static void INTERRUPT dummy(InterruptFrame* frame){}
 
-void isr_install(uint16_t interrupt_number, Isr isr){
+static void do_isr_install(uint16_t interrupt_number, Isr isr, uint8_t type){
+
     IDTEntry* entry = &(IDT[interrupt_number]);
     if (!isr){
         isr = dummy;
@@ -28,10 +30,16 @@ void isr_install(uint16_t interrupt_number, Isr isr){
     entry->offset1 = ((uint32_t)isr) & 0xFFFF;
     entry->offset2 = ((uint32_t)isr) >> 16;
     entry->selector = 8;
-    entry->gate_type = 0xE;
+    entry->gate_type = type;
     entry->unused = 0;
     entry->present = 1;
     entry->storage_segment = 0;
+}
+void isr_install(uint16_t interrupt_number, Isr isr){
+    do_isr_install(interrupt_number, isr, 0xE);
+}
+void trap_install(uint16_t interrupt_number, Isr isr){
+    do_isr_install(interrupt_number, isr, 0xF);
 }
 
 inline void sti(void){

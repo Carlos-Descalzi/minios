@@ -3,19 +3,23 @@ LD=i686-gnu-ld
 AS=nasm
 
 ASFLAGS=-f elf32
-CFLAGS=-march=i386 -m32 -mno-80387
+CFLAGS=-march=i386 -m32 -mno-80387 -DDEBUGMODE #-g
 KLDFLAGS=-Ttext 0x10000
 IMAGE=os.img
 IMAGESIZE=66048
-KOBJS=startup.o init.o console.o pci.o io.o misc.o isr.o pit.o pic.o stdlib.o string.o
+KOBJS=startup.o init.o console.o pci.o io.o misc.o isr.o pit.o pic.o stdlib.o string.o debug.o task.o
 QEMU=qemu-system-i386
 QEMU_ARGS=         \
 	-no-reboot     \
 	-no-shutdown   \
-	-monitor stdio \
-	-vga std \
-	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,in_asm
-#-D log \
+	-vga std 	   \
+	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,pcall,guest_errors,nochain \
+	-D trace.log
+QEMU_TEST_ARGS=-serial mon:stdio
+
+QEMU_DEBUG_ARGS=-monitor stdio \
+				-serial file:minios.log \
+				-s -S
 
 all: $(IMAGE)
 
@@ -37,6 +41,7 @@ bootloader.bin: bootloader.asm
 
 kernel.bin: kernel.elf
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin
+	objdump -d $< > kernel.lst
 
 kernel.elf: $(KOBJS)
 	i686-gnu-ld $(KLDFLAGS) $(KOBJS) -o kernel.elf
@@ -48,7 +53,10 @@ kernel.elf: $(KOBJS)
 	$(AS) $(ASFLAGS) -o $@ $<
 
 clean:
-	rm -rf *.o *.bin *.img
+	rm -rf *.o *.bin *.img *.lst
 
 test: $(IMAGE)
-	$(QEMU) $(QEMU_ARGS) -hda ./$(IMAGE)
+	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) -hda ./$(IMAGE)
+
+debug: $(IMAGE)
+	$(QEMU) $(QEMU_ARGS) $(QEMU_DEBUG_ARGS) -hda ./$(IMAGE)

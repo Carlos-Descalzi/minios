@@ -19,6 +19,7 @@ typedef struct {
 typedef void (*Isr)(InterruptFrame*);
 
 void    isr_install (uint16_t interrupt_number, Isr isr);
+void    trap_install(uint16_t interrupt_number, Isr isr);
 void    sti         (void);
 void    cli         (void);
 void    cld         (void);

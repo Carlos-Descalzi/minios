@@ -10,6 +10,13 @@ void* memcpy(void* dest, const void*src, size_t n){
     }
     return dest;
 }
+void* memset(void* s, int c, size_t size){
+    int i;
+    for (i=0;i<size;i++){
+        ((char*)s)[i] = c;
+    }
+    return s;
+}
 
 char* strcpy(char* dest, const char* src){
     if (dest && src){
