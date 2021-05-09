@@ -9,6 +9,7 @@
 #include "task.h"
 #include "minfo.h"
 #include "heap.h"
+#include "paging.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -63,6 +64,7 @@ void init(){
         asm volatile("nop");
     }*/
     display_memory();
+    paging_init();
     heap_init();
 
     pit_init();
@@ -119,7 +121,7 @@ void bsod(){
     console_gotoxy(30,12);
     console_print("General Protection Fault");
     console_gotoxy(30,14);
-    console_print("En criollo: PALMO !!!!!!");
+    console_print("  *** Te re cabio ***");
 
 }
 static void display_memory(){
