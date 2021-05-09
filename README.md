@@ -8,6 +8,8 @@ So far these features are implemented (barely):
 * basic raw console
 * base libraries: strings, heap, etc.
 
+![screenshot](screenshot.png)
+
 ## Requirements
 * gcc
 * nasm
