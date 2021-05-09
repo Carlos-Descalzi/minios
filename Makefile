@@ -10,7 +10,7 @@ IMAGESIZE=66048
 KOBJS=			   \
 	startup.o init.o console.o pci.o \
 	io.o misc.o isr.o pit.o pic.o \
-	stdlib.o string.o debug.o task.o minfo.o \
+	stdlib.o string.o debug.o task.o task_asm.o minfo.o \
 	heap.o paging.o
 
 QEMU=qemu-system-i386

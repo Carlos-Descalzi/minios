@@ -1,7 +1,9 @@
 #include "paging.h"
 #include "string.h"
+#include "isr.h"
 
-// Use the available RAM region of ~30kb which is behind boot sector.
+// Use the available RAM region of ~30kb which is behind boot sector,
+// for page directory.
 // The region starts at 0x500 but I need 4k aligned addresses.
 #define PAGE_DIRECTORY  ((PageDirectoryEntry*)0x1000)
 // Kernel page table, is table#0 in page directory
@@ -9,6 +11,8 @@
 
 #define PD_USED     0x1
 #define PD_KERNEL   0x4
+
+static void handle_page_fault(InterruptFrame* frame);
 
 void paging_init(){
     int i;
@@ -39,6 +43,8 @@ void paging_init(){
         "\tmov %%eax, %%cr0"
         :: "Nd"(PAGE_DIRECTORY)
     );
+
+    isr_install(0xE, handle_page_fault);
 }
 
 int16_t paging_alloc_table(PageDirectoryEntry** entry_ptr){
@@ -55,4 +61,7 @@ int16_t paging_alloc_table(PageDirectoryEntry** entry_ptr){
 
 void paging_free_table(uint16_t page_table_index){
     PAGE_DIRECTORY[page_table_index].user_data &= ~PD_USED;
+}
+static void INTERRUPT handle_page_fault(InterruptFrame* frame){
+    console_init("Page fault!!!\n");
 }

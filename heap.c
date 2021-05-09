@@ -1,7 +1,6 @@
 #include "heap.h"
 #include "stdint.h"
 #include "debug.h"
-#include "stdlib.h"
 
 #define MEMORY_START    0x30000
 #define MEMORY_END      0x5FFFF     // ~320 Kb
@@ -29,14 +28,13 @@ void    heap_init   (void){
 }
 
 void* heap_alloc(size_t size){
-    char buff[32];
     MemoryBlock* block = FIRST_BLOCK;
     if (size % 4 != 0){
         size+=4 - (size % 4);   // always word aligned.
     }
     while(block && (block->header.used || block->header.size < size)){
         debug("block size ");
-        debug(itoa(block->header.size,buff,10));
+        debug_i(block->header.size,10);
         debug("\n");
         block = block->header.next;
     }
@@ -58,9 +56,9 @@ void* heap_alloc(size_t size){
     block->header.size = size;
 
     debug("Allocated ");
-    debug(itoa(size,buff,10));
+    debug_i(size,10);
     debug(" bytes at address ");
-    debug(itoa((uint32_t)block->block,buff,16));
+    debug_i((uint32_t)block->block,16);
     debug("\n");
 
     return block->block;

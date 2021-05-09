@@ -4,7 +4,6 @@
 #include "isr.h"
 #include "debug.h"
 #include "pic.h"
-#include "stdlib.h"
 #include "heap.h"
 
 #define TASKS_MAX           32
@@ -50,7 +49,6 @@ static Task TASKS[TASKS_MAX];
 Task* current_task; 
 
 void tasks_init(){
-    //char buff[32];
     memset(TASKS,0,sizeof(TASKS));
     TASKS[TID_KERNEL].tid = TID_KERNEL;
     TASKS[TID_KERNEL].status = TASK_STATUS_RUNNING;
@@ -60,15 +58,11 @@ void tasks_init(){
     TASKS[TID_IDLE].tid = TID_IDLE;
     TASKS[TID_IDLE].status = TASK_STATUS_IDLE;
     TASKS[TID_IDLE].eip = (uint32_t) &idle_loop;
-    //TASKS[TID_IDLE].esp = 0x30100;  // TODO fix when have paging.
-    TASKS[TID_IDLE].esp = (uint32_t)heap_alloc(16384);
+    // Just allocate 1kb of stack for idle task on heap
+    TASKS[TID_IDLE].esp = (uint32_t)heap_alloc(1024);
 
     TASKS[TID_KERNEL].next = &(TASKS[TID_IDLE]);
     TASKS[TID_IDLE].next = &(TASKS[TID_KERNEL]);
-
-    /*debug("Idle task:");
-    debug(itoa(TASKS[TID_IDLE].eip,buff,16));
-    debug("\n");*/
 
     current_task = &(TASKS[TID_KERNEL]);
 
@@ -80,27 +74,13 @@ uint32_t tasks_current_tid(){
 }
 
 void next_task(){
-    char buff[32];
     current_task->status = TASK_STATUS_IDLE;
-    /*
-    debug("Current task:");
-    debug(itoa(current_task->tid,buff,10));
-    debug(" ");
-    debug(itoa(current_task->eip,buff,16));
-    debug("\n");
-    */
     current_task = current_task->next;
     current_task->status = TASK_STATUS_RUNNING;
     debug("Next task:");
-    debug(itoa(current_task->tid,buff,10));
+    debug_i(current_task->tid,10);
     debug(" ");
-    debug(itoa(current_task->eip,buff,16));
+    debug_i(current_task->eip,16);
     debug("\n");
-    //debug("switch \n");
 }
 
-void dump_eflags(uint32_t eflags){
-    char buff[32];
-    debug(itoa(eflags,buff,16));
-    debug("\n");
-}
