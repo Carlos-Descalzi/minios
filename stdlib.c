@@ -1,4 +1,5 @@
 #include "stdlib.h"
+#include "debug.h"
 
 const char NUMBERS[] = "0123456789ABCDEF";
 
@@ -35,14 +36,20 @@ char* itoa(int value, char* string,int radix){
     } while(value > 0);
     string[i] = '\0';
 
-    m = i/2;
-    i--;
+    if (i == 2){
+        d = string[1];
+        string[1] = string[0];
+        string[0] = d;
+    } else {
+        m = i/2;
+        i--;
 
-    for(;m>=0;m--){
-        d = string[m];
-        string[m] = string[i-m];
-        string[i-m] = d;
+        for(;m>=0;m--){
+            d = string[m];
+            string[m] = string[i-m];
+            string[i-m] = d;
+        }
     }
-    
+        
     return string;
 }

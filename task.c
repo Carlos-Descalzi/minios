@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "pic.h"
 #include "stdlib.h"
+#include "heap.h"
 
 #define TASKS_MAX           32
 
@@ -59,7 +60,8 @@ void tasks_init(){
     TASKS[TID_IDLE].tid = TID_IDLE;
     TASKS[TID_IDLE].status = TASK_STATUS_IDLE;
     TASKS[TID_IDLE].eip = (uint32_t) &idle_loop;
-    TASKS[TID_IDLE].esp = 0x30100;  // TODO fix when have paging.
+    //TASKS[TID_IDLE].esp = 0x30100;  // TODO fix when have paging.
+    TASKS[TID_IDLE].esp = (uint32_t)heap_alloc(16384);
 
     TASKS[TID_KERNEL].next = &(TASKS[TID_IDLE]);
     TASKS[TID_IDLE].next = &(TASKS[TID_KERNEL]);
