@@ -3,6 +3,7 @@
 
 typedef struct __file FILE;
 
-int fprintf(FILE* fp, const char* format, ...);
+int kfprintf(FILE* fp, const char* format, ...);
+int kfputc(int c, FILE* fp);
 
 #endif

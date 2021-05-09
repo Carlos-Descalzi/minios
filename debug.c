@@ -16,3 +16,6 @@ void serial_log_i(long long number, unsigned char radix){
     serial_log(itoa(number,buff,radix));
 }
 
+void serial_log_c(char c){
+    outb(0x3F8,c);
+}
