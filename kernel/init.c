@@ -10,6 +10,7 @@
 #include "minfo.h"
 #include "heap.h"
 #include "paging.h"
+#include "string.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -21,12 +22,12 @@ typedef struct {
 const char BANNER[] = "*************\n** MINI OS **\n*************\n";
 
 static uint8_t timer_count;
-static char buff[16];
+static char buff[32];
 
 static void timer_handler();
 static void dummy_handler();
 static void trap_handler();
-static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, HeaderBase* header);
+static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header);
 static uint8_t show_memory_region(MemoryRegion* region, uint8_t, MemData* mem_data);
 static void display_memory();
 static void test_timer();
@@ -67,28 +68,60 @@ void init(){
     paging_init();
     heap_init();
 
+    /*
     pit_init();
     pit_set_freq(1);
     tasks_init();
     sti();
 
     while(1){}
+    */
 }
 
-static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, HeaderBase* header){
-    console_print("Bus:");
-    console_print(itoa(bus,buff,16));
-    console_print(" Dev:");
-    console_print(itoa(device,buff,16));
-    console_print(" Vendor:");
-    console_print(itoa(header->vendor_id,buff,16));
-    console_print(" Device:");
-    console_print(itoa(header->device_id,buff,16));
-    console_print(" Class:");
-    console_print(itoa(header->class,buff,16));
-    console_print(" Subclass:");
-    console_print(itoa(header->subclass,buff,16));
-    console_put('\n');
+static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header){
+    uint8_t header_type;
+    int i;
+    debug("Bus:");
+    debug_i(bus,16);
+    debug(" Dev:");
+    debug_i(device,16);
+    debug(" Func:");
+    debug_i(func,10);
+    debug(" Vendor:");
+    debug_i(header->base.vendor_id,16);
+    debug(" Device:");
+    debug_i(header->base.device_id,16);
+    debug(" Class:");
+    debug_i(header->base.class,16);
+    debug(" Subclass:");
+    debug_i(header->base.subclass,16);
+    if (header->base.header_type.mf){
+        debug(" (MF)");
+    }
+    debug("\n");
+    header_type = header->base.header_type.type;
+
+    if (header_type == 0){
+        debug("\tType 00\n");
+        for (i=0;i<6;i++){
+            if(header->type00.base_addresses[i]){
+                debug("\t");
+                debug_i(header->type00.base_addresses[i],16);
+                debug("\n");
+            }
+        }
+    } else if (header_type == 1){
+        debug("\tType 01\n");
+        for (i=0;i<6;i++){
+            if(header->type01.base_addresses[i]){
+                debug("\t");
+                debug_i(header->type00.base_addresses[i],16);
+                debug("\n");
+            }
+        }
+    } else {
+        debug("\tType 02\n");
+    }
 }
 
 static void test_timer(){

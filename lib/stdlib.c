@@ -29,6 +29,7 @@ long atol(const char* string){
 char* itoa(int value, char* string,int radix){
     int d, i, m;
     i=0;
+    string[0] = '\0';
     do {
         d = value % radix;
         string[i++]=NUMBERS[d];

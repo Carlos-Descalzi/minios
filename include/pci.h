@@ -35,10 +35,9 @@ typedef struct {
     uint8_t latency_timer;
     HeaderType header_type;
     BistRegister bist;
-} HeaderBase;
+} HeaderBaseFields;
 
 typedef struct {
-    HeaderBase base_header;
     uint32_t base_addresses[6];
     uint32_t cardbus_cis_pointer;
     uint16_t subsystem_vendor_id;
@@ -54,10 +53,9 @@ typedef struct {
     uint8_t interrupt_pin;
     uint8_t min_grant;
     uint8_t max_latency;
-} Type00Header;
+} Type00HeaderFields;
 
 typedef struct {
-    HeaderBase base_header;
     uint32_t base_addresses[2];
     uint8_t primary_bus_number;
     uint8_t secondary_bus_number;
@@ -82,10 +80,43 @@ typedef struct {
     uint8_t interrupt_line;
     uint8_t interrupt_pin;
     uint16_t bridge_control;
+} Type01HeaderFields;
 
-} Type01Header;
+typedef struct {
+    uint32_t cardbus_exca_base_address;
+    uint8_t offset_cap_list;
+    uint8_t reserved1;
+    uint16_t secondary_status;
+    uint8_t pci_bus_number;
+    uint8_t cardbus_bus_number;
+    uint8_t subordinate_bus_number;
+    uint8_t cardbus_latency_timer;
+    uint32_t memory_base_0;
+    uint32_t memory_limit_0;
+    uint32_t memory_base_1;
+    uint32_t memory_limit_1;
+    uint32_t io_base_0;
+    uint32_t io_limit_0;
+    uint32_t io_base_1;
+    uint32_t io_limit_1;
+    uint8_t interrupt_line;
+    uint8_t interrupt_pin;
+    uint16_t bridge_control;
+    uint16_t subsystem_device_id;
+    uint16_t subsystem_vendor_id;
+    uint32_t legacy_mode_base_address;
+} Type02HeaderFields;
 
-typedef void (*PciVisitor)(uint8_t,uint8_t,uint8_t, HeaderBase* header);
+typedef struct {
+    HeaderBaseFields base;
+    union {
+        Type00HeaderFields type00;
+        Type01HeaderFields type01;
+        Type02HeaderFields type02;
+    };
+} PCIHeader;
+
+typedef void (*PciVisitor)(uint8_t,uint8_t,uint8_t, PCIHeader* header);
 
 uint16_t    pci_config_read_w   (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);
 uint32_t    pci_config_read_dw  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);

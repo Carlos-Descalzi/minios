@@ -1,5 +1,6 @@
 #include "pci.h"
 #include "io.h"
+#include "string.h"
 
 #define HEADER_TYPE_STANDARD        0x00
 #define HEADER_TYPE_PCI_PCI         0x01
@@ -18,6 +19,10 @@ typedef union PciAddress {
     };
     uint32_t address;
 } PciAddress;
+
+static void check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor);
+static void check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor);
+static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor);
 
 uint16_t pci_config_read_w  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset){
 
@@ -52,42 +57,83 @@ uint32_t pci_config_read_dw(uint8_t bus, uint8_t device, uint8_t func, uint8_t o
 
 #define filled(a) (a[0] != 0 || a[1] != 0 || a[2] != 0 || a[3] != 0)
 
-uint8_t get_header_base(uint8_t bus, uint8_t device, uint8_t function, HeaderBase* header){
+uint8_t get_header(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header){
     uint8_t i;
     uint32_t* raw_header = (uint32_t*)header;
+    size_t header_fields_size;
+    memset(header,0,sizeof(PCIHeader));
 
     for (i=0;i<4;i++){
+        raw_header[i] = pci_config_read_dw(bus, device, function, i*4);
+    }
+    if (header->base.header_type.type == 0){
+        header_fields_size = sizeof(Type00HeaderFields) >> 2;
+    } else if (header->base.header_type.type == 1){
+        header_fields_size = sizeof(Type01HeaderFields) >> 2;
+    } else {
+        header_fields_size = sizeof(Type01HeaderFields) >> 2;
+    }
+    for (;i<header_fields_size;i++){
         raw_header[i] = pci_config_read_dw(bus, device, function, i*4);
     }
     return filled(raw_header);
 }
 
-
-
-static void check_function(uint8_t bus, uint8_t device, uint8_t function, PciVisitor visitor){
-    HeaderBase header;
-
-    if (get_header_base(bus,device,function, &header)){
-        if(header.vendor_id != 0xFFFF){
-            visitor(bus, device, function, &header);
-        }
-    }
-}
-
-static void check_device(uint8_t bus, uint8_t device, PciVisitor visitor){
-    uint8_t function = 0;
-
-    check_function(bus, device, 0, visitor);
-
-}
-
 void pci_list_all_buses(PciVisitor visitor){
     uint8_t bus;
     uint8_t device;
+    uint8_t function;
+    PCIHeader header;
 
-    for (bus = 0;bus <= 32;bus ++){ // todo check all buses
-        for (device = 0;device < 32;device ++){
-            check_device(bus, device, visitor);
+    get_header(0, 0, 0, &header);
+
+    if (header.base.header_type.mf){
+        for(function = 0; function < 8;function++){
+            get_header(0,0,function,&header);
+            if(header.base.vendor_id != 0xFFFF) break;
+            check_bus(function,&header,visitor);
+        }
+    } else {
+        check_bus(0, &header, visitor);
+    }
+
+    //for (bus = 0;bus <= 255;bus ++){ // todo check all buses
+    //    check_bus(bus, &header, visitor);
+    //}
+}
+
+
+static void check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor){
+    uint8_t device;
+
+    for (device=0;device < 32;device++){
+        check_device(bus, device, header, visitor);
+    }
+}
+static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor){
+    visitor(bus, device, function, header);
+
+    if (header->base.class == 0x06 && header->base.subclass == 0x04){
+        if (header->base.header_type.type == 1){
+            check_bus(header->type01.secondary_bus_number, header, visitor);
+        } 
+    }
+}
+
+static void check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor){
+    uint8_t function = 0;
+    if (get_header(bus,device,function, header)){
+        if(header->base.vendor_id != 0xFFFF){
+            visitor(bus, device, function, header);
+            if (header->base.header_type.mf){
+                for(function=0;function<8;function++){
+                    if (get_header(bus,device,function, header)){
+                        if (header->base.vendor_id != 0xFFFF){
+                            visitor(bus,device, function,header);
+                        }
+                    }
+                }
+            }
         }
     }
 }
