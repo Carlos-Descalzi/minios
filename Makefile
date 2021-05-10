@@ -1,17 +1,13 @@
-CC=gcc
-LD=i686-gnu-ld
-AS=nasm
+include ./Make.defs
+include ./Make.rules
 
-ASFLAGS=-f elf32
-CFLAGS=-march=i386 -m32 -mno-80387 -DDEBUGMODE #-g
-KLDFLAGS=-Ttext 0x10000
-IMAGE=os.img
-IMAGESIZE=66048
-KOBJS=			   \
-	startup.o init.o console.o pci.o \
-	io.o misc.o isr.o pit.o pic.o \
-	stdlib.o string.o debug.o task.o task_asm.o minfo.o \
-	heap.o paging.o stdio.o
+TOPTARGETS=all clean
+
+SUBDIRS=kernel lib devices
+
+KOBJS=$(shell find kernel -name '*.o') 
+KOBJS+=$(shell find lib -name '*.o')
+KOBJS+=$(shell find devices -name '*.o')
 
 QEMU=qemu-system-i386
 QEMU_ARGS=         \
@@ -28,12 +24,22 @@ QEMU_DEBUG_ARGS=   \
 	-serial file:minios.log \
 	-s -S
 
+.PHONY: $(TOPTARGETS) $(SUBDIRS) boot
+
 all: $(IMAGE)
+
+test:
+	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) -hda ./$(IMAGE)
+
+debug:
+	$(QEMU) $(QEMU_ARGS) $(QEMU_DEBUG_ARGS) -hda ./$(IMAGE)
+
+$(TOPTARGETS): $(SUBDIRS)
 
 $(IMAGE): baseimage padding
 
-baseimage: bootloader.bin kernel.bin
-	cat bootloader.bin > $(IMAGE)
+baseimage: boot kernel.bin
+	cat boot/bootloader.bin > $(IMAGE)
 	cat kernel.bin >> $(IMAGE)
 
 padding:
@@ -43,27 +49,18 @@ padding:
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
 
-bootloader.bin: bootloader.asm
-	$(AS) -f bin -l bootloader.lst -o bootloader.bin bootloader.asm
-
 kernel.bin: kernel.elf
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin
-	objdump -d $< > kernel.lst
+	objdump -d $< > $(LSTDIR)/kernel.lst
 
-kernel.elf: $(KOBJS)
+kernel.elf: $(SUBDIRS)
 	i686-gnu-ld $(KLDFLAGS) $(KOBJS) -o kernel.elf
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $<
+boot:
+	@echo "Entering $@"
+	@$(MAKE) -C $@ $(MAKECMDGOALS)
 
-%.o: %.asm
-	$(AS) $(ASFLAGS) -o $@ $<
+$(SUBDIRS):
+	@echo "Entering $@"
+	@$(MAKE) -C $@ $(MAKECMDGOALS)
 
-clean:
-	rm -rf *.o *.bin *.img *.lst
-
-test: $(IMAGE)
-	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) -hda ./$(IMAGE)
-
-debug: $(IMAGE)
-	$(QEMU) $(QEMU_ARGS) $(QEMU_DEBUG_ARGS) -hda ./$(IMAGE)

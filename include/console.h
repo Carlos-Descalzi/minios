@@ -33,10 +33,13 @@ void console_color(unsigned char color);
  * Moves cursor to the given x/y position on screen
  **/
 void console_gotoxy(unsigned char x, unsigned char y);
+void console_clear_screen(void);
+void console_get_cursor_pos(unsigned char* x, unsigned char* y);
 /**
  * Prints a string in console.
  * does not handle escape characters
  **/
+
 void console_print(const char* msg);
 /**
  * Puts a character in console in actual position x/y.

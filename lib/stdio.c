@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include "ctype.h"
 #include "debug.h"
+#include "errno.h"
 
 struct __file {
 };
@@ -73,6 +74,10 @@ int kfprintf(FILE* fp, const char* format, ...){
                         print_num(d,&tformat, 16, &written, buffer, fp);
                         break;
                     }
+
+                default:
+
+                    break;
             }
 
         } else {

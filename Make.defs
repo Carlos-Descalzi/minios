@@ -1,0 +1,15 @@
+# vim: syntax=make
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
+TOPDIR=$(MAKEFILE_DIR)
+CC=gcc
+LD=i686-gnu-ld
+AS=nasm
+ASFLAGS=-f elf32
+CFLAGS=-march=i386 -m32 -mno-80387 -DDEBUGMODE -I$(TOPDIR)/include -nodefaultlibs -no-pie -fno-PIC
+KLDFLAGS=-T linker.ld -no-pie
+IMAGE=os.img
+IMAGESIZE=66048
+OBJDIR=$(TOPDIR)/obj
+LSTDIR=$(TOPDIR)/lst
+.DEFAULT_GOAL=all

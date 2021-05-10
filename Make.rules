@@ -1,0 +1,9 @@
+# vim: syntax=make
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
+
+%.o: %.asm
+	$(AS) $(ASFLAGS) -o $@ $<
+
+clean:
+	rm -rf *.o *.bin *.img lst/*.lst *.log *.elf

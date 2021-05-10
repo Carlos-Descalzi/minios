@@ -35,3 +35,21 @@ size_t strlen(const char* string){
     }
     return len;
 }
+char*   strchr  (const char*s, int c){
+    int i;
+    for (i=0;s[i];i++){
+        if (s[i] == c){
+            return (char*)&(s[i]);
+        }
+    }
+    return NULL;
+}
+char*   strrchr (const char*s, int c){
+    int i;
+    for (i=strlen(s);i>=0;i--){
+        if (s[i] == c){
+            return (char*)&(s[i]);
+        }
+    }
+    return NULL;
+}

@@ -7,6 +7,10 @@ extern init ; the entry point in C code.
 ; has been loaded from the image located on the 128 sectors
 ; after boot.
 ; The only thing this code does is a call to C function.
+
+
+    section .init
+
 _start:
     call init
     hlt

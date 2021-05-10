@@ -14,15 +14,17 @@ static unsigned char cursor;
 static void scroll_up           (void);
 static void update_cursor       (void);
 static void do_console_put      (const char c);
+static void do_clear            (void);
 
 void console_init(){
-    int i;
     pos = 0;
     color = 0xF;
-    for (i=0;i<SCREEN_SIZE;i++){
-        SCREEN[i] = color << 8;
-    }
+    do_clear();
     console_cursor_on();
+    update_cursor();
+}
+void console_clear_screen(void){
+    do_clear();
     update_cursor();
 }
 
@@ -90,3 +92,13 @@ static void update_cursor(void){
     }
 }
 
+static void do_clear(){
+    int i;
+    for (i=0;i<SCREEN_SIZE;i++){
+        SCREEN[i] = color << 8;
+    }
+}
+void console_get_cursor_pos(unsigned char* x, unsigned char* y){
+    *y = pos / SCREEN_WIDTH;
+    *x = pos % SCREEN_HEIGHT;
+}
