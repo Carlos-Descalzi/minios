@@ -35,6 +35,9 @@ char* itoa(int value, char* string,int radix){
         string[i++]=NUMBERS[d];
         value /= radix;
     } while(value > 0);
+    if (value < 0){
+        string[i++] = '-';
+    }
     string[i] = '\0';
 
     if (i == 2){
@@ -44,7 +47,34 @@ char* itoa(int value, char* string,int radix){
     } else {
         m = i/2;
         i--;
+        for(;m>=0;m--){
+            d = string[m];
+            string[m] = string[i-m];
+            string[i-m] = d;
+        }
+    }
+        
+    return string;
+}
 
+char* utoa(unsigned int value, char* string,int radix){
+    int d, i, m;
+    i=0;
+    string[0] = '\0';
+    do {
+        d = value % radix;
+        string[i++]=NUMBERS[d];
+        value /= radix;
+    } while(value > 0);
+    string[i] = '\0';
+
+    if (i == 2){
+        d = string[1];
+        string[1] = string[0];
+        string[0] = d;
+    } else {
+        m = i/2;
+        i--;
         for(;m>=0;m--){
             d = string[m];
             string[m] = string[i-m];

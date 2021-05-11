@@ -10,7 +10,7 @@
 #endif
 
 void serial_log(const char*);
-void serial_log_i(long long number, unsigned char radix);
+void serial_log_i(unsigned int number, unsigned char radix);
 void serial_log_c(char c);
 
 

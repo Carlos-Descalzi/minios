@@ -1,7 +1,7 @@
 #include "paging.h"
 #include "string.h"
 #include "isr.h"
-#include "console.h"
+#include "debug.h"
 
 // Use the available RAM region of ~30kb which is behind boot sector,
 // for page directory.
@@ -64,5 +64,5 @@ void paging_free_table(uint16_t page_table_index){
     PAGE_DIRECTORY[page_table_index].user_data &= ~PD_USED;
 }
 static void INTERRUPT handle_page_fault(InterruptFrame* frame){
-    console_init("Page fault!!!\n");
+    debug("Page fault!!!\n");
 }

@@ -11,9 +11,9 @@ void serial_log(const char* string){
     }
 }
 
-void serial_log_i(long long number, unsigned char radix){
+void serial_log_i(unsigned int number, unsigned char radix){
     char buff[20];
-    serial_log(itoa(number,buff,radix));
+    serial_log(utoa(number,buff,radix));
 }
 
 void serial_log_c(char c){

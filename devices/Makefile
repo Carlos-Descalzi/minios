@@ -1,5 +1,5 @@
 include ../Make.defs
 include ../Make.rules
-OBJS=screen.o	
+OBJS=devices.o screen.o serial.o
 
 all: $(OBJS)

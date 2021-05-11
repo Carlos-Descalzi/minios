@@ -3,6 +3,7 @@
 #include "string.h"
 #include "console.h"
 #include "stdlib.h"
+#include "debug.h"
 
 /**
  * This device is just a wrapper over raw console API.
@@ -13,6 +14,9 @@
 
 #define SCREEN_OPT_CURSOR_ON    1
 #define SCREEN_OPT_CURSOR_OFF   2
+
+#define MODE_TEXT   0
+#define MODE_ESCAPE 1
 
 static int16_t  screen_init         (Device* device);
 static int16_t  screen_setopt       (Device* device, uint32_t option, void* data);
@@ -27,30 +31,49 @@ static void     move_cursor         (void);
 static void     save_cursor         (void);
 static void     restore_cursor      (void);
 static void     set_color           (void);
-
-#define MODE_TEXT   0
-#define MODE_ESCAPE 1
+static uint8_t  count_devices       (struct DeviceType* device_type);
+static Device*  instantiate         (struct DeviceType* device_type, uint8_t device_number);
+static void     release             (struct DeviceType* device_type, Device* device);
+static void     clear_buff          (void);
 
 static uint8_t mode;
 static uint8_t buff_index;
 static char buff[8];
 static uint8_t saved_x;
 static uint8_t saved_y;
-
-static inline void clear_buff(){
-    memset(buff,0,8);
-    buff_index = 0;
-}
 static CharDevice SCREEN_DEVICE = {
     base: {
         type: DEVICE_TYPE_CHAR,
-        subtype: DEVICE_SUBTYPE_SCREEN,
-        init: screen_init,
+        //subtype: DEVICE_SUBTYPE_SCREEN,
+        //init: screen_init,
         setopt: screen_setopt,
     },
     read: screen_read,
     write: screen_write
 };
+
+static DeviceType SCREEN_DEVICE_TYPE = {
+    kind: CON,
+    count_devices: count_devices,
+    instantiate: instantiate,
+    release: release
+};
+
+static uint8_t count_devices(struct DeviceType* device_type){
+    return 1;
+}
+
+static Device* instantiate(struct DeviceType* device_type, uint8_t device_number){
+    screen_init((Device*)&SCREEN_DEVICE);
+    return DEVICE(&SCREEN_DEVICE);
+}
+
+static void release(struct DeviceType* device_type, Device* device){
+}
+
+void screen_register(){
+    device_register_type((DeviceType*)&SCREEN_DEVICE_TYPE);
+}
 
 static int16_t screen_init(Device* device){
     console_init();
@@ -58,6 +81,7 @@ static int16_t screen_init(Device* device){
     mode = MODE_TEXT;
     saved_x = 0;
     saved_y = 0;
+    debug("Screen device initialized\n");
 }
 
 static int16_t screen_setopt(Device* device, uint32_t option, void* data){
@@ -252,6 +276,7 @@ static void set_color(){
     console_color(bg << 4 | fg); // TODO: Intensity
 }
 
-void screen_register(){
-    device_register((Device*)&SCREEN_DEVICE, NULL);
+static inline void clear_buff(){
+    memset(buff,0,8);
+    buff_index = 0;
 }

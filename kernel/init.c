@@ -11,6 +11,9 @@
 #include "heap.h"
 #include "paging.h"
 #include "string.h"
+#include "bda.h"
+#include "ps2.h"
+#include "device.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -31,9 +34,12 @@ static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader*
 static uint8_t show_memory_region(MemoryRegion* region, uint8_t, MemData* mem_data);
 static void display_memory();
 static void test_timer();
+static void check_bda();
+static void check_ps2();
 
 extern void test_call();
 extern void handle_gpf();
+extern void devices_register();
 
 void init(){
     uint32_t i =0;
@@ -43,8 +49,12 @@ void init(){
     console_gotoxy(0,4);
     console_print("PCI Devices:\n");
 
+    /*
     pci_list_all_buses(show_pci_entry);
 
+    check_bda();
+    check_ps2();
+    */
     /*
     console_print("------\nTesting timer:\n");
 
@@ -68,14 +78,19 @@ void init(){
     paging_init();
     heap_init();
 
+    device_init();
+    devices_register();
+    device_init_devices();
     /*
     pit_init();
     pit_set_freq(1);
     tasks_init();
     sti();
 
+    
     while(1){}
     */
+    console_print("devices initialized\n");
 }
 
 static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header){
@@ -102,20 +117,32 @@ static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader*
     header_type = header->base.header_type.type;
 
     if (header_type == 0){
-        debug("\tType 00\n");
         for (i=0;i<6;i++){
-            if(header->type00.base_addresses[i]){
+            uint32_t address = header->type00.base_addresses[i];
+            if(address){
                 debug("\t");
-                debug_i(header->type00.base_addresses[i],16);
+                debug("Address ");
+                debug_i(i,10);
+                debug(" ");
+                debug_i(address,16);
+                if (address & 1){
+                    debug(" (IO Port)");
+                }
                 debug("\n");
             }
         }
     } else if (header_type == 1){
-        debug("\tType 01\n");
-        for (i=0;i<6;i++){
-            if(header->type01.base_addresses[i]){
+        for (i=0;i<2;i++){
+            uint32_t address = header->type01.base_addresses[i];
+            if(address){
                 debug("\t");
-                debug_i(header->type00.base_addresses[i],16);
+                debug("Address ");
+                debug_i(i,10);
+                debug(" ");
+                debug_i((address & ~1),16);
+                if (address & 1){
+                    debug(" (IO Port)");
+                }
                 debug("\n");
             }
         }
@@ -135,7 +162,7 @@ static void test_timer(){
 static void INTERRUPT timer_handler(InterruptFrame* frame){
     console_print("Timer called ");
     timer_count++;
-    console_print(itoa(timer_count,buff,10));
+    console_print(utoa(timer_count,buff,10));
     console_put('\n');
     eoi();
 }
@@ -163,12 +190,12 @@ static void display_memory(){
 
     minfo_iterate_regions((MemRegionVisitor)show_memory_region, &mem_data);
     console_print("Total Memory:");
-    console_print(itoa(mem_data.total_ram,buff, 10));
+    console_print(utoa(mem_data.total_ram,buff, 10));
     console_print(" Bytes free\n");
 
     console_print("Region #0 will be used for Kernel\n");
     console_print("Region #");
-    console_print(itoa(mem_data.biggest_region,buff,10));
+    console_print(utoa(mem_data.biggest_region,buff,10));
     console_print(" will be used for programs\n");
 
 }
@@ -176,11 +203,11 @@ static void display_memory(){
 static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, MemData* mem_data){
 
     console_print("Region#");
-    console_print(itoa(region_num,buff,10));
+    console_print(utoa(region_num,buff,10));
     console_print(":");
-    console_print(itoa(region->base_address,buff,16));
+    console_print(utoa(region->base_address,buff,16));
     console_print(" ");
-    console_print(itoa(region->length,buff,10));
+    console_print(utoa(region->length,buff,10));
     if (region->type == MEM_TYPE_FREE){
         mem_data->total_ram+=region->length;
         console_print(" (Free)\n");
@@ -194,3 +221,43 @@ static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, MemD
     }
     return 0;
 }
+static void check_bda(){
+    int i;
+    console_print("------\nSerial Ports:\n");
+    for (i=0;i<4;i++){
+        if (BDA->com_ports[i]){
+            console_print("Serial port ");
+            console_print(utoa(i,buff,10));
+            console_print(" ");
+            console_print(utoa(BDA->com_ports[i],buff,16));
+            console_print("\n");
+        }
+    }
+}
+static void check_ps2(){
+    PS2Port ps2;
+    console_print("------\nPS/2:\n");
+
+    ps2_get_status(&ps2);
+
+    console_print("Controller: ");
+    if (ps2.controller_present){
+        console_print("Ok\n");
+    } else {
+        console_print("Not present\n");
+    }
+    console_print("Port 1: ");
+    if (ps2.port1_present){
+        console_print("Ok\n");
+    } else {
+        console_print("Not present\n");
+    }
+    console_print("Port 2: ");
+    if (ps2.port2_present){
+        console_print("Ok\n");
+    } else {
+        console_print("Not present\n");
+    }
+}
+
+

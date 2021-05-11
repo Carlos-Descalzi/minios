@@ -20,7 +20,7 @@ typedef struct {
 static void parse_format(const char* format, int* pos, char* buffer, Format* tformat);
 static void print_num(int d, Format* tformat, int radix, int* written, char* buffer, FILE* fp);
 
-int kfprintf(FILE* fp, const char* format, ...){
+int fprintf(FILE* fp, const char* format, ...){
     va_list parameters;
     static char buffer[30];
     int written = 0;
@@ -42,7 +42,7 @@ int kfprintf(FILE* fp, const char* format, ...){
 
             switch(tformat.ftype){
                 case '%':
-                    kfputc('%',fp);
+                    fputc('%',fp);
                     written++;
                     break;
 
@@ -54,7 +54,7 @@ int kfprintf(FILE* fp, const char* format, ...){
 
                 case 'c': {
                         char c = (char) va_arg(parameters, int);
-                        kfputc(c,fp);
+                        fputc(c,fp);
                         written++;
                         break;
                     }
@@ -63,7 +63,7 @@ int kfprintf(FILE* fp, const char* format, ...){
                         const char* str = (char*) va_arg(parameters, const char*);
                         int n=0;
                         for (n=0;str[n];n++){
-                            kfputc(str[n],fp);
+                            fputc(str[n],fp);
                             written++;
                         }
                         break;
@@ -76,12 +76,11 @@ int kfprintf(FILE* fp, const char* format, ...){
                     }
 
                 default:
-
                     break;
             }
 
         } else {
-            kfputc(fmtchar, fp);
+            fputc(fmtchar, fp);
             written++;
         }
 
@@ -93,7 +92,7 @@ int kfprintf(FILE* fp, const char* format, ...){
 
 #include "console.h"
 
-int kfputc(int c, FILE* fp){
+int fputc(int c, FILE* fp){
     // TODO Use proper FILE implementation
     console_put(c);
     return 0;
@@ -128,12 +127,12 @@ static void print_num(int d, Format* tformat, int radix, int* written, char* buf
     itoa(d, buffer, 10);
     if (tformat->padding){
         for (n=strlen(buffer);n<tformat->digits;n++){
-            kfputc('0',fp);
+            fputc('0',fp);
             *written++;
         }
     }
     for (n=0;buffer[n];n++){
-        kfputc(buffer[n],fp);
+        fputc(buffer[n],fp);
         *written++;
     }
 }

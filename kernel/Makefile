@@ -15,7 +15,8 @@ OBJS=startup.o	\
 	 paging.o	\
 	 minfo.o	\
 	 device.o	\
-	 bda.o
+	 bda.o		\
+	 ps2.o
 	 
 
 all: $(OBJS)
