@@ -2,6 +2,7 @@
 #include "string.h"
 #include "isr.h"
 #include "debug.h"
+#include "console.h"
 
 // Use the available RAM region of ~30kb which is behind boot sector,
 // for page directory.
@@ -46,6 +47,7 @@ void paging_init(){
     );
 
     isr_install(0xE, handle_page_fault);
+    console_print("Paging initialized\n");
 }
 
 int16_t paging_alloc_table(PageDirectoryEntry** entry_ptr){

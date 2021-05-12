@@ -18,7 +18,6 @@
 #define MODE_TEXT   0
 #define MODE_ESCAPE 1
 
-static int16_t  screen_init         (Device* device);
 static int16_t  screen_setopt       (Device* device, uint32_t option, void* data);
 static int16_t  screen_read         (CharDevice* device);
 static int16_t  screen_write        (CharDevice* device, uint8_t chr);
@@ -45,7 +44,6 @@ static CharDevice SCREEN_DEVICE = {
     base: {
         type: DEVICE_TYPE_CHAR,
         //subtype: DEVICE_SUBTYPE_SCREEN,
-        //init: screen_init,
         setopt: screen_setopt,
     },
     read: screen_read,
@@ -64,7 +62,12 @@ static uint8_t count_devices(struct DeviceType* device_type){
 }
 
 static Device* instantiate(struct DeviceType* device_type, uint8_t device_number){
-    screen_init((Device*)&SCREEN_DEVICE);
+    console_init();
+    clear_buff();
+    mode = MODE_TEXT;
+    saved_x = 0;
+    saved_y = 0;
+    console_print("Screen device initialized\n");
     return DEVICE(&SCREEN_DEVICE);
 }
 
@@ -75,14 +78,6 @@ void screen_register(){
     device_register_type((DeviceType*)&SCREEN_DEVICE_TYPE);
 }
 
-static int16_t screen_init(Device* device){
-    console_init();
-    clear_buff();
-    mode = MODE_TEXT;
-    saved_x = 0;
-    saved_y = 0;
-    debug("Screen device initialized\n");
-}
 
 static int16_t screen_setopt(Device* device, uint32_t option, void* data){
     switch(option){

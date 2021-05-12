@@ -19,7 +19,9 @@ typedef enum {
     CON = 0,
     SER,
     HD,
-    NET
+    NET,
+    KEYB,
+    MOUSE
 } DeviceKind;
 
 typedef struct Device Device;

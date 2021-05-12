@@ -21,7 +21,7 @@ struct MemoryBlock {
 #define HEADER_SIZE (sizeof(MemoryBlock))
 #define FIRST_BLOCK ((MemoryBlock*)MEMORY_START)
 
-void    heap_init   (void){
+void heap_init(void){
     FIRST_BLOCK->header.used = 0;
     FIRST_BLOCK->header.size = (MEMORY_END - MEMORY_START) + HEADER_SIZE;
     FIRST_BLOCK->header.next = NULL;
@@ -48,7 +48,9 @@ void* heap_alloc(size_t size){
     if (block->header.size + HEADER_SIZE > size){
         MemoryBlock* next = block->header.next;
         // split
-        block->header.next = (MemoryBlock*) block + size + HEADER_SIZE;
+        block->header.size = size;
+        block->header.next = (MemoryBlock*) (((char*)block) + size + HEADER_SIZE);
+        block->header.next->header.size = block->header.size - size - HEADER_SIZE;
         block->header.next->header.next = next;
     } 
 
@@ -56,7 +58,7 @@ void* heap_alloc(size_t size){
     block->header.size = size;
 
     debug("Allocated ");
-    debug_i(size,10);
+    debug_i(block->header.size,10);
     debug(" bytes at address ");
     debug_i((uint32_t)block->block,16);
     debug("\n");

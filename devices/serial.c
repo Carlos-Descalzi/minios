@@ -4,6 +4,8 @@
 #include "heap.h"
 #include "io.h"
 #include "debug.h"
+#include "console.h"
+#include "stdlib.h"
 
 static uint8_t count_devices(DeviceType* device_type);
 static Device* instantiate(DeviceType* device_type, uint8_t device_number);
@@ -18,7 +20,6 @@ typedef struct {
 } SerialDevice;
 
 #define SERIAL_DEVICE(d)    ((SerialDevice*)d)
-
 
 static DeviceType SERIAL_DEVICE_TYPE = {
     kind: SER,
@@ -38,6 +39,7 @@ static uint8_t count_devices(DeviceType* device_type){
 }
 
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
+    char buff[8];
     uint16_t port = BDA->com_ports[device_number];
     SerialDevice* device = heap_alloc(sizeof(SerialDevice));
     device->device.base.type = DEVICE_TYPE_CHAR;
@@ -45,9 +47,9 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->device.read = serial_read;
     device->device.write = serial_write;
     device->port = port;
-    debug("Serial port ");
-    debug_i(port,16);
-    debug(" initialized\n");
+    console_print("Serial port ");
+    console_print(itoa(port,buff,16));
+    console_print(" initialized\n");
     return DEVICE(device);
 }
 

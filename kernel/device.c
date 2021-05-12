@@ -52,8 +52,10 @@ void device_init_devices(void){
             for (j=0;j<device_count;j++){
                 devices[device_index].device_type = device_types[i];
                 devices[device_index].device = device_types[i]->instantiate(device_types[i], j);
-                devices[device_index].device->instance_number = j;
-                device_index++;
+                if (devices[device_index].device){
+                    devices[device_index].device->instance_number = j;
+                    device_index++;
+                }
             }
         }
     }
