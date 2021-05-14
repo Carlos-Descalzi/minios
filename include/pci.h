@@ -116,10 +116,10 @@ typedef struct {
     };
 } PCIHeader;
 
-typedef void (*PciVisitor)(uint8_t,uint8_t,uint8_t, PCIHeader* header);
+typedef void (*PciVisitor)(uint8_t,uint8_t,uint8_t, PCIHeader* header, void* user_data);
 
 uint16_t    pci_config_read_w   (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);
 uint32_t    pci_config_read_dw  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);
-void        pci_list_all_buses  (PciVisitor visitor);
+void        pci_list_all_buses  (PciVisitor visitor, void* user_data);
 
 #endif

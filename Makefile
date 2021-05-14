@@ -49,6 +49,8 @@ padding:
 	@echo "Code size: $(fsize) bytes"
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
+	@echo "Now adding 2 Mb for filesystem"
+	@dd if=/dev/zero bs=1024 count=2048 >> $(IMAGE)
 
 kernel.bin: kernel.elf
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin

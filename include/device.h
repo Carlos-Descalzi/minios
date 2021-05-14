@@ -46,7 +46,7 @@ typedef struct BlockDevice {
     int16_t     (*write)            (struct BlockDevice*,uint8_t*,uint16_t);
     int16_t     (*close)            (struct BlockDevice*);
     void        (*seek)             (struct BlockDevice*, uint32_t);
-    void*       block_data;
+    void        (*flush)            (struct BlockDevice*);
 } BlockDevice;
 
 typedef struct CharDevice {

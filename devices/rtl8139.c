@@ -10,7 +10,7 @@
 static uint8_t count_devices(DeviceType* device_type);
 static Device* instantiate(DeviceType* device_type, uint8_t device_number);
 static void release(DeviceType* device_type, Device* device);
-static void check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header);
+static void check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
 
 typedef struct {
     BlockDevice device;
@@ -40,13 +40,13 @@ static DeviceType DEVICE_TYPE = {
 };
 
 void rtl8139_register(){
-    device_register_type((DeviceType*)&DEVICE_TYPE);
+    device_register_type(&DEVICE_TYPE);
 }
 
 static uint8_t count_devices(DeviceType* device_type){
     device_count = 0;
     memset(avail_net_devices,0,sizeof(avail_net_devices));
-    pci_list_all_buses(check_pci);
+    pci_list_all_buses(check_pci, NULL);
     return device_count;
 }
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
@@ -78,7 +78,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
 static void release(DeviceType* device_type, Device* device){
     heap_free(device);
 }
-static void check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header){
+static void check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void *data){
     if (header->base.class == 0x02 
         && header->base.subclass == 0x00 
         && header->base.vendor_id == 0x10EC
