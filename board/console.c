@@ -1,5 +1,5 @@
-#include "console.h"
-#include "io.h"
+#include "board/console.h"
+#include "board/io.h"
 
 #define SCREEN                  ((unsigned short*)0xb8000)
 #define SCREEN_WIDTH            80

@@ -3,11 +3,13 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices
+SUBDIRS=kernel lib devices fs board
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
 KOBJS+=$(shell find devices -name '*.o')
+KOBJS+=$(shell find fs -name '*.o')
+KOBJS+=$(shell find board -name '*.o')
 
 QEMU=qemu-system-i386
 QEMU_ARGS=         \
@@ -37,7 +39,9 @@ debug:
 
 $(TOPTARGETS): $(SUBDIRS)
 
-$(IMAGE): baseimage padding
+$(IMAGE): baseimage padding e2fs.img
+	@echo "Now adding 2 Mb for filesystem"
+	cat e2fs.img >> $(IMAGE)
 
 baseimage: boot kernel.bin
 	cat boot/bootloader.bin > $(IMAGE)
@@ -49,8 +53,17 @@ padding:
 	@echo "Code size: $(fsize) bytes"
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
-	@echo "Now adding 2 Mb for filesystem"
-	@dd if=/dev/zero bs=1024 count=2048 >> $(IMAGE)
+
+e2fs.img:
+	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
+	@mkdir -p tmp
+	@mke2fs e2fs.img
+	@sudo mount e2fs.img tmp
+	@sudo mkdir tmp/folder1
+	@echo hola | sudo tee tmp/file1.txt
+	@echo hola2 | sudo tee tmp/folder1/file2.txt
+	@sudo umount tmp
+	@rm -rf tmp
 
 kernel.bin: kernel.elf
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin

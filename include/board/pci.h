@@ -7,7 +7,7 @@
 #define PCI_IO_CONFIG_ADDR  0xCF8
 #define PCI_IO_CONFIG_DATA  0xCFC
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 typedef struct {
     uint8_t type:7,

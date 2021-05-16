@@ -1,11 +1,11 @@
-#include "device.h"
 #include "rtl8139.h"
-#include "string.h"
-#include "pci.h"
-#include "console.h"
-#include "heap.h"
-#include "stdlib.h"
-#include "io.h"
+#include "kernel/device.h"
+#include "board/pci.h"
+#include "board/console.h"
+#include "board/io.h"
+#include "lib/string.h"
+#include "lib/heap.h"
+#include "lib/stdlib.h"
 
 static uint8_t count_devices(DeviceType* device_type);
 static Device* instantiate(DeviceType* device_type, uint8_t device_number);
@@ -69,9 +69,9 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
         outb(device->iobase + 0x52,0x0); // wake up device.
         outdw(device->iobase + 0x30, (uint32_t)device->rx_buffer); // send rx buffer address
         
-        console_print("RTL8139 ethernet controller initialized, IOBase: ");
-        console_print(itoa(device->iobase,buff,16));
-        console_print("\n");
+        //console_print("RTL8139 ethernet controller initialized, IOBase: ");
+        //console_print(itoa(device->iobase,buff,16));
+        //console_print("\n");
         return DEVICE(device);
     }
 }

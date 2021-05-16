@@ -1,10 +1,10 @@
 #ifndef _EXT2_H_
 #define _EXT2_H_
 
-#include "stdint.h"
-#include "device.h"
+#include "lib/stdint.h"
+#include "kernel/device.h"
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint32_t block_bitmap;
     uint32_t inode_bitmap;
     uint32_t inode_table;
@@ -15,7 +15,7 @@ typedef struct {
     uint8_t reserved[12];
 } Ext2BlockGroupDescriptor;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint16_t mode;
     uint16_t uid;
     uint32_t size;
@@ -36,7 +36,7 @@ typedef struct {
     uint8_t osd2[12];
 } Ext2Inode;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint32_t inode_count;
     uint32_t block_count;
     uint32_t r_block_count;
@@ -92,26 +92,38 @@ typedef struct {
     uint8_t unused2[760];
 } Ext2Superblock;
 
-typedef struct Ext2Dirent {
+typedef struct {
     uint32_t inode;
     uint16_t rec_len;
     uint8_t name_len;
     uint8_t file_type;
     char name[1];
-} Ext2Dirent;
+} Ext2DirEntry;
 
 typedef struct {
     BlockDevice* device;
     Ext2Superblock super_block;
     uint32_t block_size;
     uint32_t first_block_group_pos;
+    uint8_t* block_buffer;
 } Ext2FileSystem;
 
-typedef int8_t (*ListIterator)(Ext2FileSystem*, Dirent*, void*);
+#define EXT2_DIR_ENTRY_UNKNOWN  0
+#define EXT2_DIR_ENTRY_FILE     1
+#define EXT2_DIR_ENTRY_DIR      2
+#define EXT2_DIR_ENTRY_CHARDEV  3
+#define EXT2_DIR_ENTRY_BLOCKDEV 4
+#define EXT2_DIR_ENTRY_FIFO     5
+#define EXT2_DIR_ENTRY_SOCKET   6
+#define EXT2_DIR_ENTRY_SYMLINK  7
 
-int16_t ext2_open   (Ext2FileSystem* fs, BlockDevice* device);
-void    ext2_list   (Ext2FileSystem* fs, const char* path, ListIterator iterator, void* func_data);
-void    ext2_close  (Ext2FileSystem* fs);
+typedef int8_t (*InodeVisitor)(Ext2FileSystem*,Ext2Inode* inode, void*);
+typedef int8_t (*DirVisitor)(Ext2FileSystem*, Ext2DirEntry*, void*);
+
+Ext2FileSystem* ext2_open           (BlockDevice* device);
+void            ext2_list_inodes    (Ext2FileSystem* fs, InodeVisitor visitor, void*data);
+void            ext2_list           (Ext2FileSystem* fs, const char* path, DirVisitor visitor, void* data);
+void            ext2_close          (Ext2FileSystem* fs);
 
 
 #endif

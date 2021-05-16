@@ -1,10 +1,9 @@
-#include "task.h"
-#include "string.h"
-#include "stdint.h"
-#include "isr.h"
-#include "debug.h"
-#include "pic.h"
-#include "heap.h"
+#include "kernel/task.h"
+#include "kernel/isr.h"
+#include "lib/string.h"
+#include "lib/heap.h"
+#include "misc/debug.h"
+#include "board/pic.h"
 
 #define TASKS_MAX           32
 

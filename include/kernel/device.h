@@ -1,26 +1,17 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 #define DEVICE_TYPE_CHAR             1
 #define DEVICE_TYPE_BLOCK            2
-
-#define DEVICE_BUS_TYPE_MAINBOARD    1
-
-#define DEVICE_BUS_SUBTYPE_IOPORT    1
-#define DEVICE_BUS_SUBTYPE_MMAPPED   2
-#define DEVICE_BUS_SUBTYPE_PS2       3
-
-#define DEVICE_BUS_TYPE_PCI          2
-#define DEVICE_BUS_TYPE_USB          3
 
 typedef enum {
     CON = 0,
     SER,
     HD,
     NET,
-    KEYB,
+    KBD,
     MOUSE
 } DeviceKind;
 
@@ -35,6 +26,7 @@ typedef struct DeviceType {
 
 struct Device{
     uint32_t    type;
+    uint8_t     kind;
     uint8_t     instance_number;
     //int16_t     (*init)             (struct Device*);
     int16_t     (*setopt)           (struct Device*, uint32_t, void*);
@@ -56,21 +48,26 @@ typedef struct CharDevice {
 } CharDevice;
 
 #define DEVICE(d)                   ((Device*)d)
+#define CHAR_DEVICE(d)              ((CharDevice*)d)
+#define BLOCK_DEVICE(d)             ((BlockDevice*)d)
 //#define device_init(d)              (((Device*)d)->init((Device*)d))
-#define device_setopt(d,o,v)        (((Device*)d)->setopt((Device*)d,o,v))
+#define device_setopt(d,o,v)        (DEVICE(d)->setopt(DEVICE(d),o,v))
 
-#define block_device_read(d,b,l)    (((BlockDevice*)d)->read((BlockDevice*)d,b,l))
-#define block_device_write(d,b,l)   (((BlockDevice*)d)->write((BlockDevice*)d,b,l))
-#define block_device_seek(d,p)      (((BlockDevice*)d)->seek((BlockDevice*)d,p))
-#define block_device_close(d)       (((Blockdevice*)d)->close((BlockDevice*)d))
+#define block_device_read(d,b,l)    (BLOCK_DEVICE(d)->read(BLOCK_DEVICE(d),b,l))
+#define block_device_write(d,b,l)   (BLOCK_DEVICE(d)->write(BLOCK_DEVICE(d),b,l))
+#define block_device_seek(d,p)      (BLOCK_DEVICE(d)->seek(BLOCK_DEVICE(d),p))
+#define block_device_close(d)       (BLOCK_DEVICE(d)->close(BLOCK_DEVICE(d)))
 
-#define char_device_read(d)         (((CharDevice*)c)->read((CharDevice*)d))
-#define char_device_write(d,c)      (((CharDevice*)c)->write((CharDevice*)d,c))
+#define char_device_read(d)         (CHAR_DEVICE(c)->read(CHAR_DEVICE(d)))
+#define char_device_write(d,c)      (CHAR_DEVICE(c)->write(CHAR_DEVICE(d),c))
 
-typedef uint16_t (*DeviceVisitor)(uint32_t, DeviceType*,void*);
+typedef uint16_t (*DeviceTypeVisitor)   (uint32_t, DeviceType*,void*);
+typedef uint16_t (*DeviceVisitor)       (uint32_t,uint8_t, Device* device,void*);
 
-void    device_init             (void);
-void    device_list_types       (DeviceVisitor visitor, void*user_data);
-int16_t device_register_type    (DeviceType* device);
-void    device_init_devices     (void);
+void    device_init                     (void);
+void    device_list_types               (DeviceTypeVisitor visitor, void* data);
+int16_t device_register_type            (DeviceType* device);
+void    device_init_devices             (void);
+void    device_list                     (DeviceVisitor visitor, void *data);
+Device* device_find                     (uint8_t kind, uint8_t instance);
 #endif

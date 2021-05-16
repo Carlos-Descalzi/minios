@@ -1,5 +1,5 @@
-#include "stdlib.h"
-#include "debug.h"
+#include "lib/stdlib.h"
+#include "misc/debug.h"
 
 const char NUMBERS[] = "0123456789ABCDEF";
 
@@ -74,6 +74,7 @@ char* utoa(unsigned int value, char* string,int radix){
         string[0] = d;
     } else {
         m = i/2;
+        m--;
         i--;
         for(;m>=0;m--){
             d = string[m];

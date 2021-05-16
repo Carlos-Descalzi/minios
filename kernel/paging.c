@@ -1,8 +1,8 @@
-#include "paging.h"
-#include "string.h"
-#include "isr.h"
-#include "debug.h"
-#include "console.h"
+#include "kernel/paging.h"
+#include "kernel/isr.h"
+#include "lib/string.h"
+#include "misc/debug.h"
+#include "board/console.h"
 
 // Use the available RAM region of ~30kb which is behind boot sector,
 // for page directory.

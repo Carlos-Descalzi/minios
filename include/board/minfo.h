@@ -3,7 +3,7 @@
 /**
  * Machine information
  **/
-#include "stdint.h"
+#include "lib/stdint.h"
 
 #define MEM_TYPE_FREE       1
 #define MEM_TYPE_RESERVED   2

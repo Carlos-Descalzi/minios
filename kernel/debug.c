@@ -1,6 +1,6 @@
-#include "debug.h"
-#include "io.h"
-#include "stdlib.h"
+#include "misc/debug.h"
+#include "board/io.h"
+#include "lib/stdlib.h"
 
 
 void serial_log(const char* string){

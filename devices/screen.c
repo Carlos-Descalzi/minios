@@ -1,9 +1,9 @@
-#include "device.h"
 #include "screen.h"
-#include "string.h"
-#include "console.h"
-#include "stdlib.h"
-#include "debug.h"
+#include "kernel/device.h"
+#include "board/console.h"
+#include "lib/string.h"
+#include "lib/stdlib.h"
+#include "misc/debug.h"
 
 /**
  * This device is just a wrapper over raw console API.
@@ -67,7 +67,6 @@ static Device* instantiate(struct DeviceType* device_type, uint8_t device_number
     mode = MODE_TEXT;
     saved_x = 0;
     saved_y = 0;
-    console_print("Screen device initialized\n");
     return DEVICE(&SCREEN_DEVICE);
 }
 

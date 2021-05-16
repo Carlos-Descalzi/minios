@@ -1,7 +1,7 @@
 #ifndef _PS2_H_
 #define _PS2_H_
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 typedef struct {
     uint8_t controller_present:1,

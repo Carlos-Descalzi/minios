@@ -1,19 +1,20 @@
-#include "console.h"
-#include "pci.h"
-#include "io.h"
-#include "pit.h"
-#include "pic.h"
-#include "isr.h"
-#include "stdlib.h"
-#include "debug.h"
-#include "task.h"
-#include "minfo.h"
-#include "heap.h"
-#include "paging.h"
-#include "string.h"
-#include "bda.h"
-#include "ps2.h"
-#include "device.h"
+#include "board/console.h"
+#include "board/pci.h"
+#include "board/io.h"
+#include "board/pit.h"
+#include "board/pic.h"
+#include "board/minfo.h"
+#include "board/bda.h"
+#include "board/ps2.h"
+#include "kernel/task.h"
+#include "kernel/paging.h"
+#include "kernel/isr.h"
+#include "kernel/device.h"
+#include "lib/stdlib.h"
+#include "lib/string.h"
+#include "lib/heap.h"
+#include "fs/ext2.h"
+#include "misc/debug.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -36,6 +37,8 @@ static void display_memory();
 static void test_timer();
 static void check_bda();
 static void check_ps2();
+static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data);
+static void check_e2fs();
 
 extern void test_call();
 extern void handle_gpf();
@@ -81,6 +84,8 @@ void init(){
     device_init();
     devices_register();
     device_init_devices();
+    console_print("devices initialized:\n");
+    device_list(show_device,NULL);
     /*
     pit_init();
     pit_set_freq(1);
@@ -90,7 +95,7 @@ void init(){
     
     while(1){}
     */
-    console_print("devices initialized\n");
+    check_e2fs();
 }
 
 static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header){
@@ -260,4 +265,58 @@ static void check_ps2(){
     }
 }
 
+const struct {
+    char* kind;
+    char* description;
+} KINDS[] = {
+    {"con", "console"},
+    {"ser", "serial"},
+    {"hdd", "hard disk drive"},
+    {"net", "network interface"},
+    {"kbd", "keyboard"},
+    {"mouse", "mouse"}
+};
 
+static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data){
+    console_print("  * ");
+    console_print(KINDS[kind].kind);
+    console_print(itoa(device->instance_number,buff,10));
+    console_print(" (");
+    console_print(KINDS[kind].description);
+    console_print(")\n");
+    return 0;
+}
+
+static int8_t show_inode(Ext2FileSystem*fs, Ext2Inode* inode, void* data){
+    debug("Inode type:");
+    debug_i(inode->mode >> 12,16);
+    debug(", perms:");
+    debug_i(inode->mode & 0xFFF, 8);
+    debug(", size:");
+    debug_i(inode->size,10);
+    debug(", created:");
+    debug_i(inode->ctime,10);
+
+    debug("\n");
+    return 0;
+}
+
+static void check_e2fs(){
+    Ext2FileSystem* fs;
+    Device* device;
+
+    device = device_find(HD, 0);
+
+    if (!device){
+        debug("Device not found\n");
+    } else {
+        fs = ext2_open((BlockDevice*)device);
+        if (!fs){
+            debug("Cannot open fs\n");
+        } else {
+            debug("Fs Ext2 open\n");
+            ext2_list_inodes(fs,show_inode,NULL);
+        }
+
+    }
+}

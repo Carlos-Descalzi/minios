@@ -1,12 +1,11 @@
-#include "device.h"
 #include "ide.h"
-#include "console.h"
-#include "heap.h"
-#include "pci.h"
-#include "stdlib.h"
-#include "debug.h"
-#include "string.h"
-#include "io.h"
+#include "kernel/device.h"
+#include "board/io.h"
+#include "board/pci.h"
+#include "lib/heap.h"
+#include "lib/stdlib.h"
+#include "lib/string.h"
+#include "misc/debug.h"
 
 /**
  * I just copied these chunks from here
@@ -113,7 +112,7 @@ typedef struct IDEDevice{
     uint32_t current_pos;
 } IDEDevice;
 
-typedef void (*ReadCallback)(uint8_t*, void*);
+typedef void (*ReadCallback)(IDEDevice*,uint8_t*, void*);
 
 static uint8_t  count_devices               (DeviceType* device_type);
 static Device*  instantiate                 (DeviceType* device_type, uint8_t device_number);
@@ -152,8 +151,6 @@ static uint8_t count_devices(DeviceType* device_type){
 }
 
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
-    //uint8_t buffer[512];
-    //int i;
     IDEDevice* device = heap_alloc(sizeof(IDEDevice));
     memset(device,0,sizeof(IDEDevice));
     memcpy(&(device->drive),&(devices[device_number]),sizeof(IDEDrive));
@@ -161,16 +158,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->device.read = ide_read;
     device->device.write = ide_write;
     device->device.seek = ide_seek;
-    console_print("IDE drive ");
-    console_print(device->drive.model);
-    console_print(" initialized\n");
-
-    /*
-    block_device_read(device,buffer,512);
-    for (i=0;i<25;i++){
-        debug_i(buffer[i],16);
-        debug("\n");
-    }*/
     return DEVICE(device);
 }
 
@@ -461,12 +448,18 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
                 return err;
             }
             for (i=0;i<nsectors;i++){
+                //debug("Read\n");
                 for (j=0;j<256;j++){
-                    ((uint16_t*)device->sector_buffer)[j] = inw(device->drive.channel.base);
+                    uint16_t w = inw(device->drive.channel.base);
+                    //if (j % 16 == 0) debug("\n");
+                    //debug_i(w,16);
+                    //debug(" ");
+                    ((uint16_t*)device->sector_buffer)[j] = w; //inw(device->drive.channel.base);
                 }
-                debug("Read sector "); debug_i(i,10); debug("\n");
+                //debug("Read sector "); debug_i(i,10); debug("\n");
                 if (callback){
-                    callback(device->sector_buffer, callback_data);
+                    callback(device, device->sector_buffer, callback_data);
+                    device->current_pos+=512;
                 }
             }
         } else {
@@ -508,23 +501,41 @@ typedef struct {
 
 #define min(a,b) (a<b ? a : b)
 
-static void read_callback(uint8_t* sector, void* read_data){
-    ReadRequest* request = (ReadRequest*)read_data;
-    int to_read = min(512,request->remaining);
-    memcpy(request->buffer,sector, to_read);
+static void read_callback(IDEDevice* device, uint8_t* sector, ReadRequest* request){
+    uint32_t to_read = min(512,request->remaining);
+    memcpy(request->buffer+request->pos,sector, to_read);
     request->pos+=to_read;
+    request->remaining-=512;
 }
 
 static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
-    ReadRequest read_request = {.buffer = buffer, .pos=0 , .remaining=size};
+    ReadRequest read_request = {
+        .buffer = buffer, 
+        .pos=0 , 
+        .remaining=size
+    };
     uint32_t sector = IDE_DEVICE(device)->current_pos >> 9;
-    uint32_t offset = IDE_DEVICE(device)->current_pos & 0x1FF;
+    uint32_t offset = IDE_DEVICE(device)->current_pos & 0x1FF; // we asume always 512 aligned for the moment
     uint8_t nsectors = size >> 9;
+    debug("IDE - Sector:"); debug_i(sector,10); debug("\n");
+    debug("IDE - Offset:"); debug_i(offset,10); debug("\n");
+    debug("IDE - N sectors:"); debug_i(nsectors,10); debug("\n");
 
-    ide_ata_access(IDE_DEVICE(device),0,nsectors,IDE_ACTION_READ, read_callback, &read_request);
+    ide_ata_access(
+        IDE_DEVICE(device),
+        sector,
+        nsectors,
+        IDE_ACTION_READ, 
+        (ReadCallback)read_callback, 
+        &read_request
+    );
+    debug("IDE - Pos after read:"); debug_i(read_request.pos,10);debug("\n");
 }
+
 static int16_t ide_write(BlockDevice* device, uint8_t* buffer, uint16_t size){
 }
+
 static void ide_seek(BlockDevice* device, uint32_t pos){
+    debug("IDE - Ide device seek "); debug_i(pos,10); debug("\n");
     IDE_DEVICE(device)->current_pos = pos;
 }

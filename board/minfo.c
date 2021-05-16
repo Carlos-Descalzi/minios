@@ -1,6 +1,6 @@
-#include "minfo.h"
-#include "debug.h"
-#include "stdlib.h"
+#include "board/minfo.h"
+#include "misc/debug.h"
+#include "lib/stdlib.h"
 
 #define MACHINE_INFO_BASE   0x8000
 

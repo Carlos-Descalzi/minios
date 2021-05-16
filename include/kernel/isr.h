@@ -4,7 +4,7 @@
  * Interrupt service routine handling
  **/
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 #define INTERRUPT __attribute__((interrupt))
 

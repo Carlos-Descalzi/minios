@@ -1,5 +1,5 @@
-#include "isr.h"
-#include "debug.h"
+#include "kernel/isr.h"
+#include "misc/debug.h"
 
 typedef struct {
     uint16_t offset1;

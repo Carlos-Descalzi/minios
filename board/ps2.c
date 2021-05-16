@@ -1,5 +1,5 @@
-#include "ps2.h"
-#include "io.h"
+#include "board/ps2.h"
+#include "board/io.h"
 
 #define CMD_READ_BYTE       0x20
 #define CMD_WRITE_BYTE      0x60

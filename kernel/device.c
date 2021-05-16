@@ -1,9 +1,9 @@
-#include "device.h"
-#include "string.h"
-#include "pci.h"
-#include "ps2.h"
-#include "bda.h"
-#include "debug.h"
+#include "kernel/device.h"
+#include "lib/string.h"
+#include "board/pci.h"
+#include "board/ps2.h"
+#include "board/bda.h"
+#include "misc/debug.h"
 
 typedef struct DeviceInstance {
     DeviceType* device_type;
@@ -20,7 +20,7 @@ void device_init(){
     memset(device_types,0,sizeof(device_types));
     memset(devices,0,sizeof(devices));
 }
-void device_list_types (DeviceVisitor visitor, void* user_data){
+void device_list_types (DeviceTypeVisitor visitor, void* user_data){
     int i;
     for (i=0;i<MAX_DEVICE_TYPES;i++){
         if (device_types[i]){
@@ -53,10 +53,32 @@ void device_init_devices(void){
                 devices[device_index].device_type = device_types[i];
                 devices[device_index].device = device_types[i]->instantiate(device_types[i], j);
                 if (devices[device_index].device){
+                    devices[device_index].device->kind = device_types[i]->kind;
                     devices[device_index].device->instance_number = j;
                     device_index++;
                 }
             }
         }
     }
+}
+void device_list (DeviceVisitor visitor, void *data){
+    int i;
+
+    for (i=0;devices[i].device;i++){
+        if(visitor(i,devices[i].device->kind,devices[i].device,data)){
+            break;
+        }
+    }
+}
+
+Device* device_find(uint8_t kind, uint8_t instance){
+    int i;
+
+    for (i=0;devices[i].device;i++){
+        if (devices[i].device->kind == kind
+            && devices[i].device->instance_number == instance){
+            return devices[i].device;
+        }
+    }
+    return NULL;
 }

@@ -4,7 +4,7 @@
  * Programmable Interval Timer
  **/
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 void        pit_init        (void);
 void        pit_set_count   (uint16_t count);

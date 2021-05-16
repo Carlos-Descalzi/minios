@@ -1,6 +1,6 @@
-#include "pci.h"
-#include "io.h"
-#include "string.h"
+#include "board/pci.h"
+#include "board/io.h"
+#include "lib/string.h"
 
 #define HEADER_TYPE_STANDARD        0x00
 #define HEADER_TYPE_PCI_PCI         0x01

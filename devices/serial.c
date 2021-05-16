@@ -1,11 +1,10 @@
-#include "device.h"
 #include "serial.h"
-#include "bda.h"
-#include "heap.h"
-#include "io.h"
-#include "debug.h"
-#include "console.h"
-#include "stdlib.h"
+#include "kernel/device.h"
+#include "board/bda.h"
+#include "board/io.h"
+#include "lib/heap.h"
+#include "lib/stdlib.h"
+#include "misc/debug.h"
 
 static uint8_t count_devices(DeviceType* device_type);
 static Device* instantiate(DeviceType* device_type, uint8_t device_number);
@@ -39,7 +38,6 @@ static uint8_t count_devices(DeviceType* device_type){
 }
 
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
-    char buff[8];
     uint16_t port = BDA->com_ports[device_number];
     SerialDevice* device = heap_alloc(sizeof(SerialDevice));
     device->device.base.type = DEVICE_TYPE_CHAR;
@@ -47,9 +45,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->device.read = serial_read;
     device->device.write = serial_write;
     device->port = port;
-    console_print("Serial port ");
-    console_print(itoa(port,buff,16));
-    console_print(" initialized\n");
     return DEVICE(device);
 }
 

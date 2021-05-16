@@ -1,7 +1,7 @@
 #ifndef _BDA_H_
 #define _BDA_H_
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 typedef struct {
     uint16_t com_ports[4];

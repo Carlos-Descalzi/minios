@@ -1,6 +1,6 @@
-#include "heap.h"
-#include "stdint.h"
-#include "debug.h"
+#include "lib/heap.h"
+#include "lib/stdint.h"
+#include "misc/debug.h"
 
 #define MEMORY_START    0x30000
 #define MEMORY_END      0x5FFFF     // ~320 Kb
@@ -33,9 +33,9 @@ void* heap_alloc(size_t size){
         size+=4 - (size % 4);   // always word aligned.
     }
     while(block && (block->header.used || block->header.size < size)){
-        debug("block size ");
+        /*debug("block size ");
         debug_i(block->header.size,10);
-        debug("\n");
+        debug("\n");*/
         block = block->header.next;
     }
 
@@ -57,12 +57,13 @@ void* heap_alloc(size_t size){
     block->header.used = 1;
     block->header.size = size;
 
+    /*
     debug("Allocated ");
     debug_i(block->header.size,10);
     debug(" bytes at address ");
     debug_i((uint32_t)block->block,16);
     debug("\n");
-
+    */
     return block->block;
 }
 

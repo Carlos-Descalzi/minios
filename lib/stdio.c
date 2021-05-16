@@ -1,11 +1,11 @@
-#include "stdio.h"
-#include "stdint.h"
-#include "stdlib.h"
-#include "string.h"
+#include "lib/stdio.h"
+#include "lib/stdint.h"
+#include "lib/stdlib.h"
+#include "lib/string.h"
+#include "lib/ctype.h"
+#include "misc/debug.h"
+#include "lib/errno.h"
 #include <stdarg.h>
-#include "ctype.h"
-#include "debug.h"
-#include "errno.h"
 
 struct __file {
 };
@@ -90,7 +90,7 @@ int fprintf(FILE* fp, const char* format, ...){
     return written;
 }
 
-#include "console.h"
+#include "board/console.h"
 
 int fputc(int c, FILE* fp){
     // TODO Use proper FILE implementation

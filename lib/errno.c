@@ -1,3 +1,3 @@
-#include "errno.h"
+#include "lib/errno.h"
 
 int errno;

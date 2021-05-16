@@ -1,7 +1,7 @@
 #ifndef _PAGING_H_
 #define _PAGING_H_
 
-#include "stdint.h"
+#include "lib/stdint.h"
 
 typedef struct {
     uint32_t 

@@ -1,5 +1,5 @@
-#include "pit.h"
-#include "io.h"
+#include "board/pit.h"
+#include "board/io.h"
 
 #define PORT_CH0            0x40
 #define PORT_CH1            0x41
