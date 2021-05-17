@@ -53,6 +53,7 @@ static void release(DeviceType* device_type, Device* device){
 }
 
 int16_t serial_setopt(Device* device, uint32_t option, void* data){
+    return 0;
 }
 
 int16_t serial_read(CharDevice* device){

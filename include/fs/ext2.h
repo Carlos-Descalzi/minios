@@ -11,8 +11,7 @@ typedef struct __attribute__((__packed__)){
     uint16_t free_blocks_count;
     uint16_t free_inodes_count;
     uint16_t used_dirs_count;
-    uint16_t pad;
-    uint8_t reserved[12];
+    uint8_t reserved[14];
 } Ext2BlockGroupDescriptor;
 
 typedef struct __attribute__((__packed__)){
@@ -92,7 +91,7 @@ typedef struct __attribute__((__packed__)){
     uint8_t unused2[760];
 } Ext2Superblock;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint32_t inode;
     uint16_t rec_len;
     uint8_t name_len;
@@ -117,13 +116,17 @@ typedef struct {
 #define EXT2_DIR_ENTRY_SOCKET   6
 #define EXT2_DIR_ENTRY_SYMLINK  7
 
-typedef int8_t (*InodeVisitor)(Ext2FileSystem*,Ext2Inode* inode, void*);
+typedef int8_t (*InodeVisitor)(Ext2FileSystem*,uint32_t,Ext2Inode* inode, void*);
 typedef int8_t (*DirVisitor)(Ext2FileSystem*, Ext2DirEntry*, void*);
 
 Ext2FileSystem* ext2_open           (BlockDevice* device);
 void            ext2_list_inodes    (Ext2FileSystem* fs, InodeVisitor visitor, void*data);
-void            ext2_list           (Ext2FileSystem* fs, const char* path, DirVisitor visitor, void* data);
+//void            ext2_list           (Ext2FileSystem* fs, const char* path, DirVisitor visitor, void* data);
 void            ext2_close          (Ext2FileSystem* fs);
+void            ext2_list_directory (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data);
+uint32_t        ext2_find_inode     (Ext2FileSystem* fs, const char* path);
+int32_t         ext2_load_inode     (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
+int32_t         ext2_load_block     (Ext2FileSystem* fs, uint32_t blocknum, uint8_t* buffer);
 
 
 #endif

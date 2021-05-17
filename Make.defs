@@ -6,7 +6,8 @@ CC=gcc
 LD=i686-gnu-ld
 AS=nasm
 ASFLAGS=-f elf32
-CFLAGS=-march=i386 -m32 -mno-80387 -DDEBUGMODE -I$(TOPDIR)/include -I$(TOPDIR)/fs -nodefaultlibs -no-pie -fno-PIC
+CFLAGS=-march=i386 -m32 -mno-80387 -DDEBUGMODE -I$(TOPDIR)/include -nodefaultlibs -no-pie -fno-PIC -Wall \
+    -Wno-address-of-packed-member
 KLDFLAGS=-T linker.ld -no-pie
 IMAGE=os.img
 IMAGESIZE=66048

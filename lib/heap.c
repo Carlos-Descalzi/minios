@@ -18,7 +18,7 @@ struct MemoryBlock {
     char     block[1];
 };
 
-#define HEADER_SIZE (sizeof(MemoryBlock))
+#define HEADER_SIZE (sizeof(BlockHeader))
 #define FIRST_BLOCK ((MemoryBlock*)MEMORY_START)
 
 void heap_init(void){
@@ -33,15 +33,13 @@ void* heap_alloc(size_t size){
         size+=4 - (size % 4);   // always word aligned.
     }
     while(block && (block->header.used || block->header.size < size)){
-        /*debug("block size ");
-        debug_i(block->header.size,10);
-        debug("\n");*/
+        //debug("HEAP - block size "); debug_i(block->header.size,10); debug("\n");
         block = block->header.next;
     }
 
     if (!block){
         // out of memory
-        debug("No memory!\n");
+        debug("HEAP - No memory!\n");
         return NULL;
     }
 
@@ -57,18 +55,21 @@ void* heap_alloc(size_t size){
     block->header.used = 1;
     block->header.size = size;
 
-    /*
-    debug("Allocated ");
-    debug_i(block->header.size,10);
-    debug(" bytes at address ");
-    debug_i((uint32_t)block->block,16);
-    debug("\n");
-    */
+    
+    //debug("HEAP - Allocated "); debug_i(block->header.size,10); 
+    //debug(" bytes at address "); debug_i((uint32_t)block->block,16); debug("\n");
+    
     return block->block;
 }
 
 void heap_free(void* address){
-    MemoryBlock* block = (MemoryBlock*)(address - sizeof(BlockHeader));
+    MemoryBlock* block = (MemoryBlock*)(address - HEADER_SIZE);
     block->header.used = 0;
-    // join free blocks
+    //debug("HEAP - Free "); debug_i(block->header.size + HEADER_SIZE,10); debug(" bytes");
+    // TODO: join free blocks
+    while(block->header.next && !block->header.next->header.used){
+        block->header.size += block->header.next->header.size;
+        block->header.next = block->header.next->header.next;
+    }
+    //debug(", collected ");debug_i(block->header.size + HEADER_SIZE,10); debug(" bytes\n");
 }

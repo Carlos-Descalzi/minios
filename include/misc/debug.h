@@ -2,11 +2,13 @@
 #define _DEBUG_H_
 
 #ifdef DEBUGMODE
-#define debug(msg)    serial_log(msg)
-#define debug_i(n,r)  serial_log_i(n,r)
-#define debug_c(c)    serial_log_c(c)
+#define debug(msg)      serial_log(msg) 
+#define debug_i(n,r)    serial_log_i(n,r)
+#define debug_c(c)      serial_log_c(c)
 #else
 #define debug(msg)
+#define debug_i(n,r)
+#define debug_c(c)
 #endif
 
 void serial_log(const char*);

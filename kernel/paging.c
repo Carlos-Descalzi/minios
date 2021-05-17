@@ -53,7 +53,7 @@ void paging_init(){
 int16_t paging_alloc_table(PageDirectoryEntry** entry_ptr){
     uint16_t i;
     for (i=0;i<1024;i++){
-        if (PAGE_DIRECTORY[i].user_data & PD_USED == 0){
+        if (PAGE_DIRECTORY[i].user_data & (PD_USED == 0)){
             PAGE_DIRECTORY[i].user_data |= PD_USED;
             *entry_ptr = &(PAGE_DIRECTORY[i]);
             return i;

@@ -51,7 +51,7 @@ static CharDevice SCREEN_DEVICE = {
 };
 
 static DeviceType SCREEN_DEVICE_TYPE = {
-    kind: CON,
+    kind: VIDEO,
     count_devices: count_devices,
     instantiate: instantiate,
     release: release
@@ -114,6 +114,7 @@ static int16_t screen_write(CharDevice* device, uint8_t chr){
             console_put(chr);
         }
     }
+    return 0;
 }
 
 
@@ -249,7 +250,7 @@ static void restore_cursor(){
 static void set_color(){
     int bg;
     int fg;
-    int b;
+    //int b;
     char* c;
 
     c = strrchr(buff,';');
@@ -264,7 +265,7 @@ static void set_color(){
             fg = atoi(c+1);
         }
         *c='\0';
-        b = atoi(buff+1);
+        //b = atoi(buff+1); TODO: intensity
     }
 
     console_color(bg << 4 | fg); // TODO: Intensity

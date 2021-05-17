@@ -28,10 +28,6 @@ int fprintf(FILE* fp, const char* format, ...){
 
     va_start(parameters, format);
     
-    if (!format){
-        return -1;
-    }
-
     while(format[i]){
         char fmtchar = format[i++];
         if (fmtchar == '%'){
@@ -128,12 +124,12 @@ static void print_num(int d, Format* tformat, int radix, int* written, char* buf
     if (tformat->padding){
         for (n=strlen(buffer);n<tformat->digits;n++){
             fputc('0',fp);
-            *written++;
+            (*written)++;
         }
     }
     for (n=0;buffer[n];n++){
         fputc(buffer[n],fp);
-        *written++;
+        (*written)++;
     }
 }
 

@@ -25,18 +25,17 @@ typedef struct {
 
 const char BANNER[] = "*************\n** MINI OS **\n*************\n";
 
-static uint8_t timer_count;
+//static uint8_t timer_count;
 static char buff[32];
 
-static void timer_handler();
+//static void timer_handler();
 static void dummy_handler();
-static void trap_handler();
-static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header);
+//static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header);
 static uint8_t show_memory_region(MemoryRegion* region, uint8_t, MemData* mem_data);
 static void display_memory();
-static void test_timer();
-static void check_bda();
-static void check_ps2();
+//static void test_timer();
+//static void check_bda();
+//static void check_ps2();
 static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data);
 static void check_e2fs();
 
@@ -45,7 +44,6 @@ extern void handle_gpf();
 extern void devices_register();
 
 void init(){
-    uint32_t i =0;
     debug("Kernel initializing\n");
     console_init();
     console_print(BANNER);
@@ -97,7 +95,7 @@ void init(){
     */
     check_e2fs();
 }
-
+/*
 static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header){
     uint8_t header_type;
     int i;
@@ -155,7 +153,6 @@ static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader*
         debug("\tType 02\n");
     }
 }
-
 static void test_timer(){
     timer_count = 0;
     isr_install(8, timer_handler); // TODO: Remap PIC
@@ -163,7 +160,9 @@ static void test_timer(){
     while(timer_count < 3);
     cli();
 }
+*/
 
+/*
 static void INTERRUPT timer_handler(InterruptFrame* frame){
     console_print("Timer called ");
     timer_count++;
@@ -171,11 +170,9 @@ static void INTERRUPT timer_handler(InterruptFrame* frame){
     console_put('\n');
     eoi();
 }
+*/
 static void INTERRUPT dummy_handler(InterruptFrame* frame){
     sti();
-}
-static void INTERRUPT trap_handler(InterruptFrame* frame){
-    debug("general protection fault\n");
 }
 
 void bsod(){
@@ -226,6 +223,7 @@ static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, MemD
     }
     return 0;
 }
+/*
 static void check_bda(){
     int i;
     console_print("------\nSerial Ports:\n");
@@ -264,12 +262,13 @@ static void check_ps2(){
         console_print("Not present\n");
     }
 }
+*/
 
 const struct {
     char* kind;
     char* description;
 } KINDS[] = {
-    {"con", "console"},
+    {"video", "video"},
     {"ser", "serial"},
     {"hdd", "hard disk drive"},
     {"net", "network interface"},
@@ -287,17 +286,37 @@ static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void*
     return 0;
 }
 
-static int8_t show_inode(Ext2FileSystem*fs, Ext2Inode* inode, void* data){
-    debug("Inode type:");
-    debug_i(inode->mode >> 12,16);
-    debug(", perms:");
-    debug_i(inode->mode & 0xFFF, 8);
-    debug(", size:");
-    debug_i(inode->size,10);
-    debug(", created:");
-    debug_i(inode->ctime,10);
+static int8_t show_dir(Ext2FileSystem*fs, Ext2DirEntry* entry, void* data){
+    char buff[256];
+    debug("\tINIT - Directory entry - Inode: ");debug_i(entry->inode,10);debug(", name len:");debug_i(entry->name_len,10);
+    memcpy(buff,entry->name,entry->name_len);
+    buff[entry->name_len] = 0;
+    debug(", Name:");debug(buff);debug("\n");
 
-    debug("\n");
+    return 0;
+}
+
+static int8_t show_inode(Ext2FileSystem*fs, uint32_t inodenum, Ext2Inode* inode, void* data){
+    if (inode->mode != 0){
+        debug("INIT - Inode#");
+        debug_i(inodenum,10);
+        debug(", type:");
+        debug_i(inode->mode >> 12,16);
+        debug(", perms:");
+        debug_i(inode->mode & 0xFFF, 8);
+        debug(", size:");
+        debug_i(inode->size,10);
+        debug(", created:");
+        debug_i(inode->ctime,10);
+        debug(", in use:");
+        debug(inode->link_count > 0 ? "Yes" : "No");
+        debug("\n");
+        if (inode->mode >> 12 == 4){
+            // directory
+            debug("INIT - Showing directory:\n");
+            ext2_list_directory(fs,inode,show_dir, NULL);
+        }
+    }
     return 0;
 }
 
@@ -314,7 +333,7 @@ static void check_e2fs(){
         if (!fs){
             debug("Cannot open fs\n");
         } else {
-            debug("Fs Ext2 open\n");
+            debug("INIT - Fs Ext2 open\n");
             ext2_list_inodes(fs,show_inode,NULL);
         }
 

@@ -22,7 +22,7 @@ typedef union PciAddress {
 
 static void check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data);
 static void check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data);
-static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor, void* user_data);
+//static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor, void* user_data);
 
 uint16_t pci_config_read_w  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset){
 
@@ -80,8 +80,6 @@ uint8_t get_header(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* hea
 }
 
 void pci_list_all_buses(PciVisitor visitor, void* user_data){
-    uint8_t bus;
-    uint8_t device;
     uint8_t function;
     PCIHeader header;
 
@@ -110,6 +108,7 @@ static void check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* 
         check_device(bus, device, header, visitor, user_data);
     }
 }
+/*
 static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor, void* user_data){
     visitor(bus, device, function, header, user_data);
 
@@ -119,7 +118,7 @@ static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHea
         } 
     }
 }
-
+*/
 static void check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data){
     uint8_t function = 0;
     if (get_header(bus,device,function, header)){

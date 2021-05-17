@@ -7,7 +7,7 @@
 #define DEVICE_TYPE_BLOCK            2
 
 typedef enum {
-    CON = 0,
+    VIDEO = 0,
     SER,
     HD,
     NET,
@@ -39,6 +39,7 @@ typedef struct BlockDevice {
     int16_t     (*close)            (struct BlockDevice*);
     void        (*seek)             (struct BlockDevice*, uint32_t);
     void        (*flush)            (struct BlockDevice*);
+    uint32_t    (*pos)              (struct BlockDevice*);
 } BlockDevice;
 
 typedef struct CharDevice {
@@ -57,6 +58,8 @@ typedef struct CharDevice {
 #define block_device_write(d,b,l)   (BLOCK_DEVICE(d)->write(BLOCK_DEVICE(d),b,l))
 #define block_device_seek(d,p)      (BLOCK_DEVICE(d)->seek(BLOCK_DEVICE(d),p))
 #define block_device_close(d)       (BLOCK_DEVICE(d)->close(BLOCK_DEVICE(d)))
+#define block_device_flush(d)       (BLOCK_DEVICE(d)->flush(BLOCK_DEVICE(d)))
+#define block_device_pos(d)         (BLOCK_DEVICE(d)->pos(BLOCK_DEVICE(d)))
 
 #define char_device_read(d)         (CHAR_DEVICE(c)->read(CHAR_DEVICE(d)))
 #define char_device_write(d,c)      (CHAR_DEVICE(c)->write(CHAR_DEVICE(d),c))

@@ -50,7 +50,6 @@ static uint8_t count_devices(DeviceType* device_type){
     return device_count;
 }
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
-    char buff[8];
     NetDevice* device = heap_alloc(sizeof(NetDevice));
     if (!device){
         console_print("Error: No memory for initializing device\n");

@@ -57,7 +57,7 @@ padding:
 e2fs.img:
 	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
 	@mkdir -p tmp
-	@mke2fs e2fs.img
+	@mke2fs -b 1024 e2fs.img
 	@sudo mount e2fs.img tmp
 	@sudo mkdir tmp/folder1
 	@echo hola | sudo tee tmp/file1.txt
@@ -66,6 +66,7 @@ e2fs.img:
 	@rm -rf tmp
 
 kernel.bin: kernel.elf
+	@mkdir -p $(LSTDIR)
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin
 	objdump -d $< > $(LSTDIR)/kernel.lst
 
