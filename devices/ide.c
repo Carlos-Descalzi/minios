@@ -137,7 +137,7 @@ static void show_sector(uint8_t *sector);
 static uint8_t device_count;
 static IDEDrive devices[4];
 static DeviceType DEVICE_TYPE = {
-    kind: HD,
+    kind: HDD,
     count_devices: count_devices,
     instantiate: instantiate,
     release: release

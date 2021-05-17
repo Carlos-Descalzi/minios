@@ -15,8 +15,7 @@ static void             ext2_list_dir_inode (Ext2FileSystem* fs, Ext2Inode* inod
                                             void* func_data);
 static uint32_t         find_next_inode     (Ext2FileSystem* fs, uint32_t inodenum, const char* dirent_name);
 static Ext2DirEntry*    next_entry          (Ext2DirEntry* entry);
-//static void show_inode(uint32_t number, Ext2Inode* inode);
-//static void show_dirent(Ext2DirEntry*entry);
+static int8_t           find_dirent         (Ext2FileSystem*fs, Ext2DirEntry* dirent, void* data);
 
 #define ext2_device_seek(fs, pos)           { block_device_seek(fs->device, (pos) + OFFSET); } 
 #define ext2_device_read_block(fs)          { block_device_read(fs->device, fs->block_buffer, fs->block_size); }
@@ -36,7 +35,9 @@ Ext2FileSystem* ext2_open(BlockDevice* device){
     block_device_read(device, (uint8_t*)&(fs->super_block), sizeof(Ext2Superblock));
 
     if (fs->super_block.magic != 0xef53){
-        debug("EXT2 - Bad magic number ("); debug_i(fs->super_block.magic,16); debug(") - no ext2 filesyste found\n");
+        debug("EXT2 - Bad magic number ("); 
+        debug_i(fs->super_block.magic,16); 
+        debug(") - no ext2 filesyste found\n");
         heap_free(fs);
         return NULL;
     } else {
@@ -74,12 +75,6 @@ static void do_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data,
             return;
         }
 
-       // debug("EXT2 - Block ");debug_i(i,10);debug(", inode table ");
-        //debug_i(descriptors[i].inode_table,10); 
-        //debug(", n dirs:");debug_i(descriptors[i].used_dirs_count,10);
-        //debug(", used blocks:");debug_i(fs->super_block.blocks_per_group - descriptors[i].free_blocks_count,10);
-        //debug(", free blocks:");debug_i(descriptors[i].free_blocks_count,10);debug("\n");
-
         ext2_device_gotoblock(fs, descriptors[i].inode_table);
         for(; ninodetableblocks > 0;ninodetableblocks--){
             ext2_device_read_block(fs);
@@ -103,9 +98,6 @@ void ext2_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data){
     uint32_t ngroups = fs->block_group_count;
     uint32_t inodenum = 1;
 
-    //debug("EXT2 - Number of block groups:"); debug_i(ngroups, 10); debug("\n");
-    //debug("EXT2 - Number of inodes per block:"); debug_i(fs->inodes_per_block,10); debug("\n");
-
     pos = fs->first_block_group_pos;
 
     while(ngroups > 0){
@@ -113,7 +105,6 @@ void ext2_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data){
         ext2_device_read_block(fs);
         pos = ext2_device_pos(fs);
         memcpy(descriptors,fs->block_buffer,fs->block_size);
-
         do_list_inodes(fs, visitor, data, descriptors, inode_table, &ngroups, &inodenum);
     }
     heap_free(inode_table);
@@ -136,28 +127,14 @@ int32_t ext2_load_inode(Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode)
     uint32_t inode_table;
     Ext2Inode* table;
 
-    //debug("EXT2 - ext2_load_inode\n");
-
-    //debug("EXT2 - Load inode "); debug_i(inodenum, 10);
-    //debug(", block group:"); debug_i(block_group,10);
-    //debug(", offset:"); debug_i(block_group_table_offset,10);
-    //debug(", index:"); debug_i(index,10);
-    //debug("\n");
-
     ext2_device_seek(fs, fs->first_block_group_pos + block_group_table_block * fs->block_size);
 
     ext2_device_read_block(fs);
     inode_table = ((Ext2BlockGroupDescriptor*)fs->block_buffer)[block_group_table_offset].inode_table;
-    //debug("EXT2 Inode table at block: ");debug_i(inode_table,10);debug("\n");
-
-    //debug("Inodes per block:");debug_i(fs->inodes_per_block,10);debug("\n");
-    //debug("Offset on table:");debug_i(index / fs->inodes_per_block,10);debug("\n");
     inode_table += (index / fs->inodes_per_block);
-    //debug("New inode table block:");debug_i(inode_table,10);debug("\n");
 
     ext2_device_gotoblock(fs,inode_table);
     index = index % fs->inodes_per_block;
-    //debug("Adjusted index:");debug_i(index,10);debug("\n");
 
     ext2_device_read_block(fs);
 
@@ -170,12 +147,10 @@ int32_t ext2_load_inode(Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode)
 uint32_t ext2_find_inode(Ext2FileSystem* fs, const char* path){
     char path_token[256];
     uint8_t pos=0;
-    uint32_t current_inode = 2; // root directory inode
+    uint32_t current_inode = EXT2_INODE_ROOT_DIR; 
     memset(path_token,0,sizeof(path_token));
     while(ext2_path_tokenize(path,path_token,&pos) && current_inode){
-        //debug("Token:"); debug(path_token); debug("\n");
         if (!strcmp(path_token,"/")){
-            //debug("Set root\n");
             current_inode = 2;
         } else {
             current_inode = find_next_inode(fs, current_inode, path_token);
@@ -197,14 +172,10 @@ typedef struct {
 
 static int8_t find_dirent(Ext2FileSystem*fs, Ext2DirEntry* dirent, void* data){
     DirentFindData* find_data = data;
-    //debug("EXT2 - find_dirent\n");
 
     if (dirent->name_len == find_data->namelen 
         && !strncmp(dirent->name, find_data->dirent_name,find_data->namelen)){
         find_data->inode = dirent->inode;
-        //debug("EXT2 - Found:");
-        //debug(find_data->dirent_name);debug(":");
-        //debug_i(find_data->inode,10);debug("\n");
         return 1;
     } 
     return 0;
@@ -221,11 +192,10 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
     if(ext2_load_inode(fs, inodenum, &inode)){
         return 0;
     }
-    if (inode.mode >> 12 != 4){
+    if (inode.type != EXT2_INODE_TYPE_DIRECTORY){
         debug("Not a directory\n");
         return 0;
     }
-    //show_inode(inodenum, &inode);
     ext2_list_dir_inode(fs,&inode, find_dirent, &dirent_find_data);
     return dirent_find_data.inode;
 }
@@ -255,7 +225,6 @@ static char* ext2_path_tokenize(const char* path, char* buffer, uint8_t* pos){
 
 static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t nblocks, DirVisitor visitor, void* data){
     int i;
-    //debug("EXT2 - ext2_list_dir_blocks\n");
     for (i=0;i<nblocks;i++){
         if (blocks[i] != 0){
             debug("EXT2 - Listing block "); debug_i(blocks[i],10);debug("\n");
@@ -273,13 +242,11 @@ static void ext2_list_dir_inode(Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor
     uint32_t *i2blocks;
     int i,j;
     int finish;
-    //debug("EXT2 - ext2_list_dir_inode\n");
-    //debug("EXT2 - Direct blocks\n");
+
     if (ext2_list_dir_blocks(fs,inode->blocks,12, visitor, data)){
         return;
     }
     if (inode->blocks[12]){
-        //debug("Simply indirect block found\n");
         blocks = heap_alloc(fs->block_size);
         ext2_device_gotoblock(fs, inode->blocks[12]);
         ext2_device_read_block(fs);
@@ -291,7 +258,6 @@ static void ext2_list_dir_inode(Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor
         return;
     }
     if (inode->blocks[13]){
-        //debug("Double indirect block found\n");
         blocks = heap_alloc(fs->block_size);
         iblocks = heap_alloc(fs->block_size);
         ext2_device_gotoblock(fs, inode->blocks[12]);
@@ -352,14 +318,10 @@ static int16_t ext2_iter_dir_block(Ext2FileSystem* fs, uint32_t block_num, DirVi
     Ext2DirEntry* dir_entry;
     ext2_device_gotoblock(fs, block_num);
     ext2_device_read_block(fs);
-    //debug("EXT2 - ext2_iter_dir_block ");
-    //debug_i(block_num,10);
-    //debug("\n");
 
     for(dir_entry = (Ext2DirEntry*)fs->block_buffer;
         (void*)dir_entry < ((void*)fs->block_buffer) + fs->block_size;
         dir_entry = next_entry(dir_entry)){
-        //show_dirent(dir_entry);
         if (dir_entry->rec_len){
             if (visitor(fs, dir_entry, data)){
                 return 1;
@@ -368,25 +330,3 @@ static int16_t ext2_iter_dir_block(Ext2FileSystem* fs, uint32_t block_num, DirVi
     }
     return 0;
 }
-
-/*
-static void show_dirent(Ext2DirEntry*entry){
-    debug("Show dir entry:");
-    debug("\tI-node:");debug_i(entry->inode,10);
-    debug(",Length:");debug_i(entry->rec_len,10);
-    debug(",Name length:");debug_i(entry->name_len,10);
-    debug(",Name:");debug_s(entry->name,entry->name_len);debug("\n");
-}
-
-static void show_inode(uint32_t number, Ext2Inode* inode){
-    int i;
-    debug("Show inode number:");debug_i(number,10);debug("\n");
-    debug("\tType:");debug_i(inode->mode >> 12,16);debug("\n");
-    debug("\tMode:");debug_i(inode->mode & 0xfff,8);debug("\n");
-    debug("\tlink count:");debug_i(inode->link_count,10);debug("\n");
-    debug("\tsector count:");debug_i(inode->block_count,10);debug("\n");
-    for (i=0;i<15;i++){
-        debug("\tblock ");debug_i(i,10);debug(":");debug_i(inode->blocks[i],10);debug("\n");
-    }
-}
-*/

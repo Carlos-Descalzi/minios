@@ -25,17 +25,11 @@ typedef struct {
 
 const char BANNER[] = "*************\n** MINI OS **\n*************\n";
 
-//static uint8_t timer_count;
 static char buff[32];
 
-//static void timer_handler();
 static void dummy_handler();
-//static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header);
 static uint8_t show_memory_region(MemoryRegion* region, uint8_t, MemData* mem_data);
 static void display_memory();
-//static void test_timer();
-//static void check_bda();
-//static void check_ps2();
 static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data);
 static void check_e2fs();
 
@@ -50,31 +44,9 @@ void init(){
     console_gotoxy(0,4);
     console_print("PCI Devices:\n");
 
-    /*
-    pci_list_all_buses(show_pci_entry);
-
-    check_bda();
-    check_ps2();
-    */
-    /*
-    console_print("------\nTesting timer:\n");
-
-    pit_init();
-    pit_set_freq(1);
-
-    test_timer();
-    */
     isr_install(9, dummy_handler);
     isr_install(0x0D, handle_gpf);
     
-    /*
-    console_print("------\nInitializing task switcher:\n");
-
-    tasks_init();
-    sti();
-    while(1){
-        asm volatile("nop");
-    }*/
     display_memory();
     paging_init();
     heap_init();
@@ -84,15 +56,6 @@ void init(){
     device_init_devices();
     console_print("devices initialized:\n");
     device_list(show_device,NULL);
-    /*
-    pit_init();
-    pit_set_freq(1);
-    tasks_init();
-    sti();
-
-    
-    while(1){}
-    */
     check_e2fs();
 }
 /*
@@ -290,20 +253,42 @@ static void check_e2fs(){
     Ext2FileSystem* fs;
     Device* device;
 
-    device = device_find(HD, 0);
+    device = device_find(HDD, 0);
+
+    console_print("\n\nTesting ext2 filesystem for device kind HDD, instance 0 (hdd0)\n");
 
     if (!device){
         debug("Device not found\n");
     } else {
-        fs = ext2_open((BlockDevice*)device);
+        fs = ext2_open(BLOCK_DEVICE(device));
         if (!fs){
             debug("Cannot open fs\n");
         } else {
             uint32_t inode;
             debug("INIT - Fs Ext2 open\n");
-            //ext2_list_inodes(fs,show_inode,NULL);
+
+            inode = ext2_find_inode(fs, "/");
+            console_print("Inode for / :");
+            console_print(itoa(inode,buff,10));
+            console_print("\n");
+
+            inode = ext2_find_inode(fs, "/file1.txt");
+            console_print("Inode for /file1.txt :");
+            console_print(itoa(inode,buff,10));
+            console_print("\n");
+
+            inode = ext2_find_inode(fs, "/folder1");
+            console_print("Inode for /folder1 :");
+            console_print(itoa(inode,buff,10));
+            console_print("\n");
+
+            inode = ext2_find_inode(fs, "/folderx");
+            console_print("Inode for /folderx :");
+            console_print(itoa(inode,buff,10));
+            console_print(" (not found, it's ok)\n");
+
             inode = ext2_find_inode(fs, "/folder1/file2.txt");
-            console_print("Inode for /folder/file2.txt:");
+            console_print("Inode for /folder1/file2.txt :");
             console_print(itoa(inode,buff,10));
             console_print("\n");
         }

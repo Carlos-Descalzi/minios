@@ -9,7 +9,7 @@
 typedef enum {
     VIDEO = 0,
     SER,
-    HD,
+    HDD,
     NET,
     KBD,
     MOUSE

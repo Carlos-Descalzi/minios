@@ -14,8 +14,20 @@ typedef struct __attribute__((__packed__)){
     uint8_t reserved[14];
 } Ext2BlockGroupDescriptor;
 
+#define EXT2_INODE_TYPE_FIFO        0x1
+#define EXT2_INODE_TYPE_CHARDEV     0x2
+#define EXT2_INODE_TYPE_DIRECTORY   0x4
+#define EXT2_INODE_TYPE_BLOCKDEV    0x6
+#define EXT2_INODE_TYPE_FILE        0x8
+#define EXT2_INODE_TYPE_SYMLINK     0xa
+#define EXT2_INODE_TYPE_SOCKET      0xc
+
+#define EXT2_INODE_ROOT_DIR         2
+
+
 typedef struct __attribute__((__packed__)){
-    uint16_t mode;
+    uint16_t mode:12,
+             type:4;
     uint16_t uid;
     uint32_t size;
     uint32_t atime;
@@ -124,12 +136,9 @@ typedef int8_t (*DirVisitor)(Ext2FileSystem*, Ext2DirEntry*, void*);
 
 Ext2FileSystem* ext2_open           (BlockDevice* device);
 void            ext2_list_inodes    (Ext2FileSystem* fs, InodeVisitor visitor, void*data);
-//void            ext2_list           (Ext2FileSystem* fs, const char* path, DirVisitor visitor, void* data);
 void            ext2_close          (Ext2FileSystem* fs);
 void            ext2_list_directory (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data);
 uint32_t        ext2_find_inode     (Ext2FileSystem* fs, const char* path);
 int32_t         ext2_load_inode     (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
-int32_t         ext2_load_block     (Ext2FileSystem* fs, uint32_t blocknum, uint8_t* buffer);
-
 
 #endif
