@@ -19,3 +19,10 @@ void serial_log_i(unsigned int number, unsigned char radix){
 void serial_log_c(char c){
     outb(0x3F8,c);
 }
+
+void serial_log_s(const char* string, int n){
+    int i;
+    for (i=0;i<n;i++){
+        serial_log_c(string[i]);
+    }
+}

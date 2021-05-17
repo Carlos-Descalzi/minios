@@ -83,6 +83,8 @@
 
 #define IDE_DEVICE(d)   ((IDEDevice*)d)
 
+#define SECTOR_SIZE     512
+
 typedef struct {
     uint16_t base;
     uint16_t ctrl;
@@ -108,7 +110,7 @@ typedef struct {
 typedef struct IDEDevice{
     BlockDevice device;
     IDEDrive drive;
-    uint8_t sector_buffer[512];
+    uint8_t sector_buffer[SECTOR_SIZE];
     uint32_t current_pos;
 } IDEDevice;
 
@@ -130,6 +132,7 @@ static uint32_t ide_pos                     (BlockDevice* device);
 static uint8_t  get_ata_access_cmd          (int action, int dma, uint8_t lbamode);
 static int8_t   ide_ata_access              (IDEDevice* device, uint32_t lba, uint8_t nsectors, 
                                             int action, ReadCallback callback, void* callback_data);
+static void show_sector(uint8_t *sector);
 
 static uint8_t device_count;
 static IDEDrive devices[4];
@@ -171,7 +174,7 @@ static void get_controller_info(PCIHeader* header){
     int i, j, k;
     uint8_t prog_if = header->base.prog_if;
     IDEChannel channels[2];
-    uint8_t buffer[512];
+    uint8_t buffer[SECTOR_SIZE];
     int status;
 
     if (prog_if & 0x80){
@@ -276,7 +279,7 @@ static void get_controller_info(PCIHeader* header){
                 debug(", # sectors: ");
                 debug_i(devices[device_count].size,10);
                 debug(", Size: ");
-                debug_i(devices[device_count].size * 512, 10);
+                debug_i(devices[device_count].size * SECTOR_SIZE, 10);
                 debug("\n");
                 memcpy(&(devices[device_count].channel),channel, sizeof(IDEChannel));
 
@@ -409,12 +412,16 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
         head = (lba & 0xFF000000) >> 24;
     } else {
         lbamode = 0;
-        sector = (lba % 32) +1;
+        sector = (lba % 63) +1;
         cylinder = (lba + 1 - sector) / (16 * 63);
         lbaio[0] = sector;
         lbaio[1] = cylinder & 0xFF;
         lbaio[2] = (cylinder >> 8) & 0xFF;
-        head = (lba + 1 - sector) % (16 * 63) / 63;
+        head = ((lba + 1 - sector) % (16 * 63)) / 63;
+        //debug("IDE - read, lba:");debug_i(lba,10);
+        //debug(",head:");debug_i(head,10);
+        //debug(",cylinder:");debug_i(cylinder,10);
+        //debug(",sector:");debug_i(sector,10);debug("\n");
     }
     while (ide_read_reg(&(device->drive.channel), ATA_REG_STATUS) & ATA_STATUS_BUSY);
 
@@ -449,19 +456,12 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
                 return err;
             }
             for (i=0;i<nsectors;i++){
-                //debug("\nRead");
                 for (j=0;j<256;j++){
-                    uint16_t w = inw(device->drive.channel.base);
-                    //if (j % 16 == 0) debug("\n");
-                    //debug_i(w,16);
-                    //debug(" ");
-                    ((uint16_t*)device->sector_buffer)[j] = w; //inw(device->drive.channel.base);
+                    ((uint16_t*)device->sector_buffer)[j] = inw(device->drive.channel.base);
                 }
-                //debug("\n");
-                //debug("Read sector "); debug_i(i,10); debug("\n");
+                //show_sector(device->sector_buffer);
                 if (callback){
                     callback(device, device->sector_buffer, callback_data);
-                    device->current_pos+=512;
                 }
             }
         } else {
@@ -471,6 +471,17 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
         }
     }
     return 0;
+}
+static void show_sector(uint8_t *sector){
+    int i;
+    int j;
+    debug("Sector read:\n");
+    for (i=0;i<8;i++){
+        for (j=0;j<64;j++){
+            debug_i(sector[i*64+j],16);debug(" ");
+        }
+        debug("\n");
+    }
 }
 
 static uint8_t get_ata_access_cmd(int action, int dma, uint8_t lbamode){
@@ -504,24 +515,20 @@ typedef struct {
 
 
 static void read_callback(IDEDevice* device, uint8_t* sector, ReadRequest* request){
-    uint32_t to_read = min(512,request->remaining);
+    uint32_t to_read = min(SECTOR_SIZE,request->remaining);
     memcpy(request->buffer+request->pos,sector, to_read);
     request->pos+=to_read;
-    request->remaining-=512;
+    request->remaining-=SECTOR_SIZE;
 }
 
 static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
     ReadRequest read_request = {
-        .buffer = buffer, 
-        .pos=0 , 
+        .buffer=buffer, 
+        .pos=0, 
         .remaining=size
     };
     uint32_t sector = IDE_DEVICE(device)->current_pos >> 9;
-    uint32_t offset = IDE_DEVICE(device)->current_pos & 0x1FF; // we asume always 512 aligned for the moment
     uint8_t nsectors = size >> 9;
-    //debug("IDE - Sector:"); debug_i(sector,10); 
-    //debug(", Offset:"); debug_i(offset,10); 
-    //debug(", N sectors:"); debug_i(nsectors,10); debug("\n");
 
     ide_ata_access(
         IDE_DEVICE(device),
@@ -531,7 +538,7 @@ static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
         (ReadCallback)read_callback, 
         &read_request
     );
-    //debug("IDE - Pos after read:"); debug_i(read_request.pos,10);debug("\n");
+    IDE_DEVICE(device)->current_pos+=SECTOR_SIZE * nsectors;
     return 0;
 }
 
@@ -540,7 +547,7 @@ static int16_t ide_write(BlockDevice* device, uint8_t* buffer, uint16_t size){
 }
 
 static void ide_seek(BlockDevice* device, uint32_t pos){
-    //debug("IDE - Ide device seek "); debug_i(pos,10); debug("\n");
+    debug("IDE - Ide device seek "); debug_i(pos,10); debug("\n");
     IDE_DEVICE(device)->current_pos = pos;
 }
 static uint32_t ide_pos (BlockDevice* device){

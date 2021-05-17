@@ -26,7 +26,7 @@ char* strcpy(char* dest, const char* src){
 
 size_t strlen(const char* string){
     int len = 0;
-    while(string[len++]);
+    while(string[len]) len++;
     return len;
 }
 char*   strchr  (const char*s, int c){
@@ -46,4 +46,17 @@ char*   strrchr (const char*s, int c){
         }
     }
     return NULL;
+}
+int strcmp(const char*s1, const char* s2){
+    int i;
+    for (i=0;s1[i] && s2[i] && (s1[i] == s2[i]);i++);
+    return s1[i] - s2[i];
+}
+int strncmp(const char*s1, const char* s2, size_t n){
+    int i;
+    int d=0;
+    for (i=0;i<n && d==0;i++){
+        d = s1[i] - s2[i];
+    }
+    return d;
 }

@@ -286,40 +286,6 @@ static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void*
     return 0;
 }
 
-static int8_t show_dir(Ext2FileSystem*fs, Ext2DirEntry* entry, void* data){
-    char buff[256];
-    debug("\tINIT - Directory entry - Inode: ");debug_i(entry->inode,10);debug(", name len:");debug_i(entry->name_len,10);
-    memcpy(buff,entry->name,entry->name_len);
-    buff[entry->name_len] = 0;
-    debug(", Name:");debug(buff);debug("\n");
-
-    return 0;
-}
-
-static int8_t show_inode(Ext2FileSystem*fs, uint32_t inodenum, Ext2Inode* inode, void* data){
-    if (inode->mode != 0){
-        debug("INIT - Inode#");
-        debug_i(inodenum,10);
-        debug(", type:");
-        debug_i(inode->mode >> 12,16);
-        debug(", perms:");
-        debug_i(inode->mode & 0xFFF, 8);
-        debug(", size:");
-        debug_i(inode->size,10);
-        debug(", created:");
-        debug_i(inode->ctime,10);
-        debug(", in use:");
-        debug(inode->link_count > 0 ? "Yes" : "No");
-        debug("\n");
-        if (inode->mode >> 12 == 4){
-            // directory
-            debug("INIT - Showing directory:\n");
-            ext2_list_directory(fs,inode,show_dir, NULL);
-        }
-    }
-    return 0;
-}
-
 static void check_e2fs(){
     Ext2FileSystem* fs;
     Device* device;
@@ -333,8 +299,13 @@ static void check_e2fs(){
         if (!fs){
             debug("Cannot open fs\n");
         } else {
+            uint32_t inode;
             debug("INIT - Fs Ext2 open\n");
-            ext2_list_inodes(fs,show_inode,NULL);
+            //ext2_list_inodes(fs,show_inode,NULL);
+            inode = ext2_find_inode(fs, "/folder1/file2.txt");
+            console_print("Inode for /folder/file2.txt:");
+            console_print(itoa(inode,buff,10));
+            console_print("\n");
         }
 
     }

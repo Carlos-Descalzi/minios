@@ -104,6 +104,9 @@ typedef struct {
     Ext2Superblock super_block;
     uint32_t block_size;
     uint32_t first_block_group_pos;
+    uint32_t inodes_per_block;
+    uint32_t group_descritors_per_block;
+    uint32_t block_group_count;
     uint8_t* block_buffer;
 } Ext2FileSystem;
 
