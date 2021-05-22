@@ -37,3 +37,8 @@ void    ps2_get_status  (PS2Port* port){
         port->port2_present = 1;
     }
 }
+uint8_t ps2_read        (uint8_t port){
+    return 0;
+}
+void    ps2_write       (uint8_t port, uint8_t value){
+}

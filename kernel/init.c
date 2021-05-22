@@ -6,6 +6,7 @@
 #include "board/minfo.h"
 #include "board/bda.h"
 #include "board/ps2.h"
+#include "board/memory.h"
 #include "kernel/task.h"
 #include "kernel/paging.h"
 #include "kernel/isr.h"
@@ -23,29 +24,75 @@ typedef struct {
     uint64_t biggest_region_address;
 } MemData;
 
-const char BANNER[] = "*************\n** MINI OS **\n*************\n";
-
 static char buff[32];
 
-static void dummy_handler();
-static uint8_t show_memory_region(MemoryRegion* region, uint8_t, MemData* mem_data);
-static void display_memory();
-static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data);
-static void check_e2fs();
+const struct {
+    char* kind;
+    char* description;
+} KINDS[] = {
+    {"video", "video"},
+    {"ser", "serial"},
+    {"hdd", "hard disk drive"},
+    {"net", "network interface"},
+    {"kbd", "keyboard"},
+    {"mouse", "mouse"}
+};
 
-extern void test_call();
-extern void handle_gpf();
-extern void devices_register();
+static void     dummy_handler       (void);
+static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
+static void     display_memory      (void);
+static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
+static void     check_e2fs          (void);
+static void     test_timer          (void);
+static void     test_isr            (InterruptFrame frame);
+static void     handle_keyboard     (InterruptFrame frame);
+
+extern void     test_call           (void);
+extern void     handle_gpf          (void);
+extern void     devices_register    (void);
+extern void     crash               (void);
 
 void init(){
     debug("Kernel initializing\n");
     console_init();
-    console_print(BANNER);
+    console_print("*************\n** MINI OS **\n*************\n");
     console_gotoxy(0,4);
-    console_print("PCI Devices:\n");
 
-    isr_install(9, dummy_handler);
+    display_memory();
+
+    memory_init();
+    isr_init();
+
+    //pit_init();
+    //pic_init();
+    //test_timer();
+    //sti();
+    //isr_install(PIC_IRQ_BASE+0x01, handle_keyboard);
+    //while(1);
+
+    paging_init();
+    console_print("Testing ISR\n");
+    isr_install(0x30, test_isr);
+    asm volatile("int $0x30");
+
+
+    //console_print("Tested ISR\n");
+    //crash();
+    
+    //debug("Initializing PIC\n");
+
+    /*
+    isr_install(0x40, dummy_handler);
     isr_install(0x0D, handle_gpf);
+
+    asm volatile ("int $0x40");
+    */
+    //sti();
+    //isr_install(0x20, dummy_handler);
+    //isr_install(0x21, dummy_handler);
+    //while(1);
+
+    /*
     
     display_memory();
     paging_init();
@@ -57,85 +104,45 @@ void init(){
     console_print("devices initialized:\n");
     device_list(show_device,NULL);
     check_e2fs();
+    */
 }
-/*
-static void show_pci_entry(uint8_t bus, uint8_t device, uint8_t func, PCIHeader* header){
-    uint8_t header_type;
-    int i;
-    debug("Bus:");
-    debug_i(bus,16);
-    debug(" Dev:");
-    debug_i(device,16);
-    debug(" Func:");
-    debug_i(func,10);
-    debug(" Vendor:");
-    debug_i(header->base.vendor_id,16);
-    debug(" Device:");
-    debug_i(header->base.device_id,16);
-    debug(" Class:");
-    debug_i(header->base.class,16);
-    debug(" Subclass:");
-    debug_i(header->base.subclass,16);
-    if (header->base.header_type.mf){
-        debug(" (MF)");
-    }
-    debug("\n");
-    header_type = header->base.header_type.type;
+static void handle_keyboard(InterruptFrame frame){
+    cli();
+    console_print("Key pressed\n");
+    inb(0x64);
+    inb(0x60);
+    pic_eoi();
+    sti();
+}
 
-    if (header_type == 0){
-        for (i=0;i<6;i++){
-            uint32_t address = header->type00.base_addresses[i];
-            if(address){
-                debug("\t");
-                debug("Address ");
-                debug_i(i,10);
-                debug(" ");
-                debug_i(address,16);
-                if (address & 1){
-                    debug(" (IO Port)");
-                }
-                debug("\n");
-            }
-        }
-    } else if (header_type == 1){
-        for (i=0;i<2;i++){
-            uint32_t address = header->type01.base_addresses[i];
-            if(address){
-                debug("\t");
-                debug("Address ");
-                debug_i(i,10);
-                debug(" ");
-                debug_i((address & ~1),16);
-                if (address & 1){
-                    debug(" (IO Port)");
-                }
-                debug("\n");
-            }
-        }
-    } else {
-        debug("\tType 02\n");
-    }
+static void test_isr(InterruptFrame frame){
+    console_print("ISR handler called\n");
+    console_print("eax  :");console_print(itoa(frame.eax,buff,16));console_print("\n");
+    console_print("eip  :");console_print(itoa(frame.eip,buff,16));console_print("\n");
+    console_print("esp  :");console_print(itoa(frame.esp,buff,16));console_print("\n");
+    console_print("ebp  :");console_print(itoa(frame.ebp,buff,16));console_print("\n");
+    console_print("cs   :");console_print(itoa(frame.cs,buff,16));console_print("\n");
+    console_print("flags:");console_print(itoa(frame.flags.dwflags,buff,16));console_print("\n");
 }
+
+static int timer_count;
+
+static void timer_handler(InterruptFrame frame){
+    timer_count++;
+    console_print("Timer called, IRQ: ");
+    console_print(utoa(pic_get_irq(),buff,16));
+    console_put('\n');
+    pic_eoi();
+}
+
 static void test_timer(){
+    console_print("Testing timer\n");
     timer_count = 0;
-    isr_install(8, timer_handler); // TODO: Remap PIC
+    isr_install(0x20, timer_handler); // TODO: Remap PIC
     sti();
     while(timer_count < 3);
     cli();
-}
-*/
-
-/*
-static void INTERRUPT timer_handler(InterruptFrame* frame){
-    console_print("Timer called ");
-    timer_count++;
-    console_print(utoa(timer_count,buff,10));
-    console_put('\n');
-    eoi();
-}
-*/
-static void INTERRUPT dummy_handler(InterruptFrame* frame){
-    sti();
+    isr_install(0x20, NULL); // TODO: Remap PIC
 }
 
 void bsod(){
@@ -153,7 +160,7 @@ static void display_memory(){
     MemData mem_data = {0,0,0};
     console_print("------\nChecking RAM:\n");
 
-    minfo_iterate_regions((MemRegionVisitor)show_memory_region, &mem_data);
+    minfo_iterate_regions(show_memory_region, &mem_data);
     console_print("Total Memory:");
     console_print(utoa(mem_data.total_ram,buff, 10));
     console_print(" Bytes free\n");
@@ -165,7 +172,8 @@ static void display_memory(){
 
 }
 
-static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, MemData* mem_data){
+static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, void* data){
+    MemData* mem_data = (MemData*)data;
 
     console_print("Region#");
     console_print(utoa(region_num,buff,10));
@@ -226,18 +234,6 @@ static void check_ps2(){
     }
 }
 */
-
-const struct {
-    char* kind;
-    char* description;
-} KINDS[] = {
-    {"video", "video"},
-    {"ser", "serial"},
-    {"hdd", "hard disk drive"},
-    {"net", "network interface"},
-    {"kbd", "keyboard"},
-    {"mouse", "mouse"}
-};
 
 static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data){
     console_print("  * ");

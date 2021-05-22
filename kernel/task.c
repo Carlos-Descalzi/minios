@@ -6,34 +6,7 @@
 #include "board/pic.h"
 
 #define TASKS_MAX           32
-
-#define TID_KERNEL          (TASKS_MAX-1)
-#define TID_IDLE            1
-
-#define TASK_STATUS_NONE    0
-#define TASK_STATUS_READY   1
-#define TASK_STATUS_IDLE    2
-#define TASK_STATUS_RUNNING 3
-
-
-typedef struct Task {
-    uint32_t tid;   // redundant
-    uint32_t status;
-
-    uint32_t eax;
-    uint32_t ebx;
-    uint32_t ecx;
-    uint32_t edx;
-
-    uint32_t eip;
-
-    uint32_t esp;
-    uint32_t ebp;
-    uint32_t edi;
-    uint32_t esi;
-    uint32_t flags;
-    struct Task* next;
-} Task;
+#define TID_KERNEL          0
 
 /**
  * The start address for the idle loop
@@ -49,27 +22,11 @@ Task* current_task;
 
 void tasks_init(){
     memset(TASKS,0,sizeof(TASKS));
-    TASKS[TID_KERNEL].tid = TID_KERNEL;
-    TASKS[TID_KERNEL].status = TASK_STATUS_RUNNING;
-
-    fill_task(&(TASKS[TID_IDLE]));
-
-    TASKS[TID_IDLE].tid = TID_IDLE;
-    TASKS[TID_IDLE].status = TASK_STATUS_IDLE;
-    TASKS[TID_IDLE].eip = (uint32_t) &idle_loop;
-    // Just allocate 1kb of stack for idle task on heap
-    TASKS[TID_IDLE].esp = (uint32_t)heap_alloc(1024);
-
-    TASKS[TID_KERNEL].next = &(TASKS[TID_IDLE]);
-    TASKS[TID_IDLE].next = &(TASKS[TID_KERNEL]);
-
-    current_task = &(TASKS[TID_KERNEL]);
-
-    isr_install(8, (Isr)&task_switch);
+    current_task = NULL;
 }
 
 uint32_t tasks_current_tid(){
-    return current_task->tid;
+    return current_task ? current_task->tid : 0;
 }
 
 void next_task(){
@@ -79,7 +36,7 @@ void next_task(){
     debug("Next task:");
     debug_i(current_task->tid,10);
     debug(" ");
-    debug_i(current_task->eip,16);
+    debug_i(current_task->cpu_state.eip,16);
     debug("\n");
 }
 

@@ -8,4 +8,5 @@ void devices_register(){
     serial_register();
     rtl8139_register();
     ide_register();
+    keyboard_register();
 }

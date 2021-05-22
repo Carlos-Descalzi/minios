@@ -62,6 +62,7 @@ e2fs.img:
 	@sudo mkdir tmp/folder1
 	@echo hola | sudo tee tmp/file1.txt
 	@echo hola2 | sudo tee tmp/folder1/file2.txt
+	@sudo cp tests/test.elf tmp/
 	@sudo umount tmp
 	@rm -rf tmp
 

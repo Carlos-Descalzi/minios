@@ -1,4 +1,4 @@
-global __stack_chk_fail,__stack_chk_fail_local, idle_loop, test_call, dummy, handle_gpf
+global __stack_chk_fail,__stack_chk_fail_local, idle_loop, test_call, dummy, handle_gpf,crash
 extern serial_log
 extern current_task
 extern next_task
@@ -32,3 +32,6 @@ handle_gpf:
 message:
     db "TESTING ASM CALLL",13,10,0
 
+
+crash:
+    jmp 15:0

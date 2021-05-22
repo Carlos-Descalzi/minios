@@ -1,9 +1,7 @@
 #include "lib/heap.h"
+#include "board/memory.h"
 #include "lib/stdint.h"
 #include "misc/debug.h"
-
-#define MEMORY_START    0x30000
-#define MEMORY_END      0x5FFFF     // ~320 Kb
 
 typedef struct MemoryBlock MemoryBlock;
 
@@ -19,11 +17,11 @@ struct MemoryBlock {
 };
 
 #define HEADER_SIZE (sizeof(BlockHeader))
-#define FIRST_BLOCK ((MemoryBlock*)MEMORY_START)
+#define FIRST_BLOCK ((MemoryBlock*)HEAP_MEMORY_START_ADDRESS)
 
 void heap_init(void){
     FIRST_BLOCK->header.used = 0;
-    FIRST_BLOCK->header.size = (MEMORY_END - MEMORY_START) + HEADER_SIZE;
+    FIRST_BLOCK->header.size = (HEAP_MEMORY_END_ADDRESS - HEAP_MEMORY_START_ADDRESS) + HEADER_SIZE;
     FIRST_BLOCK->header.next = NULL;
 }
 

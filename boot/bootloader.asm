@@ -38,6 +38,10 @@ start:
     mov     eax,    cr0     ; switch to protected mode
     or      eax,    0x01
     mov     cr0,    eax
+
+    mov     eax,    0x18    ; kernel tss
+    ltr     ax
+    
     jmp     8:init_regs_and_start   ; This jump sets CS to segment selector #8
     nop
     nop
@@ -153,20 +157,25 @@ init_regs_and_start:
 msg1:   db "Loading kernel ...",13,10,0
 
 ; Global Descriptors Table
-gdt:    dw 0,0,0,0
-        dw 0x07FF
+gdt:    dw 0,0,0,0  ; NULL segment
+        dw 0x07FF   ; code segment
         dw 0x0000
         dw 0x9A00
         dw 0x00c0
 
-        dw 0x07FF
+        dw 0x07FF   ; data segment
         dw 0x0000
         dw 0x9200
-        dw 0x00c0
+        dw 0x00c0   
+                    
+        dw 0x0068   ; tss segment
+        dw 0x0500    
+        dw 0x8900   
+        dw 0x0040
 
 ; IDT TOC
 idt_48:
-        dw 0x100-1
+        dw 0x200-1
         dw 0,0
 
 ; GDT TOC

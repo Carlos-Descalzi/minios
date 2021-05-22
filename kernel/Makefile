@@ -4,11 +4,12 @@ OBJS=startup.o	\
 	 init.o		\
 	 debug.o	\
 	 misc.o		\
-	 task.o		\
-	 task_asm.o \
 	 isr.o		\
+	 isr_asm.o	\
 	 paging.o	\
 	 device.o	
 	 
+#	 task.o		\
+#	 task_asm.o \
 
 all: $(OBJS)

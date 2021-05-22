@@ -33,8 +33,12 @@ typedef struct {
         physical_page_address: 20;
 } PageTableEntry;
 
-void        paging_init         (void);
-int16_t     paging_alloc_table  (PageDirectoryEntry** entry_ptr);
-void        paging_free_table   (uint16_t page_table_index);
+#define PAGE_TYPE_READ          0
+#define PAGE_TYPE_READ_WRITE    1
+
+void                paging_init                 (void);
+PageDirectoryEntry* paging_new_page_directory   (void);
+uint32_t            paging_alloc_table          (PageDirectoryEntry* directory);
+
 
 #endif
