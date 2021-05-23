@@ -15,7 +15,10 @@ handle_trap_%1:
 global handle_isr_%1
 handle_isr_%1:
     pushad
+    mov eax, cr3
+    push eax
     call [isr_handlers+(4*%1)]
+    pop eax
     popad
     iret
 %endmacro

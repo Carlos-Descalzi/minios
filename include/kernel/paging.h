@@ -39,6 +39,8 @@ typedef struct {
 void                paging_init                 (void);
 PageDirectoryEntry* paging_new_page_directory   (void);
 uint32_t            paging_alloc_table          (PageDirectoryEntry* directory);
+PageDirectoryEntry* paging_get_current_directory(void);
+void                paging_set_directory        (PageDirectoryEntry* directory);
 
 
 #endif

@@ -80,9 +80,11 @@ void init(){
     device_init();
     devices_register();
     device_init_devices();
-    //check_e2fs();
     test_elf();
-
+    
+    //check_e2fs();
+    /*
+    */
     //console_print("Tested ISR\n");
     //crash();
     
@@ -126,6 +128,7 @@ static void test_isr(InterruptFrame frame){
     console_print("esp  :");console_print(itoa(frame.esp,buff,16));console_print("\n");
     console_print("ebp  :");console_print(itoa(frame.ebp,buff,16));console_print("\n");
     console_print("cs   :");console_print(itoa(frame.cs,buff,16));console_print("\n");
+    console_print("cr3  :");console_print(itoa(frame.cr3,buff,16));console_print("\n");
     console_print("flags:");console_print(itoa(frame.flags.dwflags,buff,16));console_print("\n");
 }
 

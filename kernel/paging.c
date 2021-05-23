@@ -59,9 +59,22 @@ void paging_init(){
         "\tmov %%eax, %%cr0"
         :: "Nd"(KERNEL_PAGE_DIR)
     );
+    debug("CR3:");debug_i((uint32_t)KERNEL_PAGE_DIR,16);debug("\n");
 
     trap_install(0xE, handle_page_fault);
     console_print("Paging initialized\n");
+}
+PageDirectoryEntry* paging_get_current_directory(void){
+    PageDirectoryEntry* directory;
+    asm volatile( "\tmov %%cr3, %0\n" : "=a"(directory));
+    return directory;
+}
+void paging_set_directory (PageDirectoryEntry* directory){
+    asm volatile(
+        "\tmov %0, %%eax\n"
+        "\tmov %%eax, %%cr3\n"
+        :: "Nd"(directory)
+    );
 }
 
 PageDirectoryEntry* paging_new_page_directory(void){

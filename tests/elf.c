@@ -147,7 +147,7 @@ void test_elf(){
     }
     fs = ext2_open(BLOCK_DEVICE(device));
 
-    inodenum = ext2_find_inode(fs, "/test.elf");
+    inodenum = ext2_find_inode(fs, "/test1.elf");
     
     if (!inodenum){
         console_print("inode not found\n");

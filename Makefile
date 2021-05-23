@@ -3,7 +3,7 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices fs board tests
+SUBDIRS=kernel lib devices fs board tests testfiles
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
@@ -63,7 +63,7 @@ e2fs.img:
 	@sudo mkdir tmp/folder1
 	@echo hola | sudo tee tmp/file1.txt
 	@echo hola2 | sudo tee tmp/folder1/file2.txt
-	@sudo cp testfiles/test.elf tmp/
+	@sudo cp testfiles/test1.elf tmp/
 	@sudo umount tmp
 	@rm -rf tmp
 
