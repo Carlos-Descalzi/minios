@@ -137,7 +137,7 @@ static void show_sector(uint8_t *sector);
 static uint8_t device_count;
 static IDEDrive devices[4];
 static DeviceType DEVICE_TYPE = {
-    kind: HDD,
+    kind: DISK,
     count_devices: count_devices,
     instantiate: instantiate,
     release: release
@@ -518,7 +518,7 @@ static void read_callback(IDEDevice* device, uint8_t* sector, ReadRequest* reque
     uint32_t to_read = min(SECTOR_SIZE,request->remaining);
     memcpy(request->buffer+request->pos,sector, to_read);
     request->pos+=to_read;
-    request->remaining-=SECTOR_SIZE;
+    request->remaining-=to_read;
 }
 
 static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
@@ -528,8 +528,8 @@ static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
         .remaining=size
     };
     uint32_t sector = IDE_DEVICE(device)->current_pos >> 9;
-    uint8_t nsectors = size >> 9;
-
+    uint8_t nsectors = size / 512 + (size % 512 ? 1 : 0);
+    
     ide_ata_access(
         IDE_DEVICE(device),
         sector,

@@ -112,6 +112,10 @@ typedef struct __attribute__((__packed__)){
 } Ext2DirEntry;
 
 typedef struct {
+    uint32_t disk_pos;
+    uint32_t pos;
+} BlockPtr;
+typedef struct {
     BlockDevice* device;
     Ext2Superblock super_block;
     uint32_t block_size;
@@ -120,6 +124,8 @@ typedef struct {
     uint32_t group_descritors_per_block;
     uint32_t block_group_count;
     uint8_t* block_buffer;
+    BlockPtr cache[5];
+    uint8_t* block_cache;
 } Ext2FileSystem;
 
 #define EXT2_DIR_ENTRY_UNKNOWN  0
@@ -140,5 +146,8 @@ void            ext2_close          (Ext2FileSystem* fs);
 void            ext2_list_directory (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data);
 uint32_t        ext2_find_inode     (Ext2FileSystem* fs, const char* path);
 int32_t         ext2_load_inode     (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
+int32_t         ext2_load           (Ext2FileSystem* fs, Ext2Inode* inode, uint8_t* dest);
+uint32_t        ext2_read_block     (Ext2FileSystem* fs, Ext2Inode* inode, 
+                                    uint32_t block, uint8_t* dest, uint32_t length);
 
 #endif

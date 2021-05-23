@@ -3,13 +3,14 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices fs board
+SUBDIRS=kernel lib devices fs board io
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
 KOBJS+=$(shell find devices -name '*.o')
 KOBJS+=$(shell find fs -name '*.o')
 KOBJS+=$(shell find board -name '*.o')
+KOBJS+=$(shell find io -name '*.o')
 
 QEMU=qemu-system-i386
 QEMU_ARGS=         \
@@ -62,7 +63,7 @@ e2fs.img:
 	@sudo mkdir tmp/folder1
 	@echo hola | sudo tee tmp/file1.txt
 	@echo hola2 | sudo tee tmp/folder1/file2.txt
-	@sudo cp tests/test.elf tmp/
+	@sudo cp testfiles/test.elf tmp/
 	@sudo umount tmp
 	@rm -rf tmp
 

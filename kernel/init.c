@@ -16,6 +16,7 @@
 #include "lib/heap.h"
 #include "fs/ext2.h"
 #include "misc/debug.h"
+#include "bin/elf.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -32,7 +33,7 @@ const struct {
 } KINDS[] = {
     {"video", "video"},
     {"ser", "serial"},
-    {"hdd", "hard disk drive"},
+    {"disk", "disk drive"},
     {"net", "network interface"},
     {"kbd", "keyboard"},
     {"mouse", "mouse"}
@@ -46,6 +47,7 @@ static void     check_e2fs          (void);
 static void     test_timer          (void);
 static void     test_isr            (InterruptFrame frame);
 static void     handle_keyboard     (InterruptFrame frame);
+static void     test_elf            (void);
 
 extern void     test_call           (void);
 extern void     handle_gpf          (void);
@@ -74,7 +76,12 @@ void init(){
     console_print("Testing ISR\n");
     isr_install(0x30, test_isr);
     asm volatile("int $0x30");
-
+    heap_init();
+    device_init();
+    devices_register();
+    device_init_devices();
+    check_e2fs();
+    test_elf();
 
     //console_print("Tested ISR\n");
     //crash();
@@ -96,14 +103,11 @@ void init(){
     
     display_memory();
     paging_init();
-    heap_init();
 
-    device_init();
     devices_register();
     device_init_devices();
     console_print("devices initialized:\n");
     device_list(show_device,NULL);
-    check_e2fs();
     */
 }
 static void handle_keyboard(InterruptFrame frame){
@@ -248,10 +252,12 @@ static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void*
 static void check_e2fs(){
     Ext2FileSystem* fs;
     Device* device;
+    char buffer[1024];
+    memset(buffer,0,1024);
 
-    device = device_find(HDD, 0);
+    device = device_find(DISK, 0);
 
-    console_print("\n\nTesting ext2 filesystem for device kind HDD, instance 0 (hdd0)\n");
+    console_print("\n\nTesting ext2 filesystem for device kind DISK, instance 0 (disk0)\n");
 
     if (!device){
         debug("Device not found\n");
@@ -260,34 +266,181 @@ static void check_e2fs(){
         if (!fs){
             debug("Cannot open fs\n");
         } else {
-            uint32_t inode;
+            uint32_t inodenum;
+            Ext2Inode inode;
             debug("INIT - Fs Ext2 open\n");
 
-            inode = ext2_find_inode(fs, "/");
+            inodenum = ext2_find_inode(fs, "/");
             console_print("Inode for / :");
-            console_print(itoa(inode,buff,10));
+            console_print(itoa(inodenum,buff,10));
             console_print("\n");
 
-            inode = ext2_find_inode(fs, "/file1.txt");
+            inodenum = ext2_find_inode(fs, "/file1.txt");
             console_print("Inode for /file1.txt :");
-            console_print(itoa(inode,buff,10));
+            console_print(itoa(inodenum,buff,10));
             console_print("\n");
 
-            inode = ext2_find_inode(fs, "/folder1");
+            inodenum = ext2_find_inode(fs, "/folder1");
             console_print("Inode for /folder1 :");
-            console_print(itoa(inode,buff,10));
+            console_print(itoa(inodenum,buff,10));
             console_print("\n");
 
-            inode = ext2_find_inode(fs, "/folderx");
+            inodenum = ext2_find_inode(fs, "/folderx");
             console_print("Inode for /folderx :");
-            console_print(itoa(inode,buff,10));
+            console_print(itoa(inodenum,buff,10));
             console_print(" (not found, it's ok)\n");
 
-            inode = ext2_find_inode(fs, "/folder1/file2.txt");
+            inodenum = ext2_find_inode(fs, "/folder1/file2.txt");
             console_print("Inode for /folder1/file2.txt :");
-            console_print(itoa(inode,buff,10));
+            console_print(itoa(inodenum,buff,10));
+            console_print("\n");
+
+            ext2_load_inode(fs, inodenum, &inode);
+            console_print("Contents:");
+            ext2_load(fs, &inode, buffer);
+            console_print(buffer);
             console_print("\n");
         }
 
     }
+}
+const char* section_types[] = {
+    "NULL    ",
+    "PROGBITS",
+    "SYMTAB  ",
+    "STRTAB  ",
+    "RELA    ",
+    "HASH    ",
+    "DYNAMIC ",
+    "NOTE    ",
+    "NOBITS  ",
+    "REL     ",
+    "SHLIB   ",
+    "DYNSYM  "
+};
+static const char* get_section_name(ElfHeader* header, ElfSectionHeader* sec_header){
+    int i;
+    if (sec_header->name){
+        ElfSectionHeader* section =(ElfSectionHeader*) 
+            (((void*)header) + header->section_header_table_position 
+             + (header->section_names_index 
+                * header->section_header_table_entry_size));
+        return (const char*) (((void*)header) + section->offset + sec_header->name);
+    }
+    return NULL;
+}
+static void show_elf(void* elf,uint32_t fsize){
+    ElfHeader* elf_header = (ElfHeader*)elf;
+    ElfProgramHeader* prg_header = (ElfProgramHeader*)(((void*)elf)+ elf_header->program_header_table_position);
+    ElfSectionHeader* sec_header = (ElfSectionHeader*)(((void*)elf) + elf_header->section_header_table_position);
+    uint32_t entries;
+    uint32_t size;
+    uint32_t i;
+    console_print("Magic number:");
+    console_print(itoa(elf_header->magic_number,buff,16));
+    console_print("\n");
+    console_print("Binary type:");
+    console_print(itoa(elf_header->bin_type,buff,10));
+    console_print("\n");
+    console_print("Arch:");
+    console_print(elf_header->arch == 1 ? "32bit" : "64bit");
+    console_print(",");
+    console_print(elf_header->endianess == 1 ? "Little endian" : "Big Endian");console_print("\n");
+    console_print("Header size:");
+    console_print(itoa(elf_header->header_size,buff,10));
+    console_print("\n");
+    console_print("Program entry position:");
+    console_print(itoa(elf_header->program_entry_position,buff,16));
+    console_print("\n");
+    console_print("Program header position:");
+    console_print(itoa(elf_header->program_header_table_position,buff,10));
+    console_print("\n");
+    console_print("Program header size:");
+    console_print(itoa(elf_header->program_header_table_entry_size,buff,10));
+    console_print("\n");
+    console_print("Section header position:");
+    console_print(itoa(elf_header->section_header_table_position,buff,10));
+    console_print("\n");
+    console_print(itoa((uint32_t)elf_header,buff,16));
+    console_print("\n");
+
+    console_print("Program header:");
+    console_print(itoa((uint32_t)prg_header,buff,16));
+    console_print("\n");
+
+    entries = elf_header->program_header_table_entry_count;
+#define next_prg_header(h,ph) \
+    ((ElfProgramHeader*)(((void*)ph)+(h->program_header_table_entry_size)))
+
+    for (i=0;i<entries;i++,prg_header = next_prg_header(elf_header, prg_header)){
+        console_print("  #");
+        console_print(itoa(i,buff,10));
+        console_print(", type:");
+        console_print(itoa(prg_header->segment_type,buff,10));
+        console_print(", Address:");
+        console_print(itoa(prg_header->virtual_address,buff,16));
+        console_print(", Offset:");
+        console_print(itoa(prg_header->offset,buff,10));
+        console_print(", Img.size:");
+        console_print(itoa(prg_header->segment_file_size,buff,10));
+        console_print(", Mem.size:");
+        console_print(itoa(prg_header->segment_mem_size,buff,10));
+        console_print(", Align:");
+        console_print(itoa(prg_header->alignment,buff,10));
+        console_print("\n");
+    }
+
+#define next_sec_header(h,sh) \
+    ((ElfSectionHeader*)(((void*)sh)+(h->section_header_table_entry_size)))
+
+    console_print("Section header:");
+    console_print(itoa((uint32_t)sec_header,buff,16));
+    console_print("\n");
+    entries = elf_header->section_header_table_entry_count;
+
+    for (i=0;i<entries;i++,sec_header = next_sec_header(elf_header, sec_header)){
+        console_print("  #");
+        console_print(itoa(i,buff,10));
+        console_print(", type:");
+        if (sec_header->type <= 11){
+            console_print(section_types[sec_header->type]);
+        } else {
+            console_print(itoa(sec_header->type,buff,10));
+        }
+        console_print(", name:");
+        console_print(get_section_name(elf_header, sec_header));
+        console_print(", Address:");
+        console_print(itoa(sec_header->address,buff,16));
+        console_print(", Size:");
+        console_print(itoa(sec_header->size,buff,16));
+        console_print("\n");
+    }
+
+}
+
+static void test_elf(){
+    uint32_t inodenum;
+    Ext2Inode inode;
+    Ext2FileSystem* fs;
+    Device* device;
+
+    device = device_find(DISK, 0);
+    if (!device){
+        console_print("Device not found\n");
+        return;
+    }
+    fs = ext2_open(BLOCK_DEVICE(device));
+
+    inodenum = ext2_find_inode(fs, "/test.elf");
+    
+    if (!inodenum){
+        console_print("inode not found\n");
+    } else {
+        char* buff = heap_alloc(inode.size);
+        console_print("Loading elf file\n");
+        ext2_load_inode(fs, inodenum, &inode);
+        ext2_load(fs, &inode, buff);
+        show_elf(buff,inode.size);
+    }
+    ext2_close(fs);
 }

@@ -46,8 +46,9 @@ typedef struct {
     Flags       flags;
     uint32_t    source_ss;
     uint32_t    source_esp;
-} X86InterruptFrame;
+} X86CpuRegisters;
 
-typedef X86InterruptFrame InterruptFrame;
+typedef X86CpuRegisters CPUState;
+typedef X86CpuRegisters InterruptFrame;
 
 #endif

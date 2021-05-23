@@ -37,13 +37,26 @@ typedef struct {
 
 typedef struct {
     uint32_t segment_type;
-    uint32_t file_offset;
+    uint32_t offset;
     uint32_t virtual_address;
-    uint32_t reserved;
+    uint32_t physical_address;
     uint32_t segment_file_size;
     uint32_t segment_mem_size;
     uint32_t flags;
     uint32_t alignment;
 } ElfProgramHeader;
+
+typedef struct {
+    uint32_t name;
+    uint32_t type;
+    uint32_t flags;
+    uint32_t address;
+    uint32_t offset;
+    uint32_t size;
+    uint32_t link;
+    uint32_t info;
+    uint32_t alignment;
+    uint32_t entry_size;
+} ElfSectionHeader;
 
 #endif

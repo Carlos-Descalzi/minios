@@ -20,6 +20,9 @@ struct MemoryBlock {
 #define FIRST_BLOCK ((MemoryBlock*)HEAP_MEMORY_START_ADDRESS)
 
 void heap_init(void){
+    debug("HEAP - Total memory:"); 
+    debug_i(HEAP_MEMORY_END_ADDRESS - HEAP_MEMORY_START_ADDRESS,10);
+    debug("\n");
     FIRST_BLOCK->header.used = 0;
     FIRST_BLOCK->header.size = (HEAP_MEMORY_END_ADDRESS - HEAP_MEMORY_START_ADDRESS) + HEADER_SIZE;
     FIRST_BLOCK->header.next = NULL;
