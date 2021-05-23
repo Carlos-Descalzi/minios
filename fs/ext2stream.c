@@ -1,4 +1,4 @@
-#include "io/streams.h"
+#include "fs/ext2.h"
 #include "lib/heap.h"
 #include "lib/string.h"
 #include "lib/stdlib.h"
@@ -23,6 +23,7 @@ int16_t     write_bytes      (Stream*,uint8_t*,int16_t);
 uint32_t    pos              (Stream*);
 int16_t     seek             (Stream*,uint32_t);
 uint32_t    size             (Stream*);
+void        close            (Stream*);
 
 Stream* file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode){
     uint32_t inodenum;
@@ -48,12 +49,13 @@ Stream* file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode){
         STREAM(stream)->pos = pos;
         STREAM(stream)->seek = seek;
         STREAM(stream)->size = size;
+        STREAM(stream)->close = close;
         ext2_read_block(fs, &(stream->inode), 0, stream->block_buffer, 0);
         return STREAM(stream);
     }
     return NULL;
 }
-void file_stream_close(Stream* stream){
+void close(Stream* stream){
     heap_free(stream);
 }
 

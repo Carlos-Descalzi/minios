@@ -11,6 +11,7 @@ typedef struct Stream {
     uint32_t    (*pos)              (struct Stream*);
     int16_t     (*seek)             (struct Stream*,uint32_t);
     uint32_t    (*size)             (struct Stream*);
+    void        (*close)            (struct Stream*);
 } Stream;
 
 #define STREAM(s)                   ((Stream*)s)
@@ -21,15 +22,8 @@ typedef struct Stream {
 #define stream_write_bytes(s,b,l)   (STREAM(s)->write_bytes(STREAM(s),b,l))
 #define stream_pos(s)               (STREAM(s)->pos(STREAM(s)))
 #define stream_seek(s,p)            (STREAM(s)->seek(STREAM(s),p))
+#define stream_close(s)             (STREAM(s)->close(STREAM(s)))
 
 
-#define     FS_MODE_R               0
-#define     FS_MODE_W               1
-#define     FS_MODE_RW              2
-#define     FS_MODE_WA              3
-#define     FS_MODE_RWA             4
-
-Stream*     file_stream_open        (Ext2FileSystem* fs, const char* path, uint8_t mode);
-void        file_stream_close       (Stream* stream);
 
 #endif

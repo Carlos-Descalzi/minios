@@ -3,6 +3,7 @@
 
 #include "lib/stdint.h"
 #include "kernel/device.h"
+#include "io/streams.h"
 
 typedef struct __attribute__((__packed__)){
     uint32_t block_bitmap;
@@ -146,8 +147,15 @@ void            ext2_close          (Ext2FileSystem* fs);
 void            ext2_list_directory (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data);
 uint32_t        ext2_find_inode     (Ext2FileSystem* fs, const char* path);
 int32_t         ext2_load_inode     (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
-int32_t         ext2_load           (Ext2FileSystem* fs, Ext2Inode* inode, uint8_t* dest);
+int32_t         ext2_load           (Ext2FileSystem* fs, Ext2Inode* inode, void* dest);
 uint32_t        ext2_read_block     (Ext2FileSystem* fs, Ext2Inode* inode, 
                                     uint32_t block, uint8_t* dest, uint32_t length);
 
+#define     FS_MODE_R               0
+#define     FS_MODE_W               1
+#define     FS_MODE_RW              2
+#define     FS_MODE_WA              3
+#define     FS_MODE_RWA             4
+
+Stream*     file_stream_open        (Ext2FileSystem* fs, const char* path, uint8_t mode);
 #endif

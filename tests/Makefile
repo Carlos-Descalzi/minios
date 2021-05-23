@@ -1,4 +1,4 @@
 include ../Make.defs
 include ../Make.rules
-OBJS=streams.o
+OBJS=ext2.o elf.o
 all: $(OBJS)

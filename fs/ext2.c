@@ -243,18 +243,15 @@ typedef struct {
     uint32_t inode;
 } DirentFindData;
 
-int32_t ext2_load(Ext2FileSystem* fs, Ext2Inode* inode, uint8_t* dest){
+int32_t ext2_load(Ext2FileSystem* fs, Ext2Inode* inode, void* dest){
     uint32_t size = inode->size;
     uint32_t offset = 0;
     uint32_t to_read;
     uint32_t block_index = 0;
     uint32_t block_num;
-    debug("size:");debug_i(size,10);debug("\n");
 
     while(size){
-        debug("Reading...\n");
         to_read = min(size, fs->block_size);
-        debug("to read:");debug_i(to_read,10);debug(",");debug_i(size,10);debug("\n");
         block_num = get_block_by_index(fs, inode, block_index);
         ext2_device_gotoblock(fs, block_num);
         ext2_device_read_block_b(fs, dest + offset, to_read);
@@ -263,7 +260,6 @@ int32_t ext2_load(Ext2FileSystem* fs, Ext2Inode* inode, uint8_t* dest){
         size-=to_read;
         block_index++;
     }
-    debug("done\n");
     
     return offset;
 }
