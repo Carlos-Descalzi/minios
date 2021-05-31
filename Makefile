@@ -3,13 +3,14 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices fs board tests testfiles
+SUBDIRS=kernel lib devices fs board tests testfiles bin
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
-KOBJS+=$(shell find devices -name '*.o')
-KOBJS+=$(shell find fs -name '*.o')
 KOBJS+=$(shell find board -name '*.o')
+KOBJS+=$(shell find fs -name '*.o')
+KOBJS+=$(shell find bin -name '*.o')
+KOBJS+=$(shell find devices -name '*.o')
 KOBJS+=$(shell find tests -name '*.o')
 
 QEMU=qemu-system-i386

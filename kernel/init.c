@@ -53,6 +53,7 @@ extern void     devices_register    (void);
 extern void     crash               (void);
 extern void     check_e2fs          (void);
 extern void     test_elf            (void);
+extern void     test_task           (void);
 
 void init(){
     debug("Kernel initializing\n");
@@ -80,7 +81,10 @@ void init(){
     device_init();
     devices_register();
     device_init_devices();
-    test_elf();
+    //test_elf();
+    tasks_init();
+
+    test_task();
     
     //check_e2fs();
     /*
@@ -161,8 +165,8 @@ void bsod(){
     console_print("General Protection Fault");
     console_gotoxy(30,14);
     console_print("  *** Te re cabio ***");
-
 }
+
 static void display_memory(){
     MemData mem_data = {0,0,0};
     console_print("------\nChecking RAM:\n");

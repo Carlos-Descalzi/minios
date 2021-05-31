@@ -2,6 +2,7 @@
 #define _ELF_H_
 
 #include "lib/stdint.h"
+#include "io/streams.h"
 
 #define ELF_ARCH_UNDEFINED  0x00
 #define ELF_ARCH_SPARC      0x02
@@ -58,5 +59,17 @@ typedef struct {
     uint32_t alignment;
     uint32_t entry_size;
 } ElfSectionHeader;
+
+int32_t elf_read_header         (Stream* stream, ElfHeader* header);
+int32_t elf_read_program_header (Stream* stream, ElfHeader* header, 
+                                uint32_t headernum, ElfProgramHeader* prg_header);
+int32_t elf_read_section_header (Stream* stream, ElfHeader* header, 
+                                uint32_t headernum, ElfSectionHeader* section_header);
+int32_t elf_read_section        (Stream* stream, ElfSectionHeader* section_header, uint8_t* dest);
+int32_t elf_read_program_page   (Stream* stream, ElfProgramHeader* prg_header, 
+                                void* dest, uint32_t blocknum, uint32_t page_size);
+
+
+
 
 #endif

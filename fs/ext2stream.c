@@ -2,6 +2,7 @@
 #include "lib/heap.h"
 #include "lib/string.h"
 #include "lib/stdlib.h"
+#include "misc/debug.h"
 
 typedef struct {
     Stream          stream;
@@ -10,6 +11,7 @@ typedef struct {
     uint8_t         mode;
     uint32_t        pos;
     uint32_t        numblocks;
+    uint32_t        current_block;
     uint8_t*        block_buffer;
     char            path[1];
 } FileStream;
@@ -25,7 +27,7 @@ int16_t     seek             (Stream*,uint32_t);
 uint32_t    size             (Stream*);
 void        close            (Stream*);
 
-Stream* file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode){
+Stream* ext2_file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode){
     uint32_t inodenum;
     FileStream* stream;
 
@@ -50,7 +52,8 @@ Stream* file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode){
         STREAM(stream)->seek = seek;
         STREAM(stream)->size = size;
         STREAM(stream)->close = close;
-        ext2_read_block(fs, &(stream->inode), 0, stream->block_buffer, 0);
+        stream->current_block = 0;
+        ext2_read_block(fs, &(stream->inode), stream->current_block, stream->block_buffer, 0);
         return STREAM(stream);
     }
     return NULL;
@@ -75,11 +78,12 @@ int16_t read_byte(Stream* stream){
     FILE_STREAM(stream)->pos++;
 
     if (!(FILE_STREAM(stream)->pos % FILE_STREAM(stream)->fs->block_size)){
+        FILE_STREAM(stream)->current_block++;
         block = FILE_STREAM(stream)->pos / FILE_STREAM(stream)->fs->block_size;
         ext2_read_block(
             FILE_STREAM(stream)->fs,  
             &(FILE_STREAM(stream)->inode),
-            block,
+            FILE_STREAM(stream)->current_block,
             FILE_STREAM(stream)->block_buffer,
             0
         );
@@ -107,19 +111,36 @@ int16_t read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     block = FILE_STREAM(stream)->pos / block_size;
     nblocks = size / block_size + (size % block_size ? 1 : 0);
     bytes_read = 0;
+    /*debug("EXT2STREAM - read bytes:");
+    debug_i(size,10);
+    debug(", actual pos:");
+    debug_i(FILE_STREAM(stream)->pos,10);
+    debug(", block:");
+    debug_i(block,10);
+    debug(", nblocks:");
+    debug_i(nblocks,10);
+    debug("\n");*/
 
     for (i=0;i<nblocks;i++){
-        to_read = min(size, block_size);
-        ext2_read_block(
-            FILE_STREAM(stream)->fs,
-            &(FILE_STREAM(stream)->inode),
-            block + i,
-            bytes + bytes_read,
-            to_read
-        );
+        if (offset){
+            to_read = min(size, block_size - offset);
+            memcpy(bytes, FILE_STREAM(stream)->block_buffer + offset, to_read);
+            offset = 0;
+        } else {
+            to_read = min(size, block_size);
+            ext2_read_block(
+                FILE_STREAM(stream)->fs,
+                &(FILE_STREAM(stream)->inode),
+                block + i,
+                FILE_STREAM(stream)->block_buffer,
+                FILE_STREAM(stream)->fs->block_size
+            );
+            memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer, to_read);
+        }
         size -= to_read;
         bytes_read += to_read;
     }
+    FILE_STREAM(stream)->pos += bytes_read;
 
     return bytes_read;
 }

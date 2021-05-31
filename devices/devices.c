@@ -6,7 +6,7 @@
 void devices_register(){
     screen_register();
     serial_register();
-    rtl8139_register();
+//    rtl8139_register();
     ide_register();
-    keyboard_register();
+//    keyboard_register();
 }

@@ -173,6 +173,16 @@ gdt:    dw 0,0,0,0  ; NULL segment
         dw 0x8900   
         dw 0x0040
 
+        dw 0x07FF   ; user code segment
+        dw 0x0000
+        dw 0xFA00
+        dw 0x0000
+
+        dw 0x07FF   ; user data segment
+        dw 0x0000
+        dw 0xF200
+        dw 0x0000
+
 ; IDT TOC
 idt_48:
         dw 0x200-1

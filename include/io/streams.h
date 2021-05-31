@@ -1,7 +1,7 @@
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
-#include "fs/ext2.h"
+#include "lib/stdlib.h"
 
 typedef struct Stream {
     int16_t     (*read_byte)        (struct Stream*);

@@ -82,6 +82,7 @@ static uint8_t* cache_find(Ext2FileSystem* fs, uint32_t disk_pos){
             uint8_t* pos = fs->block_cache + fs->cache[i].pos;
             if (i > 0){
                 uint32_t tmp;
+                // Raise in cache
                 swap(fs->cache[i-1].disk_pos ,fs->cache[i].disk_pos,tmp);
                 swap(fs->cache[i-1].pos,fs->cache[i].pos,tmp);
             }
@@ -111,8 +112,10 @@ static void ext2_device_read_block(Ext2FileSystem* fs){
     uint8_t *block_buffer = cache_find(fs, disk_pos);
 
     if (block_buffer){
+        debug("EXT2 - Cache hit for ");debug_i(disk_pos,10);debug("\n");
         fs->block_buffer = block_buffer;
     } else {
+        debug("EXT2 - Cache miss for ");debug_i(disk_pos,10);debug("\n");
         fs->block_buffer = cache_take(fs, disk_pos);
         block_device_read(fs->device, fs->block_buffer, fs->block_size); 
     }
@@ -127,12 +130,13 @@ static void ext2_device_read_block_b(Ext2FileSystem* fs, void* buffer, uint32_t 
     }
 
     if(block_buffer){
-        debug("1\n");
-        memcpy(buffer, block_buffer, length);
+        debug("EXT2 - Cache hit for ");debug_i(disk_pos,10);debug("\n");
     } else {
-        debug("2\n");
-        block_device_read(fs->device, buffer, length); 
+        debug("EXT2 - Cache miss for ");debug_i(disk_pos,10);debug("\n");
+        block_buffer = cache_take(fs, disk_pos);
+        block_device_read(fs->device, block_buffer, fs->block_size); 
     }
+    memcpy(buffer, block_buffer, length);
 }
 
 
@@ -143,15 +147,20 @@ static void do_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data,
                             uint32_t *inodenum){
     int i, j;
     uint32_t pos;
-    uint32_t ninodetableblocks = fs->super_block.blocks_per_group / fs->inodes_per_block;
+    uint32_t ninodetableblocks;
+
+    ninodetableblocks = fs->super_block.blocks_per_group / fs->inodes_per_block;
 
     for (i=0;i< fs->group_descritors_per_block && *ngroups > 0;i++,(*ngroups)--){
+
         if (descriptors[i].inode_table == 0){
             return;
         }
 
         ext2_device_gotoblock(fs, descriptors[i].inode_table);
+
         for(; ninodetableblocks > 0;ninodetableblocks--){
+
             ext2_device_read_block_b(fs,inode_table,0);
             pos = ext2_device_pos(fs);
 
@@ -166,20 +175,26 @@ static void do_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data,
 }
 
 void ext2_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data){
+
+    Ext2BlockGroupDescriptor* descriptors;
+    Ext2Inode* inode_table;
     uint32_t pos;
-    Ext2BlockGroupDescriptor* descriptors = heap_alloc(fs->block_size);
-    Ext2Inode* inode_table = heap_alloc(fs->block_size);
-    uint32_t ngroups = fs->block_group_count;
+    uint32_t ngroups;
     uint32_t inodenum = 1;
 
+    descriptors = heap_alloc(fs->block_size);
+    inode_table = heap_alloc(fs->block_size);
+    ngroups = fs->block_group_count;
     pos = fs->first_block_group_pos;
 
     while(ngroups > 0){
+
         ext2_device_seek(fs, pos);
         ext2_device_read_block_b(fs, descriptors,0);
         pos = ext2_device_pos(fs);
         do_list_inodes(fs, visitor, data, descriptors, inode_table, &ngroups, &inodenum);
     }
+
     heap_free(inode_table);
     heap_free(descriptors);
 }
@@ -311,6 +326,7 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
         .inode=0 
     };
     Ext2Inode inode;
+
     if(ext2_load_inode(fs, inodenum, &inode)){
         return 0;
     }
@@ -318,7 +334,9 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
         debug("Not a directory\n");
         return 0;
     }
+
     ext2_list_dir_inode(fs,&inode, find_dirent, &dirent_find_data);
+
     return dirent_find_data.inode;
 }
 
@@ -347,14 +365,18 @@ static char* ext2_path_tokenize(const char* path, char* buffer, uint8_t* pos){
 
 static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t nblocks, DirVisitor visitor, void* data){
     int i;
+
     for (i=0;i<nblocks;i++){
         if (blocks[i] != 0){
+            
             debug("EXT2 - Listing block "); debug_i(blocks[i],10);debug("\n");
+
             if (ext2_iter_dir_block(fs, blocks[i], visitor, data)){
                 return 1;
             }
         }
     }
+
     return 0;
 }
 
@@ -437,6 +459,7 @@ static int16_t ext2_iter_dir_block(Ext2FileSystem* fs, uint32_t block_num, DirVi
     for(dir_entry = (Ext2DirEntry*)fs->block_buffer;
         (void*)dir_entry < ((void*)fs->block_buffer) + fs->block_size;
         dir_entry = next_entry(dir_entry)){
+
         if (dir_entry->rec_len){
             if (visitor(fs, dir_entry, data)){
                 return 1;
