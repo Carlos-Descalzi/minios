@@ -68,6 +68,8 @@ int32_t elf_read_section_header (Stream* stream, ElfHeader* header,
 int32_t elf_read_section        (Stream* stream, ElfSectionHeader* section_header, uint8_t* dest);
 int32_t elf_read_program_page   (Stream* stream, ElfProgramHeader* prg_header, 
                                 void* dest, uint32_t blocknum, uint32_t page_size);
+int32_t elf_read_section_page   (Stream* stream, ElfSectionHeader* sec_header, 
+                                void* dest, uint32_t blocknum, uint32_t page_size);
 
 
 

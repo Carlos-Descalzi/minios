@@ -157,28 +157,32 @@ init_regs_and_start:
 msg1:   db "Loading kernel ...",13,10,0
 
 ; Global Descriptors Table
-gdt:    dw 0,0,0,0  ; NULL segment
-        dw 0x07FF   ; code segment
+gdt:    dw 0        ; NULL segment              0x00
+        dw 0
+        dw 0
+        dw 0  
+
+        dw 0x07FF   ; code segment              8
         dw 0x0000
         dw 0x9A00
         dw 0x00c0
 
-        dw 0x07FF   ; data segment
+        dw 0x07FF   ; data segment              0x10
         dw 0x0000
         dw 0x9200
         dw 0x00c0   
                     
-        dw 0x0068   ; tss segment
+        dw 0x0068   ; tss segment               0x18
         dw 0x0500    
         dw 0x8900   
         dw 0x0040
 
-        dw 0x07FF   ; user code segment
+        dw 0x07FF   ; user code segment         0x20
         dw 0x0000
         dw 0xFA00
         dw 0x0000
 
-        dw 0x07FF   ; user data segment
+        dw 0x07FF   ; user data segment         0x28
         dw 0x0000
         dw 0xF200
         dw 0x0000

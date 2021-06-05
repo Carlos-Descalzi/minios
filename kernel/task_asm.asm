@@ -2,115 +2,68 @@ global idle_loop, task_switch, fill_task
 extern current_task
 extern next_task
 
+current_task_ptr:   equ 0x3000
 ;
 ; Task switching routines
 ;
 
+t_tid:      equ (0  * 4)
+t_stat:     equ (1  * 4)
+t_cr3:      equ (2  * 4)
+t_edi:      equ (3  * 4)
+t_esi:      equ (4  * 4)
+t_ebp:      equ (5  * 4)
+t_esp:      equ (6  * 4)
+t_ebx:      equ (7  * 4)
+t_edx:      equ (8  * 4)
+t_ecx:      equ (9  * 4)
+t_eax:      equ (10 * 4)
+t_eip:      equ (11 * 4)
+t_cs:       equ (12 * 4)
+t_flags:    equ (13 * 4)
+t_sss:      equ (14 * 4)
+t_sesp:     equ (15 * 4)
 
-task_tid:	    equ     0
-task_status:	equ     4
-task_eax:	    equ     8
-task_ebx:	    equ     12
-task_ecx:	    equ     16
-task_edx:	    equ     20
-task_eip:	    equ     24
-task_esp:	    equ     28
-task_ebp:	    equ     32
-task_edi:	    equ     36
-task_esi:	    equ     40
-task_flags:	    equ     44
-task_next:      equ     48
-
-TASK_STATUS_READY: equ  1
 
 task_switch:
     cli
 
-    push ebx    ; save ebx for storing it later
-    mov ebx, [current_task]
+    mov ebx,    current_task_ptr ;[current_task]
+    mov ebx,    [ebx]
+    ; here I switch page directory
+    mov eax,    [ebx+t_cr3]
+    mov cr3,    eax
+    ; Now I have the current address space
 
-    mov [ebx+task_eax], eax
-    pop eax     ; retrieve ebx in eax for saving it.
-    mov [ebx+task_ebx], eax
-    mov [ebx+task_ecx], ecx
-    mov [ebx+task_edx], edx
-
-    mov [ebx+task_esp], esp
-    mov [ebx+task_ebp], ebp
-    mov [ebx+task_edi], edi
-    mov [ebx+task_esi], esi
-
-    ; pull what came from stack after interrupt
-    pop eax ; eip
-    mov [ebx+task_eip], eax
-    pop eax ; cs, segments don't care, it's always 8.
-    pop eax ; eflags
-    mov [ebx+task_flags], eax
-
-    ; switch to next task
-    call next_task
-
-    ; acknowledge pic before filling registers 
-    ; with actual task state.
-    mov dx, 0x20
-    mov al, 0x20
-    out dx, al
-
-    mov ebx, [current_task]
+    mov eax,    [ebx+t_ecx]
+    mov ecx,    eax
+    mov eax,    [ebx+t_edx]
+    mov edx,    eax
+    mov eax,    [ebx+t_ebp]
+    mov ebp,    eax
+    mov eax,    [ebx+t_esi]
+    mov esi,    eax
+    mov eax,    [ebx+t_edi]
+    mov edi,    eax
     
-    ;mov ebx, [current_task+task_ebx]
-    mov ecx, [ebx+task_ecx]
-    mov edx, [ebx+task_edx]
-
-    mov esp, [ebx+task_esp]
-    mov ebp, [ebx+task_ebp]
-    mov edi, [ebx+task_edi]
-    mov esi, [ebx+task_esi]
-
-    ; now proceed to fill stack 
-    mov eax, [ebx+task_flags]
-    or eax, 0x200
+    mov eax,     0x2b
+    mov ds,     ax
+    ;mov ss,     ax
+    push eax    ; ss
+    mov eax,    [ebx+t_esp]
+    ;mov esp,    eax
+    push eax    ; esp
+    mov eax,    [ebx+t_flags]
     push eax    ; flags
-    mov eax, 8  ; push 8 into cs.
+    mov eax,    0x23
     push eax    ; cs
-    mov eax, [ebx+task_eip]
+    mov eax,    [ebx+t_eip]
     push eax    ; eip
-    mov eax, [ebx+task_eax]
-    ; and finally, the same ebx
-    mov ebx, [ebx+task_ebx]
+    mov eax,    [ebx+t_eax]
+    push eax
+    mov eax,    [ebx+t_ebx]
+    mov ebx,    eax
+    pop eax
 
     sti
     iret
-
-fill_task:
-    push ebp
-    mov ebp, esp
-    push ebx
-    mov ebx, [ebp+8]
-
-    pushad
-    pop eax
-    mov [ebx + task_edi], eax
-    pop eax
-    mov [ebx + task_esi], eax
-    pop eax
-    mov [ebx + task_ebp], eax
-    pop eax
-    mov [ebx + task_esp], eax
-    pop eax
-    mov [ebx + task_ebx], eax
-    pop eax
-    mov [ebx + task_edx], eax
-    pop eax
-    mov [ebx + task_ecx], eax
-    pop eax
-    mov [ebx + task_eax], eax
-    pop ebx
-
-    leave 
-    ret
-
-idle_loop:
-    nop;
-    jmp idle_loop
-

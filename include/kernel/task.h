@@ -10,12 +10,18 @@
 #define TASK_STATUS_IDLE    2
 #define TASK_STATUS_RUNNING 3
 
+typedef struct StreamSet {
+    Stream* streams[10];
+    struct StreamSet* next;
+} StreamSet;
+
 typedef struct Task {
     uint32_t tid;   // redundant
     uint32_t status;
-    CPUState cpu_state;
+    CPUState cpu_state; 
     //TaskStateSegment task_state;
     PageDirectoryEntry* page_directory;
+    StreamSet* stream_set;
 } Task;
 
 void        tasks_init              (void);

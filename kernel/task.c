@@ -6,6 +6,7 @@
 #include "board/pic.h"
 #include "bin/elf.h"
 #include "kernel/paging.h"
+#include "board/memory.h"
 
 #define TASKS_MAX           32
 #define TID_KERNEL          0
@@ -14,7 +15,7 @@
 #define PAGE_DATA       0x01
 #define PAGE_STACK      0x02
 
-TaskStateSegment* TSS = (TaskStateSegment*)0x500;
+TaskStateSegment* TSS = (TaskStateSegment*)KERNEL_TSS_ADDRESS;
 
 /**
  * The start address for the idle loop
@@ -23,15 +24,21 @@ TaskStateSegment* TSS = (TaskStateSegment*)0x500;
 //extern uint32_t task_switch;
 //extern uint32_t dummy;
 //extern void fill_task(Task* task);
+extern void task_switch();
 
 static Task TASKS[TASKS_MAX];
 
-Task* current_task; 
+Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
+
+#define current_task (*current_task_ptr)
+//extern Task* current_task;
+//Task* current_task = *current_task;
 
 void tasks_init(){
     memset(TASKS,0,sizeof(TASKS));
     current_task = NULL;
     TSS->ss0 = 0x10;
+    TSS->esp0 = 0xFFFF;
 }
 
 uint32_t tasks_current_tid(){
@@ -74,6 +81,7 @@ uint32_t tasks_new(Stream* exec_stream){
     Task* task;
     ElfHeader header;
     ElfProgramHeader prg_header;
+    ElfSectionHeader sec_header;
     PageTableEntry* page_table;
     VirtualAddress v_address;
     task = get_next_free_task();
@@ -88,24 +96,27 @@ uint32_t tasks_new(Stream* exec_stream){
 
     task->tid = new_task_id();
     debug("Allocating page directory\n");
-    task->page_directory = paging_new_page_directory(1);
-    debug("Allocating table\n");
-    paging_alloc_table(&(task->page_directory[0]));
-    page_table = (PageTableEntry*)(task->page_directory[0].page_table_address << 12);
+    task->page_directory = paging_new_task_space();// paging_new_page_directory(1);
 
     debug("Loading code into memory\n");
-    paging_load_code(exec_stream, page_table);
+    paging_load_code(exec_stream, task->page_directory, prg_header.virtual_address);
     debug("Setting up task\n");
+    elf_read_section_header(exec_stream, &header, 1, &sec_header);
+    debug("Start address:");debug_i(sec_header.address,16);debug("\n");
 
     task->cpu_state.cr3 = (uint32_t)task->page_directory;
+    debug("Page directory for task:");debug_i(task->cpu_state.cr3,16);debug("\n");
     task->cpu_state.cs = 0x23;
-    task->cpu_state.ds = 0x2B;
+    //task->cpu_state.ds = 0x2B;
     task->cpu_state.source_ss = 0x2B;
-    v_address.page_dir_index = 0;
-    v_address.page_index = 0;
+    v_address.page_dir_index = 1;
+    v_address.page_index = 1022;
     v_address.offset = 0xFFF;
+    task->cpu_state.esp = v_address.address;
     task->cpu_state.source_esp = v_address.address;
-    task->cpu_state.eip = prg_header.virtual_address;
+    task->cpu_state.eip = prg_header.virtual_address + 0x60;//sec_header.address;
+    task->cpu_state.flags.privilege_level = 3;
+    debug("Program start:");debug_i(task->cpu_state.eip,16);debug("\n");
 
     return task->tid;
 }
@@ -122,6 +133,7 @@ void tasks_switch_to_task(uint32_t task_id){
         }
         if (current_task){
             debug("Switching to task\n");
+            task_switch();
         }
     }
 }

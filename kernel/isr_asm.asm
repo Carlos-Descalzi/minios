@@ -17,11 +17,7 @@ handle_isr_%1:
     pushad
     mov eax, cr3
     push eax
-    xor eax, eax
-    mov ax, ds
-    push eax
     call [isr_handlers+(4*%1)]
-    pop eax
     pop eax
     popad
     iret

@@ -8,7 +8,9 @@ OBJS=startup.o	\
 	 isr_asm.o	\
 	 paging.o	\
 	 device.o	\
-	 task.o
+	 task.o		\
+	 task_asm.o	\
+	 syscall.o
 	 
 #	 task.o		\
 #	 task_asm.o \

@@ -33,7 +33,6 @@ typedef union {
 typedef X86EFlags Flags;
 
 typedef struct {
-    uint32_t    ds;
     uint32_t    cr3;
     uint32_t    edi;
     uint32_t    esi;

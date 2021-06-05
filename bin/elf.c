@@ -90,3 +90,16 @@ int32_t elf_read_program_page(Stream* stream, ElfProgramHeader *prg_header,
 
     return 0;
 }
+int32_t elf_read_section_page   (Stream* stream, ElfSectionHeader* sec_header, 
+                                void* dest, uint32_t blocknum, uint32_t page_size){
+    if (!stream || !sec_header){
+        return -1;
+    }
+    debug("10\n");
+    stream_seek(stream, sec_header->offset + blocknum * page_size);
+    debug("11\n");
+    stream_read_bytes(stream, dest, page_size);
+    debug("12\n");
+
+    return 0;
+}

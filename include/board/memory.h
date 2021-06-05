@@ -7,9 +7,11 @@
  * lower 1Mb memory is used by kernel and
  * marks the beginning of physical user memory space
  **/
+#define KERNEL_TSS_ADDRESS                  0x500
 #define KERNEL_PAGE_DIR_ADDRESS             0x1000
 #define KERNEL_PAGE_TABLE_ADDRESS           0x2000
 #define USER_MEMORY_BITMAP_ADDRESS          0x2400
+#define KERNEL_CURRENT_TASK_PAGE            0x3000
 #define USER_MEMORY_START_ADDRESS           0x100000
 #define KERNEL_UPPER_PAGE_TABLE_ADDRESS     0x30000
 #define HEAP_MEMORY_START_ADDRESS           0x31000
