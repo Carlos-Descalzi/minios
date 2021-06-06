@@ -82,11 +82,8 @@ int32_t elf_read_program_page(Stream* stream, ElfProgramHeader *prg_header,
     if (!stream || !prg_header){
         return -1;
     }
-    debug("10\n");
     stream_seek(stream, prg_header->offset + blocknum * page_size);
-    debug("11\n");
     stream_read_bytes(stream, dest, page_size);
-    debug("12\n");
 
     return 0;
 }
@@ -95,11 +92,8 @@ int32_t elf_read_section_page   (Stream* stream, ElfSectionHeader* sec_header,
     if (!stream || !sec_header){
         return -1;
     }
-    debug("10\n");
     stream_seek(stream, sec_header->offset + blocknum * page_size);
-    debug("11\n");
     stream_read_bytes(stream, dest, page_size);
-    debug("12\n");
 
     return 0;
 }
