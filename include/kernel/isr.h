@@ -5,7 +5,7 @@
  **/
 #include "board/cpu.h"
 
-typedef void (*Isr)(InterruptFrame);
+typedef void (*Isr)(InterruptFrame*);
 
 void    isr_init    (void);
 void    isr_install (uint16_t interrupt_number, Isr isr);

@@ -22,9 +22,9 @@ typedef struct {
  **/
 #define IDT ((IDTEntry*)0x0)
 
-static void dummy_trap_handler(InterruptFrame frame);
-static void dummy_isr_pic_handler(InterruptFrame frame);
-static void dummy_isr_handler(InterruptFrame frame);
+static void dummy_trap_handler(InterruptFrame* frame);
+static void dummy_isr_pic_handler(InterruptFrame* frame);
+static void dummy_isr_handler(InterruptFrame* frame);
 
 static void do_isr_install(uint16_t interrupt_number, uint32_t isr, uint8_t type){
     IDTEntry* entry = &(IDT[interrupt_number]);
@@ -187,15 +187,15 @@ void isr_init(){
     ISR_SETUP(0x5f);
 }
 
-static void dummy_trap_handler(InterruptFrame frame){
+static void dummy_trap_handler(InterruptFrame* frame){
     debug("Trap!");
     asm volatile("hlt");
 }
 
-static void dummy_isr_pic_handler(InterruptFrame frame){
+static void dummy_isr_pic_handler(InterruptFrame* frame){
     pic_eoi();
 }
 
-static void dummy_isr_handler(InterruptFrame frame){
+static void dummy_isr_handler(InterruptFrame* frame){
 }
 

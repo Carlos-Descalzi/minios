@@ -7,7 +7,15 @@ extern isr_handlers
 %macro trap_handler 1
 global handle_trap_%1
 handle_trap_%1:
+    pushad
+    mov eax, cr3
+    push eax
+    mov eax, esp
+    push esp
     call [isr_handlers+(4*%1)]
+    pop eax
+    pop eax
+    popad
     iret
 %endmacro
 
@@ -17,7 +25,10 @@ handle_isr_%1:
     pushad
     mov eax, cr3
     push eax
+    mov eax, esp
+    push esp
     call [isr_handlers+(4*%1)]
+    pop eax
     pop eax
     popad
     iret

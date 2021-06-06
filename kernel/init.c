@@ -45,8 +45,8 @@ static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
 static void     display_memory      (void);
 static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
 static void     test_timer          (void);
-static void     test_isr            (InterruptFrame frame);
-static void     handle_keyboard     (InterruptFrame frame);
+static void     test_isr            (InterruptFrame* frame);
+static void     handle_keyboard     (InterruptFrame* frame);
 
 extern void     test_call           (void);
 extern void     handle_gpf          (void);
@@ -119,7 +119,7 @@ void init(){
     device_list(show_device,NULL);
     */
 }
-static void handle_keyboard(InterruptFrame frame){
+static void handle_keyboard(InterruptFrame* frame){
     cli();
     console_print("Key pressed\n");
     inb(0x64);
@@ -128,20 +128,20 @@ static void handle_keyboard(InterruptFrame frame){
     sti();
 }
 
-static void test_isr(InterruptFrame frame){
+static void test_isr(InterruptFrame* frame){
     console_print("ISR handler called\n");
-    console_print("eax  :");console_print(itoa(frame.eax,buff,16));console_print("\n");
-    console_print("eip  :");console_print(itoa(frame.eip,buff,16));console_print("\n");
-    console_print("esp  :");console_print(itoa(frame.esp,buff,16));console_print("\n");
-    console_print("ebp  :");console_print(itoa(frame.ebp,buff,16));console_print("\n");
-    console_print("cs   :");console_print(itoa(frame.cs,buff,16));console_print("\n");
-    console_print("cr3  :");console_print(itoa(frame.cr3,buff,16));console_print("\n");
-    console_print("flags:");console_print(itoa(frame.flags.dwflags,buff,16));console_print("\n");
+    console_print("eax  :");console_print(itoa(frame->eax,buff,16));console_print("\n");
+    console_print("eip  :");console_print(itoa(frame->eip,buff,16));console_print("\n");
+    console_print("esp  :");console_print(itoa(frame->esp,buff,16));console_print("\n");
+    console_print("ebp  :");console_print(itoa(frame->ebp,buff,16));console_print("\n");
+    console_print("cs   :");console_print(itoa(frame->cs,buff,16));console_print("\n");
+    console_print("cr3  :");console_print(itoa(frame->cr3,buff,16));console_print("\n");
+    console_print("flags:");console_print(itoa(frame->flags.dwflags,buff,16));console_print("\n");
 }
 
 static int timer_count;
 
-static void timer_handler(InterruptFrame frame){
+static void timer_handler(InterruptFrame* frame){
     timer_count++;
     console_print("Timer called, IRQ: ");
     console_print(utoa(pic_get_irq(),buff,16));
