@@ -48,10 +48,11 @@ task_switch:
     
     mov eax,     0x2b
     mov ds,     ax
-    ;mov ss,     ax
+    mov es,     ax
+    mov gs,     ax
+    mov fs,     ax
     push eax    ; ss
     mov eax,    [ebx+t_esp]
-    ;mov esp,    eax
     push eax    ; esp
     mov eax,    [ebx+t_flags]
     push eax    ; flags
@@ -63,6 +64,8 @@ task_switch:
     push eax
     mov eax,    [ebx+t_ebx]
     mov ebx,    eax
+
+
     pop eax
 
     sti

@@ -28,6 +28,7 @@ static void dummy_isr_handler(InterruptFrame frame);
 
 static void do_isr_install(uint16_t interrupt_number, uint32_t isr, uint8_t type){
     IDTEntry* entry = &(IDT[interrupt_number]);
+    entry->privilege_level = 3;
     entry->offset1 = isr & 0xFFFF;
     entry->offset2 = isr >> 16;
     entry->selector = 8;

@@ -17,6 +17,7 @@
 #include "misc/debug.h"
 #include "bin/elf.h"
 #include "fs/ext2.h"
+#include "kernel/syscall.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -83,6 +84,8 @@ void init(){
     device_init_devices();
     //test_elf();
     tasks_init();
+    syscall_init();
+    asm volatile("int $0x31");
 
     test_task();
     

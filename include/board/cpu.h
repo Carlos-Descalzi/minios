@@ -7,7 +7,7 @@
  * i386 CPU Registers and Flags
  **/
 
-typedef union {
+typedef union __attribute__((__packed__)){
     uint32_t
         carry:1,
         reserved_1:1,
@@ -45,8 +45,8 @@ typedef struct {
     uint32_t    eip;
     uint32_t    cs;
     Flags       flags;
-    uint32_t    source_ss;
     uint32_t    source_esp;
+    uint32_t    source_ss;
 } X86CpuRegisters;
 
 typedef struct {
@@ -88,6 +88,24 @@ typedef struct {
     uint32_t reserved_11;
     uint16_t iopb_offset;
 } X86TaskStateSegment;
+
+typedef struct __attribute__((__packed__)){
+    uint32_t segment_limit_l: 16,
+             base_address_1: 24,
+             accessed: 1,
+             read_write: 1,
+             expand_down: 1,
+             code:1,
+             code_data_segment:1,
+             dpl: 2,
+             present:1,
+             segment_limit_h:4,
+             available: 1,
+             long_mode: 1,
+             big: 1,
+             granularity: 1,
+             base_address_h: 8;
+} GDTEntry;
 
 typedef X86CpuRegisters CPUState;
 typedef X86CpuRegisters InterruptFrame;

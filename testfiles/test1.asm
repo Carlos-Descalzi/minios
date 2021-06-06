@@ -1,11 +1,15 @@
+global main;
 
-global _start
+BITS 32
 
-_start:
-    mov eax, 10
-loop:
-    sub eax, 1
-    jnz loop
-    ret
+main:
+    mov eax, 0x00
+    push eax
+    int 0x31 ;ret;jmp .loop
+    mov eax, 0x01
+    push eax
+    int 0x31
+.loop
+    jmp .loop
 
 

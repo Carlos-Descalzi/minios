@@ -56,7 +56,7 @@ padding:
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
 
-e2fs.img:
+e2fs.img: testfiles/test1.elf
 	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
 	@mkdir -p tmp
 	@mke2fs -b 1024 e2fs.img

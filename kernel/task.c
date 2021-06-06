@@ -7,6 +7,7 @@
 #include "bin/elf.h"
 #include "kernel/paging.h"
 #include "board/memory.h"
+#include "board/cpu.h"
 
 #define TASKS_MAX           32
 #define TID_KERNEL          0
@@ -17,6 +18,7 @@
 
 TaskStateSegment* TSS = (TaskStateSegment*)KERNEL_TSS_ADDRESS;
 
+GDTEntry* tss_gdt_entry = (GDTEntry*)0x18;
 /**
  * The start address for the idle loop
  **/
@@ -37,8 +39,26 @@ Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
 void tasks_init(){
     memset(TASKS,0,sizeof(TASKS));
     current_task = NULL;
+
+    tss_gdt_entry->accessed = 1;
+    tss_gdt_entry->available = 0;
+    tss_gdt_entry->dpl = 3;
+    tss_gdt_entry->present = 1;
+    tss_gdt_entry->read_write = 0;
+    tss_gdt_entry->expand_down = 0;
+    tss_gdt_entry->big = 1;
+    tss_gdt_entry->code = 1;
+    tss_gdt_entry->code_data_segment = 0;
+
+    memset(TSS,0,sizeof(TaskStateSegment));
+
     TSS->ss0 = 0x10;
-    TSS->esp0 = 0xFFFF;
+    TSS->esp0 = 0x2FFF;
+
+    asm volatile(
+        "\tmov $0x1b, %eax\n"
+        "\tltr %ax\n"
+    );
 }
 
 uint32_t tasks_current_tid(){
@@ -81,7 +101,6 @@ uint32_t tasks_new(Stream* exec_stream){
     Task* task;
     ElfHeader header;
     ElfProgramHeader prg_header;
-    ElfSectionHeader sec_header;
     PageTableEntry* page_table;
     VirtualAddress v_address;
     task = get_next_free_task();
@@ -90,32 +109,26 @@ uint32_t tasks_new(Stream* exec_stream){
         return 0;
     }
     memset(task,0,sizeof(Task));
-    debug("Reading executable headers:\n");
-    elf_read_header(exec_stream, &header);
-    elf_read_program_header(exec_stream, &header, 0, &prg_header);
 
     task->tid = new_task_id();
     debug("Allocating page directory\n");
     task->page_directory = paging_new_task_space();// paging_new_page_directory(1);
 
     debug("Loading code into memory\n");
-    paging_load_code(exec_stream, task->page_directory, prg_header.virtual_address);
+    task->cpu_state.eip = paging_load_code(exec_stream, task->page_directory);
     debug("Setting up task\n");
-    elf_read_section_header(exec_stream, &header, 1, &sec_header);
-    debug("Start address:");debug_i(sec_header.address,16);debug("\n");
 
     task->cpu_state.cr3 = (uint32_t)task->page_directory;
     debug("Page directory for task:");debug_i(task->cpu_state.cr3,16);debug("\n");
-    task->cpu_state.cs = 0x23;
-    //task->cpu_state.ds = 0x2B;
     task->cpu_state.source_ss = 0x2B;
-    v_address.page_dir_index = 1;
+    v_address.page_dir_index = 1023;
     v_address.page_index = 1022;
     v_address.offset = 0xFFF;
     task->cpu_state.esp = v_address.address;
     task->cpu_state.source_esp = v_address.address;
-    task->cpu_state.eip = prg_header.virtual_address + 0x60;//sec_header.address;
     task->cpu_state.flags.privilege_level = 3;
+    task->cpu_state.flags.reserved_1 = 1;
+    task->cpu_state.flags.interrupt_enable = 1;
     debug("Program start:");debug_i(task->cpu_state.eip,16);debug("\n");
 
     return task->tid;

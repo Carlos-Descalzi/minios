@@ -39,8 +39,8 @@ start:
     or      eax,    0x01
     mov     cr0,    eax
 
-    mov     eax,    0x18    ; kernel tss
-    ltr     ax
+    ;mov     eax,    0x18    ; kernel tss
+    ;ltr     ax
     
     jmp     8:init_regs_and_start   ; This jump sets CS to segment selector #8
     nop
@@ -180,12 +180,14 @@ gdt:    dw 0        ; NULL segment              0x00
         dw 0x07FF   ; user code segment         0x20
         dw 0x0000
         dw 0xFA00
-        dw 0x0000
+        dw 0x0040   ; 40 means 32 bit opcodes
 
         dw 0x07FF   ; user data segment         0x28
         dw 0x0000
         dw 0xF200
-        dw 0x0000
+        dw 0x0040   ; 40 means 32 bit words for stack and data.
+
+
 
 ; IDT TOC
 idt_48:

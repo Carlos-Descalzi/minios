@@ -36,7 +36,7 @@ typedef struct {
         physical_page_address: 20;
 } PageTableEntry;
 
-typedef union {
+typedef union __attribute__((__packed__)){
     struct {
         uint32_t offset:12,
                  page_index:10,
@@ -55,7 +55,7 @@ void                paging_init                 (void);
  **/
 uint32_t            physical_address            (uint32_t page_dir, uint32_t address);
 
-void                paging_load_code            (Stream* stream, PageDirectoryEntry* dir, uint32_t vaddress);
+uint32_t            paging_load_code            (Stream* stream, PageDirectoryEntry* dir);
 
 /**
  * Returns a page directory configured for a new task

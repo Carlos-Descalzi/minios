@@ -148,33 +148,40 @@ static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_
 /**
  * TODO: Move somewhere else
  **/
-void paging_load_code(Stream* stream, PageDirectoryEntry* dir, uint32_t vaddress){
+uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
     ElfHeader header;
     ElfProgramHeader prg_header;
     uint32_t blocks;
     uint32_t size;
     uint32_t i;
+    uint32_t j;
 
     elf_read_header(stream, &header);
-    elf_read_program_header(stream, &header, 0, &prg_header);
 
-    size = prg_header.segment_mem_size;
-    blocks = TO_PAGES(size);
 
-    debug("Reading ");debug_i(blocks,10);debug(" blocks\n");
+    for (i=0;i< header.program_header_table_entry_count;i++){
 
-    for (i=0;i<blocks;i++){
-        uint32_t phys_block = memory_alloc_block();
-        set_exchange_page(phys_block);
-        elf_read_program_page(stream, &prg_header, local_ptr, i, PAGE_SIZE);
-        setup_page(dir, (VirtualAddress)(vaddress + ( i * PAGE_SIZE )), phys_block);
+        elf_read_program_header(stream, &header, i, &prg_header);
+
+        if (prg_header.segment_type == ELF_PH_PT_LOAD){
+            size = prg_header.segment_mem_size;
+            blocks = TO_PAGES(size);
+            for (j=0;j<blocks;j++){
+                uint32_t phys_block = memory_alloc_block();
+                set_exchange_page(phys_block);
+                elf_read_program_page(stream, &prg_header, local_ptr, j, PAGE_SIZE);
+                setup_page(dir, (VirtualAddress)(prg_header.virtual_address + ( i * PAGE_SIZE )), phys_block);
+            }
+        }
     }
+    return header.program_entry_position;
 }
 
 PageDirectoryEntry* paging_new_task_space(void){
     uint32_t directory;
     uint32_t table_address_1;
     uint32_t table_address_2;
+    uint32_t stack_block;
     int i;
 
     directory = memory_alloc_block();
@@ -197,6 +204,14 @@ PageDirectoryEntry* paging_new_task_space(void){
         memory_free_block(table_address_1);
         return NULL;
     }
+
+    stack_block = memory_alloc_block();
+    if (!stack_block){
+        memory_free_block(directory);
+        memory_free_block(table_address_1);
+        memory_free_block(table_address_2);
+        return NULL;
+    }
     debug("Allocated page table 0 at ");debug_i(table_address_1,16);debug("\n");
     debug("Allocated page table 1 at ");debug_i(table_address_2,16);debug("\n");
 
@@ -210,7 +225,7 @@ PageDirectoryEntry* paging_new_task_space(void){
     local_page_dir[0].page_table_address = table_address_1 >> 12;
 
     local_page_dir[PAGE_LAST].present = 1;
-    local_page_dir[PAGE_LAST].read_write = 0;
+    local_page_dir[PAGE_LAST].read_write = 1;
     local_page_dir[PAGE_LAST].user_supervisor = 1;
     local_page_dir[PAGE_LAST].page_table_address = table_address_2 >> 12;
 
@@ -228,12 +243,12 @@ PageDirectoryEntry* paging_new_task_space(void){
 
     set_exchange_page(table_address_2);
     // Last page (1023) of last table maps to ISRs
-    setup_isr_page((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS, 1);
+    setup_isr_page(local_table, 1);
     // Page 1022 of last table maps to stack.
     local_table[PAGE_LAST-1].present = 1;
     local_table[PAGE_LAST-1].read_write = 1;
     local_table[PAGE_LAST-1].user_supervisor = 1;
-    local_table[PAGE_LAST-1].physical_page_address = 0x3;
+    local_table[PAGE_LAST-1].physical_page_address = stack_block;
 
     return (PageDirectoryEntry*)(directory | 3);
 }

@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "ide.h"
 #include "kernel/device.h"
 #include "board/io.h"

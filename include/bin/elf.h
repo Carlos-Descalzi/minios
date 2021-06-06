@@ -14,6 +14,10 @@
 #define ELF_ARCH_X86_64     0x3e
 #define ELF_ARCH_AARCH64    0xb7
 
+#define ELF_PH_PT_NULL      0x00
+#define ELF_PH_PT_LOAD      0x01
+
+
 typedef struct {
     uint32_t magic_number;
     uint8_t arch;
