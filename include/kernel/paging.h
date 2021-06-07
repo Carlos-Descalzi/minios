@@ -61,6 +61,7 @@ uint32_t            paging_load_code            (Stream* stream, PageDirectoryEn
  * Returns a page directory configured for a new task
  **/
 PageDirectoryEntry* paging_new_task_space       (void);
+void                paging_release_task_space   (PageDirectoryEntry* page_directory);
 
 
 #endif

@@ -22,10 +22,6 @@ GDTEntry* tss_gdt_entry = (GDTEntry*)0x18;
 /**
  * The start address for the idle loop
  **/
-//extern uint32_t idle_loop;
-//extern uint32_t task_switch;
-//extern uint32_t dummy;
-//extern void fill_task(Task* task);
 extern void task_switch();
 
 static Task TASKS[TASKS_MAX];
@@ -33,8 +29,6 @@ static Task TASKS[TASKS_MAX];
 Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
 
 #define current_task (*current_task_ptr)
-//extern Task* current_task;
-//Task* current_task = *current_task;
 
 void tasks_init(){
     memset(TASKS,0,sizeof(TASKS));
@@ -65,17 +59,8 @@ uint32_t tasks_current_tid(){
     return current_task ? current_task->tid : 0;
 }
 
-void next_task(){
-    /*
-    current_task->status = TASK_STATUS_IDLE;
-    current_task = current_task->next;
-    current_task->status = TASK_STATUS_RUNNING;
-    debug("Next task:");
-    debug_i(current_task->tid,10);
-    debug(" ");
-    debug_i(current_task->cpu_state.eip,16);
-    debug("\n");
-    */
+Task* tasks_current_task(void){
+    return current_task;
 }
 
 static Task* get_next_free_task(){
@@ -147,6 +132,17 @@ void tasks_switch_to_task(uint32_t task_id){
         if (current_task){
             debug("Switching to task\n");
             task_switch();
+        }
+    }
+}
+
+void tasks_finish(uint32_t task_id, uint32_t exit_code){
+    for (int i=0;i<TASKS_MAX;i++){
+        if (TASKS[i].tid == task_id){
+            Task* task = &(TASKS[i]);
+            debug("Releasing task\n");
+            paging_release_task_space(task->page_directory);
+            memset(task,0,sizeof(Task));
         }
     }
 }

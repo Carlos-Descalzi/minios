@@ -16,7 +16,8 @@
 #define KERNEL_PAGE_DIR         ((PageDirectoryEntry*)KERNEL_PAGE_DIR_ADDRESS)
 #define KERNEL_PAGE_TABLE       ((PageTableEntry*)KERNEL_PAGE_TABLE_ADDRESS)
 #define PD_USED                 0x1
-#define PAGE_LAST               1023
+#define PAGES_MAX               1024
+#define PAGE_LAST               ((PAGES_MAX)-1)
 /**
  * I use this page as a kind of window to map to other physical addresses
  * belonging to task pages when I need to operate them
@@ -257,4 +258,26 @@ static inline void invalidate_cache(void){
         "\tmov %cr3, %eax\n"
         "\tmov %eax, %cr3\n"
     );
+}
+
+void paging_release_task_space(PageDirectoryEntry* page_directory){
+    int i,j;
+    for (i=0;i<PAGES_MAX;i++){
+        set_exchange_page(page_directory);
+        if (local_page_dir[i].present){
+            local_page_dir[i].present = 0;
+            set_exchange_page(local_page_dir[i].page_table_address << 12);
+            for (j=0;j<PAGES_MAX;j++){
+                if (!(
+                    (i == 0 && j < 256) 
+                    || (i == PAGE_LAST && j >= (PAGE_LAST-1)))){
+                    // skip the shared pages
+                    if (local_table[j].present){
+                        memory_free_block(local_table[j].physical_page_address);
+                    }
+                }
+            }
+        }
+    }
+    memory_free_block(page_directory);
 }
