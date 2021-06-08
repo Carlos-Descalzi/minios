@@ -41,12 +41,13 @@ const struct {
 };
 
 static void     dummy_handler       (void);
-static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
+//static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
 static void     display_memory      (void);
-static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
-static void     test_timer          (void);
+//static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
+//static void     test_timer          (void);
 static void     test_isr            (InterruptFrame* frame);
-static void     handle_keyboard     (InterruptFrame* frame);
+//static void     handle_keyboard     (InterruptFrame* frame);
+static void     bsod                (InterruptFrame* frame);
 
 extern void     test_call           (void);
 extern void     handle_gpf          (void);
@@ -62,11 +63,12 @@ void init(){
     console_print("*************\n** MINI OS **\n*************\n");
     console_gotoxy(0,4);
 
-    display_memory();
+    //display_memory();
 
     memory_init();
     isr_init();
 
+    isr_install(0xd,bsod);
     //pit_init();
     //pic_init();
     //test_timer();
@@ -85,7 +87,6 @@ void init(){
     //test_elf();
     tasks_init();
     syscall_init();
-    asm volatile("int $0x31");
 
     test_task();
     
@@ -119,6 +120,7 @@ void init(){
     device_list(show_device,NULL);
     */
 }
+/*
 static void handle_keyboard(InterruptFrame* frame){
     cli();
     console_print("Key pressed\n");
@@ -127,7 +129,7 @@ static void handle_keyboard(InterruptFrame* frame){
     pic_eoi();
     sti();
 }
-
+*/
 static void test_isr(InterruptFrame* frame){
     console_print("ISR handler called\n");
     console_print("eax  :");console_print(itoa(frame->eax,buff,16));console_print("\n");
@@ -139,6 +141,7 @@ static void test_isr(InterruptFrame* frame){
     console_print("flags:");console_print(itoa(frame->flags.dwflags,buff,16));console_print("\n");
 }
 
+/*
 static int timer_count;
 
 static void timer_handler(InterruptFrame* frame){
@@ -148,7 +151,6 @@ static void timer_handler(InterruptFrame* frame){
     console_put('\n');
     pic_eoi();
 }
-
 static void test_timer(){
     console_print("Testing timer\n");
     timer_count = 0;
@@ -158,8 +160,8 @@ static void test_timer(){
     cli();
     isr_install(0x20, NULL); 
 }
-
-void bsod(){
+*/
+static void bsod(InterruptFrame* frame){
     int i;
     console_gotoxy(0,0);
     console_color(CONSOLE_COLOR_BLUE << 4 | CONSOLE_COLOR_WHITE);
@@ -168,8 +170,10 @@ void bsod(){
     console_print("General Protection Fault");
     console_gotoxy(30,14);
     console_print("  *** Te re cabio ***");
+    asm volatile("hlt");
 }
 
+/*
 static void display_memory(){
     MemData mem_data = {0,0,0};
     console_print("------\nChecking RAM:\n");
@@ -185,7 +189,6 @@ static void display_memory(){
     console_print(" will be used for programs\n");
 
 }
-
 static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, void* data){
     MemData* mem_data = (MemData*)data;
 
@@ -208,7 +211,7 @@ static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, void
     }
     return 0;
 }
-/*
+
 static void check_bda(){
     int i;
     console_print("------\nSerial Ports:\n");
@@ -247,7 +250,6 @@ static void check_ps2(){
         console_print("Not present\n");
     }
 }
-*/
 
 static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data){
     console_print("  * ");
@@ -259,3 +261,4 @@ static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void*
     return 0;
 }
 
+*/

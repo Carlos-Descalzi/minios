@@ -4,6 +4,7 @@
 #include "kernel/context.h"
 #include "kernel/paging.h"
 #include "io/streams.h"
+#include "kernel/isr.h"
 
 #define TASK_STATUS_NONE    0
 #define TASK_STATUS_READY   1
@@ -24,5 +25,6 @@ Task*       tasks_current_task      (void);
 uint32_t    tasks_new               (Stream* exec_stream);
 void        tasks_switch_to_task    (uint32_t task_id);
 void        tasks_finish            (uint32_t task_id, uint32_t exit_code);
+void        tasks_update_current    (InterruptFrame* frame);
 
 #endif

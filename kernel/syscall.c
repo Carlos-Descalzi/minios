@@ -19,14 +19,14 @@ void syscall_init(){
 }
 
 static void handle_syscall(InterruptFrame* f){
-    debug("Syscall called!\n");
-    debug("eax: ");debug_i(f->eax,16);debug("\n");
-    debug("cr3: ");debug_i(f->cr3,16);debug("\n");
-    debug("cs: ");debug_i(f->cs,16);debug("\n");
-    debug("ss: ");debug_i(f->source_ss,16);debug("\n");
-    debug("esp: ");debug_i(f->source_esp,16);debug("\n");
-    debug("flags: ");debug_i(f->flags.dwflags,16);debug("\n");
-    debug("eip: ");debug_i(f->eip,16);debug("\n");
+    debug("SYSCALL - Syscall called!\n");
+    debug("\teax: ");debug_i(f->eax,16);debug("\n");
+    debug("\tcr3: ");debug_i(f->cr3,16);debug("\n");
+    debug("\tcs: ");debug_i(f->cs,16);debug("\n");
+    debug("\tss: ");debug_i(f->source_ss,16);debug("\n");
+    debug("\tesp: ");debug_i(f->source_esp,16);debug("\n");
+    debug("\tflags: ");debug_i(f->flags.dwflags,16);debug("\n");
+    debug("\teip: ");debug_i(f->eip,16);debug("\n");
     switch(f->eax){
         case 0x00:
             handle_read(f);
@@ -44,7 +44,7 @@ static void handle_syscall(InterruptFrame* f){
             handle_exit(f);
             break;
         default:
-            debug("Unknown system call:");debug_i(f->eax,16);debug("\n");
+            debug("\tUnknown system call:");debug_i(f->eax,16);debug("\n");
             break;
     }
 }
@@ -135,7 +135,7 @@ static void handle_close(InterruptFrame* f){
 
 static void handle_exit(InterruptFrame* f){
     uint32_t exit_code = f->ebx;
-    debug("Handling task exit, code:");debug_i(f->ebx,10);debug("\n");
+    debug("SYSCALL - Handling task exit, code:");debug_i(f->ebx,10);debug("\n");
     tasks_finish(tasks_current_tid(), exit_code);
     f->ebx = 0;
 }

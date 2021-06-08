@@ -133,7 +133,7 @@ static uint32_t ide_pos                     (BlockDevice* device);
 static uint8_t  get_ata_access_cmd          (int action, int dma, uint8_t lbamode);
 static int8_t   ide_ata_access              (IDEDevice* device, uint32_t lba, uint8_t nsectors, 
                                             int action, ReadCallback callback, void* callback_data);
-static void show_sector(uint8_t *sector);
+//static void show_sector(uint8_t *sector);
 
 static uint8_t device_count;
 static IDEDrive devices[4];
@@ -473,6 +473,7 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
     }
     return 0;
 }
+/*
 static void show_sector(uint8_t *sector){
     int i;
     int j;
@@ -484,7 +485,7 @@ static void show_sector(uint8_t *sector){
         debug("\n");
     }
 }
-
+*/
 static uint8_t get_ata_access_cmd(int action, int dma, uint8_t lbamode){
     if (action == IDE_ACTION_READ){
         if (dma){

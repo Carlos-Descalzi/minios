@@ -15,7 +15,6 @@
 // The region starts at 0x500 but I need 4k aligned addresses.
 #define KERNEL_PAGE_DIR         ((PageDirectoryEntry*)KERNEL_PAGE_DIR_ADDRESS)
 #define KERNEL_PAGE_TABLE       ((PageTableEntry*)KERNEL_PAGE_TABLE_ADDRESS)
-#define PD_USED                 0x1
 #define PAGES_MAX               1024
 #define PAGE_LAST               ((PAGES_MAX)-1)
 /**
@@ -32,7 +31,7 @@
     invalidate_cache(); \
 }
 
-static void     handle_page_fault       (InterruptFrame frame);
+static void     handle_page_fault       (InterruptFrame *frame);
 static void     setup_isr_page          (PageTableEntry* page_table,uint8_t us);
 static void     invalidate_cache        (void);
 
@@ -46,7 +45,7 @@ void paging_init(){
     KERNEL_PAGE_DIR[0].user_supervisor = 0;
     KERNEL_PAGE_DIR[0].page_size = 0;
     KERNEL_PAGE_DIR[0].page_table_address = ((uint32_t)KERNEL_PAGE_TABLE) >> 12;
-    KERNEL_PAGE_DIR[0].user_data = 0;//PD_USED;
+    KERNEL_PAGE_DIR[0].user_data = 0;
 
     // need 256 pages to cover the first 1Mb
     // These pages are 1:1 with physical memory
@@ -71,7 +70,7 @@ void paging_init(){
     KERNEL_PAGE_DIR[PAGE_LAST].user_supervisor = 0;
     KERNEL_PAGE_DIR[PAGE_LAST].page_size = 0;
     KERNEL_PAGE_DIR[PAGE_LAST].page_table_address = KERNEL_UPPER_PAGE_TABLE_ADDRESS >> 12;
-    KERNEL_PAGE_DIR[PAGE_LAST].user_data = 0;//PD_USED;
+    KERNEL_PAGE_DIR[PAGE_LAST].user_data = 0;
 
     setup_isr_page((PageTableEntry*)KERNEL_UPPER_PAGE_TABLE_ADDRESS,0);
 
@@ -81,12 +80,12 @@ void paging_init(){
         "\tmov %%cr0, %%eax\n"
         "\tor  $0x80000001, %%eax\n"
         "\tmov %%eax, %%cr0"
-        :: "Nd"(KERNEL_PAGE_DIR)
+        :: "Nd"(KERNEL_PAGE_DIR_ADDRESS)
     );
-    debug("CR3:");debug_i((uint32_t)KERNEL_PAGE_DIR,16);debug("\n");
+    debug("PAGING - CR3:");debug_i((uint32_t)KERNEL_PAGE_DIR,16);debug("\n");
 
     trap_install(0xE, handle_page_fault);
-    console_print("Paging initialized\n");
+    console_print("PAGING - Paging initialized\n");
 }
 
 uint32_t physical_address(uint32_t page_dir, uint32_t address){
@@ -95,8 +94,8 @@ uint32_t physical_address(uint32_t page_dir, uint32_t address){
     return page_table[v_address.page_index].physical_page_address << 12;
 }
 
-static void handle_page_fault(InterruptFrame frame){
-    debug("Page fault!!!\n");
+static void handle_page_fault(InterruptFrame *frame){
+    debug("PAGING - Page fault!!!\n");
 }
 
 static void setup_isr_page(PageTableEntry* page_table, uint8_t us){
@@ -106,22 +105,22 @@ static void setup_isr_page(PageTableEntry* page_table, uint8_t us){
     page_table[PAGE_LAST].present = 1;
     page_table[PAGE_LAST].read_write = 0;
     page_table[PAGE_LAST].user_supervisor = us;
-    page_table[PAGE_LAST].user_data = 0;//PD_USED;
+    page_table[PAGE_LAST].user_data = 0;
     page_table[PAGE_LAST].physical_page_address = ((uint32_t)isr_handlers_start) >> 12;
-    debug("ISR handlers physical address:");debug_i((uint32_t)isr_handlers_start,16);debug("\n");
-    debug("Last page of table directory used to map ISR handlers: ");
+    debug("PAGING - ISR handlers physical address:");debug_i((uint32_t)isr_handlers_start,16);debug("\n");
+    debug("PAGING - Last page of table directory used to map ISR handlers: ");
     debug_i((PAGE_LAST << 22) | (PAGE_LAST << 12),16);debug("\n");
 }
 // Convenience macros, map the page I use for exchange to different structures
 // which I use dpending the situation
-#define local_page_dir ((PageDirectoryEntry*)KERNEL_EXCHANGE_ADDRESS)
-#define local_table  ((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS)
-#define local_ptr    ((void*)KERNEL_EXCHANGE_ADDRESS)
+#define local_page_dir  ((PageDirectoryEntry*)KERNEL_EXCHANGE_ADDRESS)
+#define local_table     ((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS)
+#define local_ptr       ((void*)KERNEL_EXCHANGE_ADDRESS)
 
 static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_t physical_address){
     uint32_t index = vaddress.page_dir_index;
 
-    debug("Setup page for vaddress:");debug_i(vaddress.address,16);debug("\n");
+    debug("PAGING - Setup page for vaddress:");debug_i(vaddress.address,16);debug("\n");
 
     set_exchange_page(dir);
 
@@ -190,7 +189,7 @@ PageDirectoryEntry* paging_new_task_space(void){
         return NULL;
     }
 
-    debug("Allocated page directory at ");debug_i(directory,16);debug("\n");
+    debug("PAGING - Allocated page directory at ");debug_i(directory,16);debug("\n");
 
     // Allocate page table 0 which maps 1:1 with kernel page 0
     table_address_1 = memory_alloc_block();
@@ -213,8 +212,8 @@ PageDirectoryEntry* paging_new_task_space(void){
         memory_free_block(table_address_2);
         return NULL;
     }
-    debug("Allocated page table 0 at ");debug_i(table_address_1,16);debug("\n");
-    debug("Allocated page table 1 at ");debug_i(table_address_2,16);debug("\n");
+    debug("PAGING - Allocated page table 0 at ");debug_i(table_address_1,16);debug("\n");
+    debug("PAGING - Allocated page table 1 at ");debug_i(table_address_2,16);debug("\n");
 
     set_exchange_page(directory);
 
@@ -259,19 +258,34 @@ static inline void invalidate_cache(void){
         "\tmov %eax, %cr3\n"
     );
 }
+static uint32_t current_page_dir(){
+    uint32_t value;
+    asm volatile(
+        "mov %%cr3, %0":"=a"(value)
+    );
+    return value;
+}
 
 void paging_release_task_space(PageDirectoryEntry* page_directory){
     int i,j;
+    debug("PAGING - current page dir:");debug_i(current_page_dir(),16);debug("\n");
     for (i=0;i<PAGES_MAX;i++){
+        debug("0 ");debug_i(i,10);debug("\n");
+        debug("1 ");debug_i((uint32_t)page_directory,16);debug("\n");
         set_exchange_page(page_directory);
+        debug("2\n");debug_i((uint32_t)(local_page_dir),16);debug("\n");
         if (local_page_dir[i].present){
+            debug("3\n");
             local_page_dir[i].present = 0;
+            debug("1\n");
             set_exchange_page(local_page_dir[i].page_table_address << 12);
+            debug("2\n");
             for (j=0;j<PAGES_MAX;j++){
                 if (!(
                     (i == 0 && j < 256) 
                     || (i == PAGE_LAST && j >= (PAGE_LAST-1)))){
                     // skip the shared pages
+                    debug("dir entry ");debug_i(i,10);debug(" - page ");debug_i(j,10);debug("\n");
                     if (local_table[j].present){
                         memory_free_block(local_table[j].physical_page_address);
                     }
@@ -279,5 +293,5 @@ void paging_release_task_space(PageDirectoryEntry* page_directory){
             }
         }
     }
-    memory_free_block(page_directory);
+    memory_free_block((uint32_t)page_directory);
 }

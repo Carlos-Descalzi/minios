@@ -1,3 +1,4 @@
+//#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -27,10 +28,11 @@ extern void task_switch();
 static Task TASKS[TASKS_MAX];
 
 Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
-
 #define current_task (*current_task_ptr)
+static uint32_t next_tid;
 
 void tasks_init(){
+    next_tid = 1;
     memset(TASKS,0,sizeof(TASKS));
     current_task = NULL;
 
@@ -70,23 +72,12 @@ static Task* get_next_free_task(){
             return &(TASKS[i]);
         }
     }
-    debug("No more room for tasks\n");
+    debug("TASK - No more room for tasks\n");
     return NULL;
-}
-static uint32_t new_task_id(){
-    uint32_t tid=0;
-    int i;
-    for (i=0;i<TASKS_MAX;i++){
-        tid = max(tid,TASKS[i].tid);
-    }
-    return tid+1;
 }
 
 uint32_t tasks_new(Stream* exec_stream){
     Task* task;
-    ElfHeader header;
-    ElfProgramHeader prg_header;
-    PageTableEntry* page_table;
     VirtualAddress v_address;
     task = get_next_free_task();
 
@@ -95,16 +86,16 @@ uint32_t tasks_new(Stream* exec_stream){
     }
     memset(task,0,sizeof(Task));
 
-    task->tid = new_task_id();
-    debug("Allocating page directory\n");
-    task->page_directory = paging_new_task_space();// paging_new_page_directory(1);
+    task->tid = next_tid++;
+    debug("TASK - Allocating page directory\n");
+    task->page_directory = paging_new_task_space();
 
-    debug("Loading code into memory\n");
+    debug("TASK - Loading code into memory\n");
     task->cpu_state.eip = paging_load_code(exec_stream, task->page_directory);
-    debug("Setting up task\n");
+    debug("TASK - Setting up task\n");
 
     task->cpu_state.cr3 = (uint32_t)task->page_directory;
-    debug("Page directory for task:");debug_i(task->cpu_state.cr3,16);debug("\n");
+    debug("TASK - Page directory for task:");debug_i(task->cpu_state.cr3,16);debug("\n");
     task->cpu_state.source_ss = 0x2B;
     v_address.page_dir_index = 1023;
     v_address.page_index = 1022;
@@ -114,7 +105,7 @@ uint32_t tasks_new(Stream* exec_stream){
     task->cpu_state.flags.privilege_level = 3;
     task->cpu_state.flags.reserved_1 = 1;
     task->cpu_state.flags.interrupt_enable = 1;
-    debug("Program start:");debug_i(task->cpu_state.eip,16);debug("\n");
+    debug("TASK - Program start:");debug_i(task->cpu_state.eip,16);debug("\n");
 
     return task->tid;
 }
@@ -130,7 +121,7 @@ void tasks_switch_to_task(uint32_t task_id){
             }
         }
         if (current_task){
-            debug("Switching to task\n");
+            debug("TASK - Switching to task\n");
             task_switch();
         }
     }
@@ -140,9 +131,20 @@ void tasks_finish(uint32_t task_id, uint32_t exit_code){
     for (int i=0;i<TASKS_MAX;i++){
         if (TASKS[i].tid == task_id){
             Task* task = &(TASKS[i]);
-            debug("Releasing task\n");
+            debug("TASK - Releasing task ");debug_i(task_id,10);debug("\n");
             paging_release_task_space(task->page_directory);
             memset(task,0,sizeof(Task));
+            if (task == current_task){
+                current_task = NULL;
+            }
+            debug("finish\n");
         }
+    }
+}
+
+void tasks_update_current(InterruptFrame* frame){
+    if (current_task){
+        debug("TASK - Updating current task\n");
+        memcpy(&(current_task->cpu_state), frame, sizeof(InterruptFrame));
     }
 }

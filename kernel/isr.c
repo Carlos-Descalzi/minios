@@ -2,8 +2,10 @@
 #include "misc/debug.h"
 #include "lib/string.h"
 #include "board/pic.h"
+#include "kernel/task.h"
+#include "board/memory.h"
 
-Isr isr_handlers[96];
+static Isr isr_handlers[96];
 
 typedef struct {
     uint16_t offset1;
@@ -25,6 +27,9 @@ typedef struct {
 static void dummy_trap_handler(InterruptFrame* frame);
 static void dummy_isr_pic_handler(InterruptFrame* frame);
 static void dummy_isr_handler(InterruptFrame* frame);
+static void handle_isr(uint32_t isr_num, InterruptFrame* frame);
+
+void* handle_isr_ref = handle_isr; // FIXME, used by assembly code.
 
 static void do_isr_install(uint16_t interrupt_number, uint32_t isr, uint8_t type){
     IDTEntry* entry = &(IDT[interrupt_number]);
@@ -59,6 +64,36 @@ void trap_install(uint16_t interrupt_number, Isr isr){
         isr_handlers[interrupt_number] = isr;
     }
 }
+static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
+    if (frame->flags.privilege_level != 0){
+        asm volatile(
+            "\tmov %0, %%eax\n"
+            "\tmov %%eax,%%cr3\n"
+            "\tmov $0x10, %%eax\n"
+            "\tmov %%ax, %%ds\n"
+            "\tmov %%ax, %%es\n"
+            "\tmov %%ax, %%gs\n"
+            "\tmov %%ax, %%fs\n"
+            ::"Nd"(KERNEL_PAGE_DIR_ADDRESS)
+        );
+    }
+
+    tasks_update_current(frame);
+    isr_handlers[isr_num](frame);
+    
+    if (frame->flags.privilege_level != 0){
+        asm volatile(
+            "\tmov %0, %%eax\n"
+            "\tmov %%eax, %%cr3\n"
+            "\tmov $0x2b, %%eax\n"
+            "\tmov %%ax, %%ds\n"
+            "\tmov %%ax, %%es\n"
+            "\tmov %%ax, %%fs\n"
+            "\tmov %%ax, %%gs\n"
+            ::"Nd"(frame->cr3)
+        );
+    }
+}
 
 inline void sti(void){
     asm volatile("sti");
@@ -78,10 +113,6 @@ inline void cld(void){
  **/
 #define ADJUST_PAGING(address) (0xFFFFF000 - ((uint32_t)isr_handlers_start) + address)
 
-#define TRAP_SETUP(n) {\
-    extern Isr handle_trap_##n(InterruptFrame);\
-    do_isr_install(n, ADJUST_PAGING((uint32_t)handle_trap_##n), 0xF); \
-}
 #define ISR_SETUP(n) {\
     extern Isr handle_isr_##n(InterruptFrame);\
     do_isr_install(n, ADJUST_PAGING((uint32_t)handle_isr_##n), 0xe); \
@@ -98,29 +129,29 @@ void isr_init(){
     for (;i<96;i++){
         isr_handlers[i] = dummy_isr_handler;
     }
-    TRAP_SETUP(0x00);
-    TRAP_SETUP(0x01);
-    TRAP_SETUP(0x02);
-    TRAP_SETUP(0x03);
-    TRAP_SETUP(0x04);
-    TRAP_SETUP(0x05);
-    TRAP_SETUP(0x06);
-    TRAP_SETUP(0x07);
-    TRAP_SETUP(0x08);
-    TRAP_SETUP(0x09);
-    TRAP_SETUP(0x0a);
-    TRAP_SETUP(0x0b);
-    TRAP_SETUP(0x0c);
-    TRAP_SETUP(0x0d);
-    TRAP_SETUP(0x0e);
-    TRAP_SETUP(0x0f);
-    TRAP_SETUP(0x10);
-    TRAP_SETUP(0x11);
-    TRAP_SETUP(0x12);
-    TRAP_SETUP(0x13);
-    TRAP_SETUP(0x14);
-    TRAP_SETUP(0x1e);
-    TRAP_SETUP(0x1f);
+    ISR_SETUP(0x00);
+    ISR_SETUP(0x01);
+    ISR_SETUP(0x02);
+    ISR_SETUP(0x03);
+    ISR_SETUP(0x04);
+    ISR_SETUP(0x05);
+    ISR_SETUP(0x06);
+    ISR_SETUP(0x07);
+    ISR_SETUP(0x08);
+    ISR_SETUP(0x09);
+    ISR_SETUP(0x0a);
+    ISR_SETUP(0x0b);
+    ISR_SETUP(0x0c);
+    ISR_SETUP(0x0d);
+    ISR_SETUP(0x0e);
+    ISR_SETUP(0x0f);
+    ISR_SETUP(0x10);
+    ISR_SETUP(0x11);
+    ISR_SETUP(0x12);
+    ISR_SETUP(0x13);
+    ISR_SETUP(0x14);
+    ISR_SETUP(0x1e);
+    ISR_SETUP(0x1f);
     ISR_SETUP(0x20);
     ISR_SETUP(0x21);
     ISR_SETUP(0x22);

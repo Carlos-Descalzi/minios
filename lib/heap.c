@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "lib/heap.h"
 #include "board/memory.h"
 #include "lib/stdint.h"
