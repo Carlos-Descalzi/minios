@@ -18,7 +18,8 @@
 #include "bin/elf.h"
 #include "fs/ext2.h"
 
-static char buff[32];
+//static char buff[32];
+/*
 const char* section_types[] = {
     "NULL    ",
     "PROGBITS",
@@ -33,19 +34,6 @@ const char* section_types[] = {
     "SHLIB   ",
     "DYNSYM  "
 };
-/*
-static const char* get_section_name(ElfHeader* header, ElfSectionHeader* sec_header){
-    int i;
-    if (sec_header->name){
-        ElfSectionHeader* section =(ElfSectionHeader*) 
-            (((void*)header) + header->section_header_table_position 
-             + (header->section_names_index 
-                * header->section_header_table_entry_size));
-        return (const char*) (((void*)header) + section->offset + sec_header->name);
-    }
-    return NULL;
-}
-*/
 static void show_elf(Stream* stream){
     ElfHeader elf_header;
     ElfProgramHeader prg_header;
@@ -152,27 +140,4 @@ void test_elf(){
     ext2_close(fs);
 
 }
-
-void test_task(){
-    Ext2FileSystem* fs;
-    Device* device;
-    Stream* stream;
-    uint32_t task_id;
-
-    console_print("Loading task in memory\n");
-
-    device = device_find(DISK, 0);
-    if (!device){
-        console_print("Device not found\n");
-        return;
-    }
-    fs = ext2_open(BLOCK_DEVICE(device));
-
-    stream = ext2_file_stream_open(fs, "/test1.elf",0);
-
-    task_id = tasks_new(stream);
-
-    debug("New task:");debug_i(task_id,10);debug("\n");
-
-    tasks_switch_to_task(task_id);
-}
+*/

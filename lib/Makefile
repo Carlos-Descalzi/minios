@@ -4,6 +4,7 @@ OBJS=errno.o	\
 	 heap.o		\
 	 stdio.o	\
 	 stdlib.o	\
-	 string.o
+	 string.o	\
+	 list.o
 
 all: $(OBJS)

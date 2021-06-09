@@ -1,12 +1,18 @@
 include ../Make.defs
 include ../Make.rules
 
-all: test1.elf
+all: elf lst
 
-test1.elf: test1.o
-	$(LD) test1.o -o test1.elf
-	objdump -d test1.elf > test1.lst
+elf: test1.elf noop.elf
 
-test1.o: test1.asm
-	$(AS) $(ASFLAGS) -O1 test1.asm -o test1.o
+lst: test1.lst noop.lst
+
+%.elf: %.o
+	$(LD) $< -o $@
+
+%.lst: %.elf
+	objdump -d $< > $@
+
+%.o: %.asm
+	$(AS) $(ASFLAGS) -O1 $< -o $@
 

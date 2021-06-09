@@ -42,6 +42,7 @@ static void handle_syscall(InterruptFrame* f){
             break;
         case 0x99:
             handle_exit(f);
+            debug("should not be here 2\n");
             break;
         default:
             debug("\tUnknown system call:");debug_i(f->eax,16);debug("\n");
@@ -133,9 +134,13 @@ static void handle_close(InterruptFrame* f){
     }
 }
 
+
 static void handle_exit(InterruptFrame* f){
     uint32_t exit_code = f->ebx;
     debug("SYSCALL - Handling task exit, code:");debug_i(f->ebx,10);debug("\n");
     tasks_finish(tasks_current_tid(), exit_code);
-    f->ebx = 0;
+    debug("SYSCALL - Going to TASK EXIT\n");
+    asm volatile("jmp do_task_exit");
+    debug("Should not be here\n");
+    
 }

@@ -17,7 +17,7 @@
 #include "fs/ext2.h"
 #include "misc/debug.h"
 #include "bin/elf.h"
-
+/*
 static char buff[32];
 
 void check_e2fs(){
@@ -74,4 +74,4 @@ void check_e2fs(){
         }
 
     }
-}
+}*/

@@ -34,8 +34,9 @@ void* heap_alloc(size_t size){
     if (size % 4 != 0){
         size+=4 - (size % 4);   // always word aligned.
     }
-    while(block && (block->header.used || block->header.size < size)){
-        //debug("HEAP - block size "); debug_i(block->header.size,10); debug("\n");
+    while(block && (block->header.used || block->header.size < ((uint32_t)size))){
+        debug("HEAP - block size "); debug_i(block->header.size,10); 
+        debug(" - "); debug_i(size,10); debug(" - ");debug_i(block->header.used,10);debug("\n");
         block = block->header.next;
     }
 
@@ -52,14 +53,15 @@ void* heap_alloc(size_t size){
         block->header.next = (MemoryBlock*) (((char*)block) + size + HEADER_SIZE);
         block->header.next->header.size = block->header.size - size - HEADER_SIZE;
         block->header.next->header.next = next;
+        block->header.next->header.used = 0;
     } 
 
     block->header.used = 1;
     block->header.size = size;
 
     
-    //debug("HEAP - Allocated "); debug_i(block->header.size,10); 
-    //debug(" bytes at address "); debug_i((uint32_t)block->block,16); debug("\n");
+    debug("HEAP - Allocated "); debug_i(block->header.size,10); 
+    debug(" bytes at address "); debug_i((uint32_t)block->block,16); debug("\n");
     
     return block->block;
 }

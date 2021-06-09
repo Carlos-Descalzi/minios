@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "fs/ext2.h"
 #include "lib/heap.h"
 #include "lib/string.h"
@@ -31,10 +32,17 @@ Stream* ext2_file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode
     uint32_t inodenum;
     FileStream* stream;
 
+    debug("EXT2STREAM - Find inode for ");debug(path);debug("\n");
     inodenum = ext2_find_inode(fs, path);
+    debug("EXT2STREAM - Inode: ");debug_i(inodenum,10);debug("\n");
 
     if (inodenum){
         stream = heap_alloc(sizeof(FileStream) + strlen(path));
+        if (!stream){
+            debug("EXT2STREAM - No memory for creating stream\n");
+            return NULL;
+        }
+        memset(stream,0,sizeof(FileStream));
         stream->fs = fs;
         stream->block_buffer = heap_alloc(fs->block_size);
         ext2_load_inode(fs, inodenum, &(stream->inode));
@@ -53,6 +61,7 @@ Stream* ext2_file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode
         STREAM(stream)->size = size;
         STREAM(stream)->close = close;
         stream->current_block = 0;
+        debug("EXT2STREAM - reading blocks\n");
         ext2_read_block(fs, &(stream->inode), stream->current_block, stream->block_buffer, 0);
         return STREAM(stream);
     }
@@ -111,15 +120,6 @@ int16_t read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     block = FILE_STREAM(stream)->pos / block_size;
     nblocks = size / block_size + (size % block_size ? 1 : 0);
     bytes_read = 0;
-    /*debug("EXT2STREAM - read bytes:");
-    debug_i(size,10);
-    debug(", actual pos:");
-    debug_i(FILE_STREAM(stream)->pos,10);
-    debug(", block:");
-    debug_i(block,10);
-    debug(", nblocks:");
-    debug_i(nblocks,10);
-    debug("\n");*/
 
     for (i=0;i<nblocks;i++){
         if (offset){

@@ -9,6 +9,14 @@
 #include "kernel/paging.h"
 #include "board/memory.h"
 #include "board/cpu.h"
+#include "lib/list.h"
+
+typedef struct {
+    ListNode head;
+    Task task;
+} TaskNode;
+
+#define TASK_NODE(n)    ((TaskNode*)n)
 
 #define TASKS_MAX           32
 #define TID_KERNEL          0
@@ -17,23 +25,26 @@
 #define PAGE_DATA       0x01
 #define PAGE_STACK      0x02
 
+extern void task_run();
+
 TaskStateSegment* TSS = (TaskStateSegment*)KERNEL_TSS_ADDRESS;
+GDTEntry* tss_gdt_entry = (GDTEntry*)KERNEL_TSS_GDT_ENTRY;
 
-GDTEntry* tss_gdt_entry = (GDTEntry*)0x18;
-/**
- * The start address for the idle loop
- **/
-extern void task_switch();
+//static Task TASKS[TASKS_MAX];
 
-static Task TASKS[TASKS_MAX];
+static ListNode* task_list;
+static ListNode* current_task_list_node;
 
 Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
 #define current_task (*current_task_ptr)
+
 static uint32_t next_tid;
 
 void tasks_init(){
     next_tid = 1;
-    memset(TASKS,0,sizeof(TASKS));
+    //memset(TASKS,0,sizeof(TASKS));
+    task_list = NULL;
+    current_task_list_node = NULL;
     current_task = NULL;
 
     tss_gdt_entry->accessed = 1;
@@ -65,21 +76,22 @@ Task* tasks_current_task(void){
     return current_task;
 }
 
+static TaskNode* new_node(){
+    TaskNode* task_node = heap_alloc(sizeof(TaskNode));
+    memset(task_node,0,sizeof(TaskNode));
+    return task_node;
+}
+
 static Task* get_next_free_task(){
-    int i;
-    for (i=0;i<TASKS_MAX;i++){
-        if (!TASKS[i].tid){
-            return &(TASKS[i]);
-        }
-    }
-    debug("TASK - No more room for tasks\n");
-    return NULL;
+    TaskNode* task_node = new_node();
+    task_list = list_add(task_list, LIST_NODE(task_node));
+
+    return &(task_node->task);
 }
 
 uint32_t tasks_new(Stream* exec_stream){
-    Task* task;
     VirtualAddress v_address;
-    task = get_next_free_task();
+    Task* task = get_next_free_task();
 
     if (!task){
         return 0;
@@ -87,6 +99,7 @@ uint32_t tasks_new(Stream* exec_stream){
     memset(task,0,sizeof(Task));
 
     task->tid = next_tid++;
+    task->status = TASK_STATUS_IDLE;
     debug("TASK - Allocating page directory\n");
     task->page_directory = paging_new_task_space();
 
@@ -110,34 +123,73 @@ uint32_t tasks_new(Stream* exec_stream){
     return task->tid;
 }
 
-void tasks_switch_to_task(uint32_t task_id){
-    int i;
-    if (current_task){
-    } else {
-        for (i=0;i<TASKS_MAX;i++){
-            if (TASKS[i].tid == task_id){
-                current_task = &(TASKS[i]);
-                break;
-            }
-        }
-        if (current_task){
-            debug("TASK - Switching to task\n");
-            task_switch();
+static Task* next_task(){
+    if (current_task_list_node){
+        current_task_list_node = current_task_list_node->next;
+    }
+    if (!current_task_list_node){
+        current_task_list_node = task_list;
+    }
+    if (current_task_list_node){
+        return &(TASK_NODE(current_task_list_node)->task);
+    }
+    return NULL;
+}
+
+static void remove_current_task(){
+    ListNode* new_current = NULL;
+    for (ListNode* t = task_list; t; t = t->next){
+        if (t->next == LIST_NODE(current_task_list_node)){
+            new_current = t;
+            break;
         }
     }
+
+    task_list = list_remove(LIST_NODE(task_list), LIST_NODE(current_task_list_node));
+    debug("TASK - Task list after remove:");debug_i((uint32_t)task_list,16);debug("\n");
+    heap_free(current_task_list_node);
+
+    current_task_list_node = new_current;
+}
+
+void tasks_loop(){
+    current_task = next_task();
+    if (current_task && current_task->status != TASK_STATUS_NONE){
+        current_task->status = TASK_STATUS_RUNNING;
+        debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run\n");
+
+        task_run();
+
+        debug("TASK - Task left cpu\n");
+        debug_i(current_page_dir(),16);
+        debug("\n");
+
+        if (current_task->status != TASK_STATUS_NONE){
+            debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set idle\n");
+            current_task->status = TASK_STATUS_IDLE;
+        } else {
+            debug("TASK - Removing task ");debug_i(current_task->tid,10);debug("\n");
+            remove_current_task();
+        }
+
+    } else {
+        debug("TASK - No tasks to run\n");
+    }
+    debug("TASK - Leave tasks loop\n");
 }
 
 void tasks_finish(uint32_t task_id, uint32_t exit_code){
-    for (int i=0;i<TASKS_MAX;i++){
-        if (TASKS[i].tid == task_id){
-            Task* task = &(TASKS[i]);
+    debug("TASK - Task finish:");debug_i(task_id,10);debug("\n");
+
+    for (ListNode* task_node = task_list; task_node; task_node = task_node->next){
+        if (TASK_NODE(task_node)->task.tid == task_id){
+            Task* task = &(TASK_NODE(task_node)->task);
             debug("TASK - Releasing task ");debug_i(task_id,10);debug("\n");
             paging_release_task_space(task->page_directory);
-            memset(task,0,sizeof(Task));
-            if (task == current_task){
-                current_task = NULL;
-            }
-            debug("finish\n");
+            task->status = TASK_STATUS_NONE;
+            //memset(task,0,sizeof(Task));
+            debug("TASK - Task finished\n");
+            break;
         }
     }
 }

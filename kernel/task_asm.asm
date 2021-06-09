@@ -1,8 +1,9 @@
-global idle_loop, task_switch, fill_task
-extern current_task
-extern next_task
+global task_run, do_task_exit
 
 current_task_ptr:   equ 0x3000
+tss_address:        equ 0x500
+
+esp0:       equ 4
 ;
 ; Task switching routines
 ;
@@ -24,11 +25,23 @@ t_flags:    equ (13 * 4)
 t_sss:      equ (14 * 4)
 t_sesp:     equ (15 * 4)
 
+ret_address:
+    dd      0x00000000
+ret_esp:
+    dd      0x00000000
+ret_ebp:
+    dd      0x00000000
 
-task_switch:
+task_run:
     cli
+    pop eax
+    mov [ret_address], eax
+    mov eax,    esp
+    mov [ret_esp],  eax         
+    mov eax,    ebp
+    mov [ret_ebp],  eax
 
-    mov ebx,    current_task_ptr ;[current_task]
+    mov ebx,    current_task_ptr 
     mov ebx,    [ebx]
     ; here I switch page directory
     mov eax,    [ebx+t_cr3]
@@ -70,3 +83,13 @@ task_switch:
 
     sti
     iret
+
+do_task_exit:
+    mov eax,    [ret_esp]
+    mov esp,    eax
+    mov eax,    [ret_ebp]
+    mov ebp,    eax
+
+    mov eax,    [ret_address]
+    mov [esp],  eax
+    ret

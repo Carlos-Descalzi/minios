@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -156,7 +157,33 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
     uint32_t i;
     uint32_t j;
 
+    debug("PAGING - Reading elf header\n");
     elf_read_header(stream, &header);
+
+    debug("Magic number:");
+    debug_i(header.magic_number,16);
+    debug(", Binary type:");
+    debug_i(header.bin_type,10);
+    debug(", Arch:");
+    debug(header.arch == 1 ? "32bit" : "64bit");
+    debug(",");
+    debug(header.endianess == 1 ? "Little endian" : "Big Endian");console_print("\n");
+    debug(", Header size:");
+    debug_i(header.header_size,10);
+    debug("\n");
+    debug("Program entry position:");
+    debug_i(header.program_entry_position,16);
+    debug("\n");
+    debug("Program header position:");
+    debug_i(header.program_header_table_position,10);
+    debug("\n");
+    debug("Program header size:");
+    debug_i(header.program_header_table_entry_size,10);
+    debug("\n");
+    debug("Section header position:");
+    debug_i(header.section_header_table_position,10);
+    debug("\n");
+    debug("Program header:\n");
 
 
     for (i=0;i< header.program_header_table_entry_count;i++){
@@ -238,7 +265,6 @@ PageDirectoryEntry* paging_new_task_space(void){
         local_table[i].read_write = 0;
         local_table[i].user_supervisor = 1;
         local_table[i].physical_page_address = i;
-        //debug("Page ");debug_i(i,10);debug(" - Address:");debug_i(i << 12,16);debug("\n");
     }
 
     set_exchange_page(table_address_2);
@@ -258,7 +284,7 @@ static inline void invalidate_cache(void){
         "\tmov %eax, %cr3\n"
     );
 }
-static uint32_t current_page_dir(){
+uint32_t current_page_dir(){
     uint32_t value;
     asm volatile(
         "mov %%cr3, %0":"=a"(value)
@@ -270,22 +296,17 @@ void paging_release_task_space(PageDirectoryEntry* page_directory){
     int i,j;
     debug("PAGING - current page dir:");debug_i(current_page_dir(),16);debug("\n");
     for (i=0;i<PAGES_MAX;i++){
-        debug("0 ");debug_i(i,10);debug("\n");
-        debug("1 ");debug_i((uint32_t)page_directory,16);debug("\n");
         set_exchange_page(page_directory);
-        debug("2\n");debug_i((uint32_t)(local_page_dir),16);debug("\n");
+        KERNEL_PAGE_TABLE[PAGE_LAST].present = 1; // FIXME: why???
         if (local_page_dir[i].present){
-            debug("3\n");
             local_page_dir[i].present = 0;
-            debug("1\n");
             set_exchange_page(local_page_dir[i].page_table_address << 12);
-            debug("2\n");
             for (j=0;j<PAGES_MAX;j++){
                 if (!(
                     (i == 0 && j < 256) 
                     || (i == PAGE_LAST && j >= (PAGE_LAST-1)))){
                     // skip the shared pages
-                    debug("dir entry ");debug_i(i,10);debug(" - page ");debug_i(j,10);debug("\n");
+                    //debug("dir entry ");debug_i(i,10);debug(" - page ");debug_i(j,10);debug("\n");
                     if (local_table[j].present){
                         memory_free_block(local_table[j].physical_page_address);
                     }
