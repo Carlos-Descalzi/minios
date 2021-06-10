@@ -3,10 +3,15 @@ A very basic bootloader and attempt of minimal i386 operating system, just for s
 So far these features are implemented (barely):
 * bootloader with available memory detection.
 * PCI device listing.
-* time based task switching
-* memory paging
-* basic raw console
+* IDE basic disk operations.
+* Basic raw console
 * base libraries: strings, heap, etc.
+* Elf binary support
+* ext2 filesystem (readonly so far).
+* Paging.
+* System calls basic skeleton.
+* Context switching.
+* Process loading and execution.
 
 ![screenshot](screenshot.png)
 
