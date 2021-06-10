@@ -9,8 +9,9 @@ handle_isr_%1:
     mov eax, cr3
     push eax
     mov eax, esp
-    push esp
-    push (%1)
+    push eax
+    mov eax, %1
+    push eax
     
     call [handle_isr_ref] 
     

@@ -62,6 +62,9 @@ uint32_t            paging_load_code            (Stream* stream, PageDirectoryEn
  **/
 PageDirectoryEntry* paging_new_task_space       (void);
 void                paging_release_task_space   (PageDirectoryEntry* page_directory);
+uint32_t            paging_physical_address     (PageDirectoryEntry* page_dir, void *address);
+void*               paging_to_kernel_space      (uint32_t physical_address);
+void                paging_invalidate_cache     (void);
 
 uint32_t current_page_dir();
 

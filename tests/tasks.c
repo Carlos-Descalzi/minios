@@ -24,7 +24,7 @@ void test_task(){
     Stream* stream;
     uint32_t task_id;
 
-    console_print("Loading task in memory\n");
+    console_print("Loading program /helloworld.elf in memory ...\n");
 
     device = device_find(DISK, 0);
     if (!device){
@@ -33,16 +33,17 @@ void test_task(){
     }
     fs = ext2_open(BLOCK_DEVICE(device));
 
-    stream = ext2_file_stream_open(fs, "/noop.elf",0);
+    stream = ext2_file_stream_open(fs, "/helloworld.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
-
+    /*
     stream = ext2_file_stream_open(fs, "/test1.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
-
+    */
+    console_print("Running program ...\n\n");
 
     tasks_loop();
     tasks_loop();

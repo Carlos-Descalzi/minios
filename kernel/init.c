@@ -68,7 +68,6 @@ void init(){
     memory_init();
     isr_init();
 
-    isr_install(0xd,bsod);
     //pit_init();
     //pic_init();
     //test_timer();
@@ -87,6 +86,7 @@ void init(){
     //test_elf();
     tasks_init();
     syscall_init();
+    trap_install(0xd,bsod);
 
     test_task();
     
@@ -163,13 +163,19 @@ static void test_timer(){
 */
 static void bsod(InterruptFrame* frame){
     int i;
-    console_gotoxy(0,0);
+    //console_gotoxy(0,0);
     console_color(CONSOLE_COLOR_BLUE << 4 | CONSOLE_COLOR_WHITE);
-    for(i=0;i<80*25;i++){console_put(' ');}
+    //for(i=0;i<80*25;i++){console_put(' ');}
+    console_gotoxy(30,11);
+    console_print("+------------------------+");
     console_gotoxy(30,12);
-    console_print("General Protection Fault");
+    console_print("|      Exception 0xd     |");
+    console_gotoxy(30,13);
+    console_print("|General Protection Fault|");
     console_gotoxy(30,14);
-    console_print("  *** Te re cabio ***");
+    console_print("|  *** Te re cabio ***   |");
+    console_gotoxy(30,15);
+    console_print("+------------------------+");
     asm volatile("hlt");
 }
 

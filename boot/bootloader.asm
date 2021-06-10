@@ -146,7 +146,7 @@ init_regs_and_start:
     mov     fs,     ax
     mov     gs,     ax
     mov     ss,     ax
-    mov     esp,    0x2ffff
+    mov     esp,    0x2ffEf
 
     jmp     dword 8:0x10000
 

@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "kernel/syscall.h"
 #include "lib/stdint.h"
 #include "kernel/isr.h"
@@ -5,6 +6,7 @@
 #include "fs/ext2.h"
 #include "kernel/task.h"
 #include "fs/fs.h"
+#include "board/console.h"
 
 static void handle_syscall(InterruptFrame* f);
 
@@ -12,6 +14,7 @@ static void handle_read(InterruptFrame* f);
 static void handle_write(InterruptFrame* f);
 static void handle_open(InterruptFrame* f);
 static void handle_close(InterruptFrame* f);
+static void handle_debug(InterruptFrame* f);
 static void handle_exit(InterruptFrame* f);
 
 void syscall_init(){
@@ -21,6 +24,7 @@ void syscall_init(){
 static void handle_syscall(InterruptFrame* f){
     debug("SYSCALL - Syscall called!\n");
     debug("\teax: ");debug_i(f->eax,16);debug("\n");
+    debug("\tebx: ");debug_i(f->ebx,16);debug("\n");
     debug("\tcr3: ");debug_i(f->cr3,16);debug("\n");
     debug("\tcs: ");debug_i(f->cs,16);debug("\n");
     debug("\tss: ");debug_i(f->source_ss,16);debug("\n");
@@ -39,6 +43,9 @@ static void handle_syscall(InterruptFrame* f){
             break;
         case 0x03:
             handle_close(f);
+            break;
+        case 0x98:
+            handle_debug(f);
             break;
         case 0x99:
             handle_exit(f);
@@ -143,4 +150,10 @@ static void handle_exit(InterruptFrame* f){
     asm volatile("jmp do_task_exit");
     debug("Should not be here\n");
     
+}
+static void handle_debug(InterruptFrame* f){
+    uint8_t* str_ptr = tasks_to_kernel_address((uint8_t*)f->ebx);
+    console_print(str_ptr);
+    f->ebx = 0;
+    f->eax = 0;
 }

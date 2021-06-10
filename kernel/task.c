@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -60,7 +60,7 @@ void tasks_init(){
     memset(TSS,0,sizeof(TaskStateSegment));
 
     TSS->ss0 = 0x10;
-    TSS->esp0 = 0x2FFF;
+    TSS->esp0 = 0x2FEF;
 
     asm volatile(
         "\tmov $0x1b, %eax\n"
@@ -84,7 +84,11 @@ static TaskNode* new_node(){
 
 static Task* get_next_free_task(){
     TaskNode* task_node = new_node();
+    debug("List add 0:");debug_i(task_node,16);debug("\n");
+    debug("List add 1:");debug_i((uint32_t)task_list,16);debug("\n");
     task_list = list_add(task_list, LIST_NODE(task_node));
+    debug("List add 2:");debug_i(TASK_NODE(task_list)->task.tid,16);debug("\n");
+    debug("List add 3:");debug_i(task_node,16);debug("\n");
 
     return &(task_node->task);
 }
@@ -94,6 +98,10 @@ uint32_t tasks_new(Stream* exec_stream){
     Task* task = get_next_free_task();
 
     if (!task){
+        return 0;
+    }
+    if (task->tid != 0){
+        debug("MAAAL\n");
         return 0;
     }
     memset(task,0,sizeof(Task));
@@ -125,12 +133,16 @@ uint32_t tasks_new(Stream* exec_stream){
 
 static Task* next_task(){
     if (current_task_list_node){
+        debug("1\n");
         current_task_list_node = current_task_list_node->next;
     }
     if (!current_task_list_node){
+        debug("2\n");
         current_task_list_node = task_list;
     }
     if (current_task_list_node){
+        debug("3: ");debug_i(TASK_NODE(task_list)->task.tid,10);debug("\n");
+        debug_i(current_task_list_node,16);
         return &(TASK_NODE(current_task_list_node)->task);
     }
     return NULL;
@@ -154,6 +166,7 @@ static void remove_current_task(){
 
 void tasks_loop(){
     current_task = next_task();
+    debug("TASK - Next task:");debug_i(current_task->tid,10);debug("\n");
     if (current_task && current_task->status != TASK_STATUS_NONE){
         current_task->status = TASK_STATUS_RUNNING;
         debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run\n");
@@ -199,4 +212,10 @@ void tasks_update_current(InterruptFrame* frame){
         debug("TASK - Updating current task\n");
         memcpy(&(current_task->cpu_state), frame, sizeof(InterruptFrame));
     }
+}
+void* tasks_to_kernel_address (void* address){
+    uint32_t physical_address = paging_physical_address(
+        current_task->page_directory,
+        address);
+    return paging_to_kernel_space(physical_address);
 }
