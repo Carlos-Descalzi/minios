@@ -1,12 +1,9 @@
 #define NODEBUG
-#include "kernel/syscall.h"
+#include "kernel/syscalls.h"
 #include "lib/stdint.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
-#include "fs/ext2.h"
 #include "kernel/task.h"
-#include "fs/fs.h"
-#include "board/console.h"
 
 void syscall_exit(InterruptFrame* f){
     uint32_t exit_code = f->ebx;

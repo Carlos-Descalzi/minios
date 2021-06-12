@@ -35,6 +35,7 @@ static void handle_syscall(InterruptFrame* f){
     debug("SYSCALL - Syscall called!\n");
     debug("\teax: ");debug_i(f->eax,16);debug("\n");
     debug("\tebx: ");debug_i(f->ebx,16);debug("\n");
+    debug("\tecx: ");debug_i(f->ecx,16);debug("\n");
     debug("\tcr3: ");debug_i(f->cr3,16);debug("\n");
     debug("\tcs: ");debug_i(f->cs,16);debug("\n");
     debug("\tss: ");debug_i(f->source_ss,16);debug("\n");
