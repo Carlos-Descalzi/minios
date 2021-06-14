@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -133,16 +133,12 @@ uint32_t tasks_new(Stream* exec_stream){
 
 static Task* next_task(){
     if (current_task_list_node){
-        debug("1\n");
         current_task_list_node = current_task_list_node->next;
     }
     if (!current_task_list_node){
-        debug("2\n");
         current_task_list_node = task_list;
     }
     if (current_task_list_node){
-        debug("3: ");debug_i(TASK_NODE(task_list)->task.tid,10);debug("\n");
-        debug_i(current_task_list_node,16);
         return &(TASK_NODE(current_task_list_node)->task);
     }
     return NULL;
@@ -162,6 +158,11 @@ static void remove_current_task(){
     heap_free(current_task_list_node);
 
     current_task_list_node = new_current;
+}
+
+void tasks_next(){
+    current_task = next_task();
+    debug("New task:");debug_i(current_task ? current_task->tid : 0,10);debug("\n");
 }
 
 void tasks_loop(){

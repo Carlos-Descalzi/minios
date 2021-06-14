@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "fs/ext2.h"
 #include "lib/heap.h"
 #include "lib/string.h"

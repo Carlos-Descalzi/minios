@@ -1,5 +1,5 @@
 include ../Make.defs
-BINS=hello.elf init.elf
+BINS=hello.elf init.elf task1.elf task2.elf
 LIBS=../bootstrap/crt0.o
 LIBS+=$(shell find ../lib -name '*.o')
 

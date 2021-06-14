@@ -23,10 +23,10 @@ void        tasks_init              (void);
 uint32_t    tasks_current_tid       (void);
 Task*       tasks_current_task      (void);
 uint32_t    tasks_new               (Stream* exec_stream);
-//void        tasks_switch_to_task    (uint32_t task_id);
 void        tasks_finish            (uint32_t task_id, uint32_t exit_code);
 void        tasks_update_current    (InterruptFrame* frame);
 void        tasks_loop              (void);
 void*       tasks_to_kernel_address (void* address);
+void        tasks_next              (void);
 
 #endif

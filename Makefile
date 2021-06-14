@@ -69,6 +69,8 @@ e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf
 	@sudo cp testfiles/helloworld.elf tmp/
 	@sudo cp userspace/bin/hello.elf tmp/
 	@sudo cp userspace/bin/init.elf tmp/
+	@sudo cp userspace/bin/task1.elf tmp/
+	@sudo cp userspace/bin/task2.elf tmp/
 	@sudo umount tmp
 	@rm -rf tmp
 

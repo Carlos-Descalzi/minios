@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"

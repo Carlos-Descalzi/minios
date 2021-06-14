@@ -46,7 +46,6 @@ static void     display_memory      (void);
 //static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
 //static void     test_timer          (void);
 static void     test_isr            (InterruptFrame* frame);
-//static void     handle_keyboard     (InterruptFrame* frame);
 static void     bsod                (InterruptFrame* frame);
 static void     start_init          (void);
 
@@ -90,18 +89,10 @@ void init(){
     trap_install(0xd,bsod);
     console_print("Kernel startup complete\n");
 
+    //test_task();
     start_init();
 }
-/*
-static void handle_keyboard(InterruptFrame* frame){
-    cli();
-    console_print("Key pressed\n");
-    inb(0x64);
-    inb(0x60);
-    pic_eoi();
-    sti();
-}
-*/
+
 static void test_isr(InterruptFrame* frame){
     console_print("ISR handler called\n");
     console_print("eax  :");console_print(itoa(frame->eax,buff,16));console_print("\n");
