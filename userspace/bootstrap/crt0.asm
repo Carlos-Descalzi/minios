@@ -1,4 +1,4 @@
-global _start
+global _start, __stack_chk_fail
 extern main
 
 _start:
@@ -12,3 +12,7 @@ _start:
     mov     ebx,    eax
     mov     eax,    0x99
     int     0x31
+
+
+__stack_chk_fail:
+    ret

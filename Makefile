@@ -3,7 +3,7 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices fs board tests testfiles bin syscalls
+SUBDIRS=kernel lib devices fs board tests testfiles bin syscalls userspace
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
@@ -57,7 +57,7 @@ padding:
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
 
-e2fs.img: testfiles/test1.elf testfiles/helloworld.elf
+e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf
 	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
 	@mkdir -p tmp
 	@mke2fs -b 1024 e2fs.img
@@ -67,6 +67,8 @@ e2fs.img: testfiles/test1.elf testfiles/helloworld.elf
 	@echo hola2 | sudo tee tmp/folder1/file2.txt
 	@sudo cp testfiles/test1.elf tmp/
 	@sudo cp testfiles/helloworld.elf tmp/
+	@sudo cp userspace/bin/hello.elf tmp/
+	@sudo cp userspace/bin/init.elf tmp/
 	@sudo umount tmp
 	@rm -rf tmp
 

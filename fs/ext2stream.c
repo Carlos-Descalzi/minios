@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "fs/ext2.h"
 #include "lib/heap.h"
 #include "lib/string.h"
@@ -113,6 +113,7 @@ int16_t read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     uint32_t bytes_read;
 
     if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.size){
+        debug(">>>> ACA\n");
         return -1;
     }
     block_size = FILE_STREAM(stream)->fs->block_size;
@@ -122,21 +123,23 @@ int16_t read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     bytes_read = 0;
 
     for (i=0;i<nblocks;i++){
-        if (offset){
-            to_read = min(size, block_size - offset);
-            memcpy(bytes, FILE_STREAM(stream)->block_buffer + offset, to_read);
+        ext2_read_block(
+            FILE_STREAM(stream)->fs,
+            &(FILE_STREAM(stream)->inode),
+            block + i,
+            FILE_STREAM(stream)->block_buffer,
+            FILE_STREAM(stream)->fs->block_size
+        );
+        to_read = min(size, block_size - offset);
+        memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer + offset, to_read);
+        offset = 0;
+        /*
+        if (offset){ /// TODO REWORK this
             offset = 0;
         } else {
             to_read = min(size, block_size);
-            ext2_read_block(
-                FILE_STREAM(stream)->fs,
-                &(FILE_STREAM(stream)->inode),
-                block + i,
-                FILE_STREAM(stream)->block_buffer,
-                FILE_STREAM(stream)->fs->block_size
-            );
             memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer, to_read);
-        }
+        }*/
         size -= to_read;
         bytes_read += to_read;
     }

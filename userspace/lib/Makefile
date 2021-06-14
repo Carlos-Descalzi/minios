@@ -1,5 +1,11 @@
-include ../../Make.rules
 include ../Make.defs
-OBJS=stdlib.o syscall.o
+OBJS=stdlib.o 	\
+	 syscall.o 	\
+	 sched.o	\
+	 file.o		\
+	 fcntl.o	\
+	 stdlib.o
 
 all: $(OBJS)
+
+include ../../Make.rules

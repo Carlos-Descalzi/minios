@@ -1,12 +1,17 @@
 global isr_handlers_start
 extern handle_isr_ref
 
+garbage:
+    dd 0x0
+
 %macro isr_handler 1
 global handle_isr_%1
 handle_isr_%1:
     pushad
     cli
     mov eax, cr3
+    push eax
+    mov eax, cr2
     push eax
     mov eax, esp
     push eax
@@ -18,11 +23,40 @@ handle_isr_%1:
     pop eax
     pop eax
     pop eax
-    ;mov cr3, eax
+    pop eax
+    
     popad
     sti
     iret
 %endmacro
+
+%macro trap_handler 1
+global handle_isr_%1
+handle_isr_%1:
+    pushad
+    cli
+    mov eax, cr3
+    push eax
+    mov eax, cr2
+    push eax
+    mov eax, esp
+    push eax
+    mov eax, %1
+    push eax
+    
+    call [handle_isr_ref] 
+    
+    pop eax
+    pop eax
+    pop eax
+    pop eax
+    
+    popad
+    pop dword [garbage]
+    sti
+    iret
+%endmacro
+
 
 ; The isr handlers need to be aligned to 4k boundary
 ; since they will be mapped to last page of all
@@ -30,29 +64,29 @@ handle_isr_%1:
 align 4096
 
 isr_handlers_start:
-isr_handler 0x00
-isr_handler 0x01
-isr_handler 0x02
-isr_handler 0x03
-isr_handler 0x04
-isr_handler 0x05
-isr_handler 0x06
-isr_handler 0x07
-isr_handler 0x08
-isr_handler 0x09
-isr_handler 0x0a
-isr_handler 0x0b
-isr_handler 0x0c
-isr_handler 0x0d
-isr_handler 0x0e
-isr_handler 0x0f
-isr_handler 0x10
-isr_handler 0x11
-isr_handler 0x12
-isr_handler 0x13
-isr_handler 0x14
-isr_handler 0x1e
-isr_handler 0x1f
+trap_handler 0x00
+trap_handler 0x01
+trap_handler 0x02
+trap_handler 0x03
+trap_handler 0x04
+trap_handler 0x05
+trap_handler 0x06
+trap_handler 0x07
+trap_handler 0x08
+trap_handler 0x09
+trap_handler 0x0a
+trap_handler 0x0b
+trap_handler 0x0c
+trap_handler 0x0d
+trap_handler 0x0e
+trap_handler 0x0f
+trap_handler 0x10
+trap_handler 0x11
+trap_handler 0x12
+trap_handler 0x13
+trap_handler 0x14
+trap_handler 0x1e
+trap_handler 0x1f
 isr_handler 0x20
 isr_handler 0x21
 isr_handler 0x22

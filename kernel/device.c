@@ -5,6 +5,15 @@
 #include "board/bda.h"
 #include "misc/debug.h"
 
+static const char* kinds[] = {
+    "video",
+    "ser",
+    "disk",
+    "net",
+    "kbd",
+    "mouse"
+};
+
 typedef struct DeviceInstance {
     DeviceType* device_type;
     Device* device;
@@ -41,6 +50,7 @@ int16_t device_register_type (DeviceType* device_type){
     return -1;
 }
 void device_init_devices(void){
+    char buff[10];
     int i, j, device_index, device_count;
 
     device_index = 0;
@@ -55,6 +65,10 @@ void device_init_devices(void){
                 if (devices[device_index].device){
                     devices[device_index].device->kind = device_types[i]->kind;
                     devices[device_index].device->instance_number = j;
+                    console_print("Registered device: ");
+                    console_print(kinds[device_types[i]->kind]);
+                    console_print(itoa(devices[device_index].device->instance_number,buff,10));
+                    console_print("\n");
                     device_index++;
                 }
             }

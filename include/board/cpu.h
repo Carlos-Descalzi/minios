@@ -33,6 +33,7 @@ typedef union __attribute__((__packed__)){
 typedef X86EFlags Flags;
 
 typedef struct {
+    uint32_t    cr2;
     uint32_t    cr3;
     uint32_t    edi;
     uint32_t    esi;
@@ -109,6 +110,15 @@ typedef struct __attribute__((__packed__)){
 
 typedef X86CpuRegisters CPUState;
 typedef X86CpuRegisters InterruptFrame;
+
+typedef struct {
+    InterruptFrame frame;
+    uint32_t pad1;
+    uint32_t pad2;
+    uint32_t pad3;
+    uint32_t error;
+} TrapFrame;
+
 typedef X86TaskStateSegment TaskStateSegment;
 
 #endif

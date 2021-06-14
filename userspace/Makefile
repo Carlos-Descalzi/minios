@@ -1,12 +1,11 @@
 include ./Make.defs
-include ../Make.rules
 
 TOPTARGETS=all clean
-SUBDIRS=bootstrap lib
+SUBDIRS=bootstrap lib bin
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
-#all: $(SUBDIRS)
+all: $(SUBDIRS)
 
 $(TOPTARGETS): $(SUBDIRS)
 

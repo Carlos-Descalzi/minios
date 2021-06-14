@@ -48,6 +48,7 @@ static void     display_memory      (void);
 static void     test_isr            (InterruptFrame* frame);
 //static void     handle_keyboard     (InterruptFrame* frame);
 static void     bsod                (InterruptFrame* frame);
+static void     start_init          (void);
 
 extern void     test_call           (void);
 extern void     handle_gpf          (void);
@@ -87,38 +88,9 @@ void init(){
     tasks_init();
     syscall_init();
     trap_install(0xd,bsod);
+    console_print("Kernel startup complete\n");
 
-    test_task();
-    
-    //check_e2fs();
-    /*
-    */
-    //console_print("Tested ISR\n");
-    //crash();
-    
-    //debug("Initializing PIC\n");
-
-    /*
-    isr_install(0x40, dummy_handler);
-    isr_install(0x0D, handle_gpf);
-
-    asm volatile ("int $0x40");
-    */
-    //sti();
-    //isr_install(0x20, dummy_handler);
-    //isr_install(0x21, dummy_handler);
-    //while(1);
-
-    /*
-    
-    display_memory();
-    paging_init();
-
-    devices_register();
-    device_init_devices();
-    console_print("devices initialized:\n");
-    device_list(show_device,NULL);
-    */
+    start_init();
 }
 /*
 static void handle_keyboard(InterruptFrame* frame){
@@ -178,8 +150,8 @@ static void bsod(InterruptFrame* frame){
     console_print("+------------------------+");
     asm volatile("hlt");
 }
-
 /*
+
 static void display_memory(){
     MemData mem_data = {0,0,0};
     console_print("------\nChecking RAM:\n");
@@ -268,3 +240,23 @@ static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void*
 }
 
 */
+static void start_init(void){
+    Ext2FileSystem* fs;
+    Device* device;
+    Stream* stream;
+    uint32_t task_id;
+
+    console_print("Loading program /init.elf ...\n");
+    device = device_find(DISK, 0);
+    if (!device){
+        console_print("Device not found\n");
+        return;
+    }
+    fs = ext2_open(BLOCK_DEVICE(device));
+    stream = ext2_file_stream_open(fs, "/init.elf",0);
+    task_id = tasks_new(stream);
+    stream_close(stream);
+    debug("New task id:");debug_i(task_id,10);debug("\n");
+    tasks_loop();
+    console_print("System shutdown\n");
+}

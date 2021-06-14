@@ -302,6 +302,7 @@ uint32_t ext2_read_block(Ext2FileSystem* fs, Ext2Inode* inode,
                          uint32_t b_index, uint8_t* dest, uint32_t length){
     uint32_t block;
 
+    debug("---");debug_i(b_index,10);debug("\n");
     block = get_block_by_index(fs, inode, b_index);
     ext2_device_gotoblock(fs, block);
     ext2_device_read_block_b(fs, dest, length);

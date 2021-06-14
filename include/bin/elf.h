@@ -51,6 +51,9 @@ typedef struct {
     uint32_t alignment;
 } ElfProgramHeader;
 
+#define SHF_WRITE   0x1
+#define SHF_ALLOC   0x2
+
 typedef struct {
     uint32_t name;
     uint32_t type;

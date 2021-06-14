@@ -1,3 +1,4 @@
+# vim: syntax=make
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
 USERSPACEDIR=$(MAKEFILE_DIR)
@@ -12,5 +13,8 @@ CFLAGS=-march=i386 \
 	-no-pie \
 	-fno-PIC \
 	-Wall \
-    -Wno-address-of-packed-member
-LDFLAGS=
+    -Wno-address-of-packed-member \
+    -mno-tls-direct-seg-refs \
+    -fno-stack-protector \
+    -nostdlib 
+LDFLAGS= -T $(USERSPACEDIR)/linker.ld 

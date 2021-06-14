@@ -63,7 +63,7 @@ static uint8_t count_devices(struct DeviceType* device_type){
 
 static Device* instantiate(struct DeviceType* device_type, uint8_t device_number){
     console_init();
-    clear_buff();
+    //clear_buff();
     mode = MODE_TEXT;
     saved_x = 0;
     saved_y = 0;
