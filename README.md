@@ -2,16 +2,20 @@
 A very basic bootloader and attempt of minimal i386 operating system, just for self learning.
 So far these features are implemented (barely):
 * bootloader with available memory detection.
-* PCI device listing.
-* IDE basic disk operations.
+* Basic chipset and buses: PCI, PIC, PIT, Serial, PS/2 in progress.
 * Basic raw console
-* base libraries: strings, heap, etc.
-* Elf binary support
+* base libraries: strings, heap, string/int conversion, etc.
+* IDE harddisk (read only, no IRQ, no DMA).
 * ext2 filesystem (readonly so far).
+* Elf binary support - no shared libraries.
 * Paging.
-* System calls basic skeleton.
 * Context switching.
 * Process loading and execution.
+* Barebones userspace C library.
+* System calls for:
+  * Open/close/read files
+  * Exit current process.
+  * Yield process.
 
 ![screenshot](screenshot.png)
 
