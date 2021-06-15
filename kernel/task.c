@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"

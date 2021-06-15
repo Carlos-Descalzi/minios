@@ -224,9 +224,11 @@ static void dummy_trap_handler(InterruptFrame* frame){
 }
 
 static void dummy_isr_pic_handler(InterruptFrame* frame){
-    pic_eoi();
+    pic_eoi1();
+    pic_eoi2();
 }
 
 static void dummy_isr_handler(InterruptFrame* frame){
+    debug("ISR\n");
 }
 

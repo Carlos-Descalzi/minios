@@ -14,7 +14,8 @@ void        pic_init        (void);
 /*
  * Acknowledges interrupt on PIC.
  **/
-void        pic_eoi         (void);
+void        pic_eoi1        (void);
+void        pic_eoi2        (void);
 /**
  * Returns both PIC1 (LSB) and PIC2 (MSB) in a 16 bit integer
  **/

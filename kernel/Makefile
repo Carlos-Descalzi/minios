@@ -10,7 +10,8 @@ OBJS=startup.o	\
 	 device.o	\
 	 task.o		\
 	 task_asm.o	\
-	 syscall.o
+	 syscall.o	\
+	 spinlock.o
 	 
 #	 task.o		\
 #	 task_asm.o \

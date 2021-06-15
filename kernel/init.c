@@ -68,8 +68,8 @@ void init(){
     memory_init();
     isr_init();
 
-    //pit_init();
-    //pic_init();
+    pit_init();
+    pic_init();
     //test_timer();
     //sti();
     //isr_install(PIC_IRQ_BASE+0x01, handle_keyboard);
@@ -88,9 +88,11 @@ void init(){
     syscall_init();
     trap_install(0xd,bsod);
     console_print("Kernel startup complete\n");
+    sti();
 
     //test_task();
-    start_init();
+    //start_init();
+    while(1);
 }
 
 static void test_isr(InterruptFrame* frame){

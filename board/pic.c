@@ -63,8 +63,11 @@ void pic_init(){
 }
 
 
-inline void pic_eoi(void){
+inline void pic_eoi1(void){
     outb(0x20, 0x20);
+}
+
+inline void pic_eoi2(void){
     outb(0xA0, 0x20);
 }
 

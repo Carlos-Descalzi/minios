@@ -1,5 +1,7 @@
 #include "board/pit.h"
+#include "board/pic.h"
 #include "board/io.h"
+#include "lib/string.h"
 
 #define PORT_CH0            0x40
 #define PORT_CH1            0x41
@@ -35,8 +37,53 @@ typedef struct {
         output_state: 1;
 } Status;
 
+static uint64_t ticks;
+
+static void timer_handler(InterruptFrame* frame);
+
+typedef struct {
+    uint64_t ticks;
+    uint64_t count;
+    Isr callback;
+} TimerSlot;
+
+#define MAX_SLOTS   32
+
+static TimerSlot slots[MAX_SLOTS];
+
 void pit_init(){
-    pit_set_freq(10);// TODO: fix this
+    ticks = 0;
+    memset(slots,0,sizeof(slots));
+    pit_set_freq(1);// TODO: fix this
+    isr_install(0x20, timer_handler); 
+}
+
+inline uint64_t pit_ticks(void){
+    return ticks;
+}
+
+void pit_add_callback(Isr callback, uint64_t ticks){
+    if (ticks > 0){
+        for (int i=0;i<MAX_SLOTS;i++){
+            if (!slots[i].callback){
+                slots[i].callback = callback;
+                slots[i].ticks = ticks;
+                slots[i].count = 0;
+                break;
+            }
+        }
+    }
+}
+
+void pit_remove_callback(Isr callback){
+    for (int i=0;i<MAX_SLOTS;i++){
+        if (slots[i].callback = callback){
+            slots[i].ticks = 0;
+            slots[i].count = 0;
+            slots[i].callback = NULL;
+            break;
+        }
+    }
 }
 
 void pit_set_count(uint16_t count){
@@ -54,9 +101,25 @@ uint16_t pit_get_count(){
     return count;
 }
 void pit_set_freq(uint16_t freq){
-    uint32_t div = 119180 / freq; //TODO Fix
+    uint32_t div = 119180 / freq; 
 
     outb(PORT_CMD, 0x36);
     outb(PORT_CH0, div & 0xFF);
     outb(PORT_CH0, div >> 8);
+}
+
+static void timer_handler(InterruptFrame* frame){
+    cli();
+    ticks++;
+    for (int i=0;i<MAX_SLOTS;i++){
+        if (slots[i].ticks && slots[i].callback){
+            if (++slots[i].count == slots[i].ticks){
+                slots[i].count = 0;
+                slots[i].callback(frame);
+            }
+        }
+    }
+
+    pic_eoi1();
+    sti();
 }
