@@ -12,7 +12,8 @@ typedef enum {
     DISK,
     NET,
     KBD,
-    MOUSE
+    MOUSE,
+    TERM
 } DeviceKind;
 
 typedef struct Device Device;
@@ -61,8 +62,8 @@ typedef struct CharDevice {
 #define block_device_flush(d)       (BLOCK_DEVICE(d)->flush(BLOCK_DEVICE(d)))
 #define block_device_pos(d)         (BLOCK_DEVICE(d)->pos(BLOCK_DEVICE(d)))
 
-#define char_device_read(d)         (CHAR_DEVICE(c)->read(CHAR_DEVICE(d)))
-#define char_device_write(d,c)      (CHAR_DEVICE(c)->write(CHAR_DEVICE(d),c))
+#define char_device_read(d)         (CHAR_DEVICE(d)->read(CHAR_DEVICE(d)))
+#define char_device_write(d,c)      (CHAR_DEVICE(d)->write(CHAR_DEVICE(d),c))
 
 typedef uint16_t (*DeviceTypeVisitor)   (uint32_t, DeviceType*,void*);
 typedef uint16_t (*DeviceVisitor)       (uint32_t,uint8_t, Device* device,void*);

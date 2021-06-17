@@ -5,7 +5,15 @@
 #include "kernel/task.h"
 #include "board/memory.h"
 
-static Isr isr_handlers[96];
+typedef void (*LowLevelIsr)(InterruptFrame*);
+
+typedef struct {
+    Isr isr;
+    void* callback_data;
+} IsrHandler;
+
+static IsrHandler isr_handlers[96];
+static uint8_t interrupts_enabled;
 
 typedef struct {
     uint16_t offset1;
@@ -24,9 +32,9 @@ typedef struct {
  **/
 #define IDT ((IDTEntry*)0x0)
 
-static void dummy_trap_handler(InterruptFrame* frame);
-static void dummy_isr_pic_handler(InterruptFrame* frame);
-static void dummy_isr_handler(InterruptFrame* frame);
+static void dummy_trap_handler(InterruptFrame* frame, void* data);
+static void dummy_isr_pic_handler(InterruptFrame* frame, void* data);
+static void dummy_isr_handler(InterruptFrame* frame, void* data);
 static void handle_isr(uint32_t isr_num, InterruptFrame* frame);
 
 void* handle_isr_ref = handle_isr; // FIXME, used by assembly code.
@@ -42,7 +50,7 @@ static void do_isr_install(uint16_t interrupt_number, uint32_t isr, uint8_t type
     entry->present = 1;
     entry->storage_segment = 0;
 }
-void isr_install(uint16_t interrupt_number, Isr isr){
+void isr_install(uint16_t interrupt_number, Isr isr, void* callback_data){
     if (interrupt_number < 0x20){
         // < 32 is for traps
         return;
@@ -54,14 +62,16 @@ void isr_install(uint16_t interrupt_number, Isr isr){
             isr = dummy_isr_handler;
         }
     }
-    isr_handlers[interrupt_number] = isr;
+    isr_handlers[interrupt_number].isr = isr;
+    isr_handlers[interrupt_number].callback_data = callback_data;
 }
-void trap_install(uint16_t interrupt_number, Isr isr){
+void trap_install(uint16_t interrupt_number, Isr isr, void* callback_data){
     if (interrupt_number < 32){
         if (!isr){
             isr = dummy_trap_handler;
         }
-        isr_handlers[interrupt_number] = isr;
+        isr_handlers[interrupt_number].isr = isr;
+        isr_handlers[interrupt_number].callback_data = callback_data;
     }
 }
 static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
@@ -79,7 +89,7 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
     }
 
     tasks_update_current(frame);
-    isr_handlers[isr_num](frame);
+    isr_handlers[isr_num].isr(frame, isr_handlers[isr_num].callback_data);
     
     if (frame->flags.privilege_level != 0){
         asm volatile(
@@ -96,11 +106,25 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
 }
 
 inline void sti(void){
+    interrupts_enabled = 1;
     asm volatile("sti");
 }
 
 inline void cli(void){
     asm volatile("cli");
+    interrupts_enabled = 0;
+}
+
+inline void pausei(void){
+    if (interrupts_enabled){
+        asm volatile("cli");
+    }
+}
+
+inline void resumei(void){
+    if (interrupts_enabled){
+        asm volatile("sti");
+    }
 }
 
 inline void cld(void){
@@ -114,20 +138,26 @@ inline void cld(void){
 #define ADJUST_PAGING(address) (0xFFFFF000 - ((uint32_t)isr_handlers_start) + address)
 
 #define ISR_SETUP(n) {\
-    extern Isr handle_isr_##n(InterruptFrame);\
+    extern LowLevelIsr handle_isr_##n(InterruptFrame);\
     do_isr_install(n, ADJUST_PAGING((uint32_t)handle_isr_##n), 0xe); \
 }
 
 void isr_init(){
     int i;
+
+    interrupts_enabled = 0;
+
     for (i=0;i<32;i++){
-        isr_handlers[i] = dummy_trap_handler;
+        isr_handlers[i].isr = dummy_trap_handler;
+        isr_handlers[i].callback_data = NULL;
     }
     for (;i<48;i++){
-        isr_handlers[i] = dummy_isr_pic_handler;
+        isr_handlers[i].isr = dummy_isr_pic_handler;
+        isr_handlers[i].callback_data = NULL;
     }
     for (;i<96;i++){
-        isr_handlers[i] = dummy_isr_handler;
+        isr_handlers[i].isr = dummy_isr_handler;
+        isr_handlers[i].callback_data = NULL;
     }
     ISR_SETUP(0x00);
     ISR_SETUP(0x01);
@@ -218,17 +248,17 @@ void isr_init(){
     ISR_SETUP(0x5f);
 }
 
-static void dummy_trap_handler(InterruptFrame* frame){
+static void dummy_trap_handler(InterruptFrame* frame, void* data){
     debug("Trap!");
     asm volatile("hlt");
 }
 
-static void dummy_isr_pic_handler(InterruptFrame* frame){
+static void dummy_isr_pic_handler(InterruptFrame* frame, void* data){
     pic_eoi1();
     pic_eoi2();
 }
 
-static void dummy_isr_handler(InterruptFrame* frame){
+static void dummy_isr_handler(InterruptFrame* frame, void* data){
     debug("ISR\n");
 }
 

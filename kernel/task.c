@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -39,6 +39,8 @@ Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
 #define current_task (*current_task_ptr)
 
 static uint32_t next_tid;
+
+static void setup_console(Task* task);
 
 void tasks_init(){
     next_tid = 1;
@@ -84,16 +86,12 @@ static TaskNode* new_node(){
 
 static Task* get_next_free_task(){
     TaskNode* task_node = new_node();
-    debug("List add 0:");debug_i(task_node,16);debug("\n");
-    debug("List add 1:");debug_i((uint32_t)task_list,16);debug("\n");
     task_list = list_add(task_list, LIST_NODE(task_node));
-    debug("List add 2:");debug_i(TASK_NODE(task_list)->task.tid,16);debug("\n");
-    debug("List add 3:");debug_i(task_node,16);debug("\n");
-
     return &(task_node->task);
 }
 
 uint32_t tasks_new(Stream* exec_stream){
+    pausei();
     VirtualAddress v_address;
     Task* task = get_next_free_task();
 
@@ -126,8 +124,10 @@ uint32_t tasks_new(Stream* exec_stream){
     task->cpu_state.flags.privilege_level = 3;
     task->cpu_state.flags.reserved_1 = 1;
     task->cpu_state.flags.interrupt_enable = 1;
+    setup_console(task);
     debug("TASK - Program start:");debug_i(task->cpu_state.eip,16);debug("\n");
 
+    resumei();
     return task->tid;
 }
 
@@ -161,18 +161,25 @@ static void remove_current_task(){
 }
 
 void tasks_next(){
+    pausei();
     current_task = next_task();
     debug("New task:");debug_i(current_task ? current_task->tid : 0,10);debug("\n");
+    resumei();
 }
 
 void tasks_loop(){
+    pausei();
     current_task = next_task();
     debug("TASK - Next task:");debug_i(current_task->tid,10);debug("\n");
     if (current_task && current_task->status != TASK_STATUS_NONE){
         current_task->status = TASK_STATUS_RUNNING;
         debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run\n");
 
+        resumei();
+
         task_run();
+
+        pausei();
 
         debug("TASK - Task left cpu\n");
         debug_i(current_page_dir(),16);
@@ -190,9 +197,11 @@ void tasks_loop(){
         debug("TASK - No tasks to run\n");
     }
     debug("TASK - Leave tasks loop\n");
+    resumei();
 }
 
 void tasks_finish(uint32_t task_id, uint32_t exit_code){
+    pausei();
     debug("TASK - Task finish:");debug_i(task_id,10);debug("\n");
 
     for (ListNode* task_node = task_list; task_node; task_node = task_node->next){
@@ -206,6 +215,7 @@ void tasks_finish(uint32_t task_id, uint32_t exit_code){
             break;
         }
     }
+    resumei();
 }
 
 void tasks_update_current(InterruptFrame* frame){
@@ -214,9 +224,20 @@ void tasks_update_current(InterruptFrame* frame){
         memcpy(&(current_task->cpu_state), frame, sizeof(InterruptFrame));
     }
 }
+
 void* tasks_to_kernel_address (void* address){
     uint32_t physical_address = paging_physical_address(
         current_task->page_directory,
         address);
     return paging_to_kernel_space(physical_address);
+}
+
+static void setup_console(Task* task){
+    // TODO Better console support
+    debug("Assigning console to task\n");
+    task->console = device_find(TERM,0);
+    task->streams[0] = char_device_stream(task->console,STREAM_READ);
+    task->streams[1] = char_device_stream(task->console,STREAM_WRITE);
+    task->streams[2] = char_device_stream(task->console,STREAM_WRITE);
+    debug("Console assigned");
 }

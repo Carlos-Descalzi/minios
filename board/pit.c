@@ -39,7 +39,7 @@ typedef struct {
 
 static uint64_t ticks;
 
-static void timer_handler(InterruptFrame* frame);
+static void timer_handler(InterruptFrame* frame, void* data);
 
 typedef struct {
     uint64_t ticks;
@@ -55,7 +55,7 @@ void pit_init(){
     ticks = 0;
     memset(slots,0,sizeof(slots));
     pit_set_freq(1);// TODO: fix this
-    isr_install(0x20, timer_handler); 
+    isr_install(0x20, timer_handler, NULL); 
 }
 
 inline uint64_t pit_ticks(void){
@@ -108,14 +108,14 @@ void pit_set_freq(uint16_t freq){
     outb(PORT_CH0, div >> 8);
 }
 
-static void timer_handler(InterruptFrame* frame){
+static void timer_handler(InterruptFrame* frame, void* data){
     cli();
     ticks++;
     for (int i=0;i<MAX_SLOTS;i++){
         if (slots[i].ticks && slots[i].callback){
             if (++slots[i].count == slots[i].ticks){
                 slots[i].count = 0;
-                slots[i].callback(frame);
+                slots[i].callback(frame, NULL);
             }
         }
     }

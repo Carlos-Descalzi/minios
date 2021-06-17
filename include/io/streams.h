@@ -2,6 +2,7 @@
 #define _STREAMS_H_
 
 #include "lib/stdlib.h"
+#include "kernel/device.h"
 
 typedef struct Stream {
     int16_t     (*read_byte)        (struct Stream*);
@@ -24,6 +25,9 @@ typedef struct Stream {
 #define stream_seek(s,p)            (STREAM(s)->seek(STREAM(s),p))
 #define stream_close(s)             (STREAM(s)->close(STREAM(s)))
 
+#define STREAM_READ     0x01
+#define STREAM_WRITE    0x02
 
+Stream* char_device_stream          (CharDevice* device, int mode);
 
 #endif

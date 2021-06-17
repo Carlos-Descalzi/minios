@@ -33,18 +33,20 @@ void test_task(){
     }
     fs = ext2_open(BLOCK_DEVICE(device));
 
-    stream = ext2_file_stream_open(fs, "/task1.elf",0);
+    stream = ext2_file_stream_open(fs, "/hello.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
     
+    /*
     stream = ext2_file_stream_open(fs, "/task2.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
     
     console_print("Running program ...\n\n");
-
+    */
+    sti();
     tasks_loop();
     tasks_loop();
     debug("END\n");

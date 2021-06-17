@@ -11,7 +11,8 @@ static const char* kinds[] = {
     "disk",
     "net",
     "kbd",
-    "mouse"
+    "mouse",
+    "term"
 };
 
 typedef struct DeviceInstance {

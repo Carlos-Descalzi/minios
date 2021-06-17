@@ -2,6 +2,7 @@
 #include "serial.h"
 #include "rtl8139.h"
 #include "ide.h"
+#include "console.h"
 
 void devices_register(){
     screen_register();
@@ -9,4 +10,5 @@ void devices_register(){
 //    rtl8139_register();
     ide_register();
     keyboard_register();
+    console_register();
 }

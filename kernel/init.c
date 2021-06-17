@@ -40,13 +40,13 @@ const struct {
     {"mouse", "mouse"}
 };
 
-static void     dummy_handler       (void);
+//static void     dummy_handler       (void);
 //static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
-static void     display_memory      (void);
+//static void     display_memory      (void);
 //static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
 //static void     test_timer          (void);
-static void     test_isr            (InterruptFrame* frame);
-static void     bsod                (InterruptFrame* frame);
+static void     test_isr            (InterruptFrame* frame, void* data);
+static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
 
 extern void     test_call           (void);
@@ -77,7 +77,7 @@ void init(){
 
     paging_init();
     console_print("Testing ISR\n");
-    isr_install(0x30, test_isr);
+    isr_install(0x30, test_isr, NULL);
     asm volatile("int $0x30");
     heap_init();
     device_init();
@@ -86,16 +86,16 @@ void init(){
     //test_elf();
     tasks_init();
     syscall_init();
-    trap_install(0xd,bsod);
+    trap_install(0xd,bsod, NULL);
     console_print("Kernel startup complete\n");
-    sti();
+    //sti();
 
-    //test_task();
+    test_task();
     //start_init();
     while(1);
 }
 
-static void test_isr(InterruptFrame* frame){
+static void test_isr(InterruptFrame* frame, void *data){
     console_print("ISR handler called\n");
     console_print("eax  :");console_print(itoa(frame->eax,buff,16));console_print("\n");
     console_print("eip  :");console_print(itoa(frame->eip,buff,16));console_print("\n");
@@ -126,7 +126,7 @@ static void test_timer(){
     isr_install(0x20, NULL); 
 }
 */
-static void bsod(InterruptFrame* frame){
+static void bsod(InterruptFrame* frame, void* data){
     int i;
     //console_gotoxy(0,0);
     console_color(CONSOLE_COLOR_BLUE << 4 | CONSOLE_COLOR_WHITE);

@@ -13,7 +13,7 @@
 typedef void (*SysCall)(InterruptFrame *f);
 
 static SysCall syscalls[0x100];
-static void handle_syscall(InterruptFrame* f);
+static void handle_syscall(InterruptFrame* f, void* data);
 static void syscall_debug(InterruptFrame* f);
 
 void syscall_init(){
@@ -30,10 +30,10 @@ void syscall_init(){
     syscalls[0x98] = syscall_debug;
     syscalls[0x99] = syscall_exit;
 
-    isr_install(0x31, handle_syscall);
+    isr_install(0x31, handle_syscall, NULL);
 }
 
-static void handle_syscall(InterruptFrame* f){
+static void handle_syscall(InterruptFrame* f, void* data){
     debug("SYSCALL - Syscall called!\n");
     debug("\teax: ");debug_i(f->eax,16);debug("\n");
     debug("\tebx: ");debug_i(f->ebx,16);debug("\n");

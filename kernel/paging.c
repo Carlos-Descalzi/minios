@@ -33,7 +33,7 @@
     paging_invalidate_cache(); \
 }
 
-static void     handle_page_fault       (InterruptFrame *frame);
+static void     handle_page_fault       (InterruptFrame *frame, void* data);
 static void     setup_isr_page          (PageTableEntry* page_table,uint8_t us);
 
 void paging_init(){
@@ -85,7 +85,7 @@ void paging_init(){
     );
     debug("PAGING - CR3:");debug_i((uint32_t)KERNEL_PAGE_DIR,16);debug("\n");
 
-    trap_install(0xE, handle_page_fault);
+    trap_install(0xE, handle_page_fault, NULL);
     console_print("PAGING - Paging initialized\n");
 }
 
@@ -373,7 +373,7 @@ void* paging_to_kernel_space(uint32_t physical_address){
     return (void*) (KERNEL_EXCHANGE_ADDRESS | (physical_address % PAGE_SIZE));
 }
 
-static void handle_page_fault(InterruptFrame *frame){
+static void handle_page_fault(InterruptFrame *frame, void* data){
     debug("PAGING - Page fault\n");
     debug("PAGING - \tCR2:");          debug_i(frame->cr2,16);debug("\n");
     debug("PAGING - \tCR2:");          debug_i(frame->cr3,16);debug("\n");

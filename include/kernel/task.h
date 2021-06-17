@@ -3,6 +3,7 @@
 #include "lib/stdint.h"
 #include "kernel/context.h"
 #include "kernel/paging.h"
+#include "kernel/device.h"
 #include "io/streams.h"
 #include "kernel/isr.h"
 
@@ -17,6 +18,7 @@ typedef struct Task {
     CPUState            cpu_state; 
     PageDirectoryEntry* page_directory;
     Stream*             streams[32];    // max open files
+    CharDevice*         console;
 } Task;
 
 void        tasks_init              (void);
