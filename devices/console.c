@@ -1,6 +1,8 @@
 #include "console.h"
 #include "kernel/device.h"
 #include "lib/heap.h"
+#include "misc/debug.h"
+#include "lib/string.h"
 
 typedef struct {
     CharDevice device;
@@ -34,8 +36,9 @@ static void release(DeviceType* device_type, Device* device){
 
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     ConsoleDevice* device = heap_alloc(sizeof(ConsoleDevice));
+    memset(device,0,sizeof(ConsoleDevice));
     device->screen = CHAR_DEVICE(device_find(VIDEO,0));
-    device->screen = CHAR_DEVICE(device_find(KBD,0));
+    device->keyboard = CHAR_DEVICE(device_find(KBD,0));
     CHAR_DEVICE(device)->read = console_read;
     CHAR_DEVICE(device)->write = console_write;
     return DEVICE(device);
@@ -46,6 +49,8 @@ static uint8_t count_devices(struct DeviceType* device_type){
 }
 
 static int16_t console_write(CharDevice* device, uint8_t data){
+    debug("write to screen\n");
+    debug_i(CONSOLE_DEVICE(device)->screen,16);
     return char_device_write(CONSOLE_DEVICE(device)->screen,data);
 }
 

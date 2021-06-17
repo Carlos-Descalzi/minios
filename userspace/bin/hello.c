@@ -3,7 +3,7 @@
 
 int main(int argc,char **argv){
 
-    printmessage("Hello world from userspace!!!\n");
+    printf("Hello world from userspace!!! %s %d \n",NULL,2);
 
     return 0;
 }

@@ -4,7 +4,10 @@ OBJS=stdlib.o 	\
 	 sched.o	\
 	 file.o		\
 	 fcntl.o	\
-	 stdlib.o
+	 stdlib.o	\
+	 printf.o	\
+	 string.o	\
+	 errno.o	
 
 all: $(OBJS)
 

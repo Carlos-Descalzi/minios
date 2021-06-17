@@ -40,16 +40,17 @@ static uint8_t buff_index;
 static char buff[8];
 static uint8_t saved_x;
 static uint8_t saved_y;
+/*
 static CharDevice SCREEN_DEVICE = {
-    base: {
-        type: DEVICE_TYPE_CHAR,
+    .base = {
+        .type = DEVICE_TYPE_CHAR,
         //subtype: DEVICE_SUBTYPE_SCREEN,
-        setopt: screen_setopt,
+        .setopt = screen_setopt,
     },
-    read: screen_read,
-    write: screen_write
+    .read = screen_read,
+    .write = screen_write
 };
-
+*/
 static DeviceType SCREEN_DEVICE_TYPE = {
     kind: VIDEO,
     count_devices: count_devices,
@@ -63,14 +64,20 @@ static uint8_t count_devices(struct DeviceType* device_type){
 
 static Device* instantiate(struct DeviceType* device_type, uint8_t device_number){
     console_init();
+    CharDevice* device = heap_alloc(sizeof(CharDevice));
     //clear_buff();
     mode = MODE_TEXT;
     saved_x = 0;
     saved_y = 0;
-    return DEVICE(&SCREEN_DEVICE);
+    device->read = screen_read;
+    device->write = screen_write;
+    device->base.setopt = screen_setopt;
+    debug("Device:");debug_i(device,16);debug("\n");
+    return DEVICE(device);
 }
 
 static void release(struct DeviceType* device_type, Device* device){
+    heap_free(device);
 }
 
 void screen_register(){
@@ -95,6 +102,7 @@ static int16_t screen_read(CharDevice* device){
 }
 
 static int16_t screen_write(CharDevice* device, uint8_t chr){
+    debug("screen write 2\n");
     if (mode == MODE_ESCAPE){
         if (chr != ']'){
             // exit escape mode, just send the esc character

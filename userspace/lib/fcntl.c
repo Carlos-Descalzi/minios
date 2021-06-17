@@ -32,16 +32,26 @@ typedef struct {
     unsigned char stream_num;
     void* buff;
     unsigned int size;
-} ReadData;
+} IOData;
 
 size_t read(int fd, void* buff, size_t count){
-    ReadData read_data = {
+    IOData read_data = {
         .stream_num = fd,
         .buff = buff,
         .size = count
     };
 
     return syscall(SYS_READ,&read_data);
+}
+
+size_t write(int fd, const void *buff, size_t count){
+    IOData write_data = {
+        .stream_num = fd,
+        .buff = buff,
+        .size = count
+    };
+
+    return syscall(SYS_WRITE,&write_data);
 }
 
 int close(int fd){
