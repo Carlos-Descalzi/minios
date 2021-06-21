@@ -38,16 +38,17 @@ void test_task(){
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
     
-    /*
     stream = ext2_file_stream_open(fs, "/task2.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
     
     console_print("Running program ...\n\n");
-    */
     sti();
-    tasks_loop();
-    tasks_loop();
+    do{
+        tasks_loop();
+        //asm volatile("pause");
+        debug("loop\n");
+    } while (1);
     debug("END\n");
 }

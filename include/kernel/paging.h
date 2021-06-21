@@ -36,6 +36,9 @@ typedef struct {
         physical_page_address: 20;
 } PageTableEntry;
 
+/**
+ * Utility structure for handling virtual addresses
+ **/
 typedef union __attribute__((__packed__)){
     struct {
         uint32_t offset:12,
@@ -54,18 +57,33 @@ void                paging_init                 (void);
  * Returns the physical address for a page directory and virtual address
  **/
 uint32_t            physical_address            (uint32_t page_dir, uint32_t address);
-
+/**
+ * Loads a given ELF binary into memory
+ **/
 uint32_t            paging_load_code            (Stream* stream, PageDirectoryEntry* dir);
 
 /**
  * Returns a page directory configured for a new task
  **/
 PageDirectoryEntry* paging_new_task_space       (void);
+/**
+ * Releases a page directory and all its allocated pages
+ **/
 void                paging_release_task_space   (PageDirectoryEntry* page_directory);
+/**
+ * Returns the physical address for a given page directory and virtual
+ * address
+ **/
 uint32_t            paging_physical_address     (PageDirectoryEntry* page_dir, void *address);
+/**
+ * Maps a given physical address into a kernel page
+ **/
 void*               paging_to_kernel_space      (uint32_t physical_address);
+/**
+ * Invalidates processor's TLB
+ **/
 void                paging_invalidate_cache     (void);
-
+            
 uint32_t current_page_dir();
 
 #endif

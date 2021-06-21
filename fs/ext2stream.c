@@ -52,6 +52,7 @@ Stream* ext2_file_stream_open(Ext2FileSystem* fs, const char* path, uint8_t mode
         if (stream->inode.size % fs->block_size){
             stream->numblocks++;
         }
+        STREAM(stream)->async = 0;
         STREAM(stream)->read_byte = read_byte;
         STREAM(stream)->write_byte = write_byte;
         STREAM(stream)->read_bytes = read_bytes;

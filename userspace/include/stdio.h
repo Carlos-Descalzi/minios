@@ -18,5 +18,6 @@ int     fputc       (int c, FILE* fp);
 int     printf      (const char* format, ...);
 int     vprintf     (const char* format, va_list ap);
 int     puts        (const char* str);
+char*   fgets       (char* buff, int size, FILE* stream);
 
 #endif

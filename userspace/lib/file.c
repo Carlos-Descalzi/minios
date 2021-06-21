@@ -26,8 +26,6 @@ FILE* stdout = &_files[1];
 FILE* stderr = &_files[2];
 
 FILE*   fopen   (const char*pathname, const char* mode){
-    char buff[10];
-
     for (int i=0;i<10;i++){
         if (_files[i].fd == -1){
             int result = open(pathname, 0);
@@ -50,4 +48,19 @@ int fclose(FILE* stream){
 
 size_t fread (void *buff, size_t size, size_t nmemb, FILE* stream){
     return read(stream->fd, buff, size * nmemb);
+}
+
+char* fgets(char* buff, int size, FILE* stream){
+    int i;
+    char c;
+    for (i=0;i<size-1;i++){
+        read(stream->fd,&c,1);
+        if (c != '\n'){
+            buff[i] = c;
+        } else {
+            break;
+        }
+    }
+    buff[i] = '\0';
+    return buff;
 }

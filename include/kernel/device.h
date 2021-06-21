@@ -1,10 +1,15 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
+#include "kernel/iobase.h"
 #include "lib/stdint.h"
 
 #define DEVICE_TYPE_CHAR             1
 #define DEVICE_TYPE_BLOCK            2
+
+#define DEVICE_READ_ERROR           -1
+#define DEVICE_READ_OK              0
+#define DEVICE_READ_WAIT            1
 
 typedef enum {
     VIDEO = 0,
@@ -29,14 +34,15 @@ struct Device{
     uint32_t    type;
     uint8_t     kind;
     uint8_t     instance_number;
-    //int16_t     (*init)             (struct Device*);
+    uint8_t     async;
     int16_t     (*setopt)           (struct Device*, uint32_t, void*);
 };
 
 typedef struct BlockDevice {
     Device base;
-    int16_t     (*read)             (struct BlockDevice*,uint8_t*,uint16_t);
-    int16_t     (*write)            (struct BlockDevice*,uint8_t*,uint16_t);
+    int16_t     (*read)             (struct BlockDevice*, uint8_t*,uint16_t);
+    int16_t     (*read_async)       (struct BlockDevice*, IORequest* request);
+    int16_t     (*write)            (struct BlockDevice*, uint8_t*,uint16_t);
     int16_t     (*close)            (struct BlockDevice*);
     void        (*seek)             (struct BlockDevice*, uint32_t);
     void        (*flush)            (struct BlockDevice*);
@@ -46,13 +52,14 @@ typedef struct BlockDevice {
 typedef struct CharDevice {
     Device base;
     int16_t     (*read)             (struct CharDevice*);
+    int16_t     (*read_async)       (struct CharDevice*, IORequest* request);
     int16_t     (*write)            (struct CharDevice*, uint8_t);
 } CharDevice;
 
 #define DEVICE(d)                   ((Device*)d)
 #define CHAR_DEVICE(d)              ((CharDevice*)d)
 #define BLOCK_DEVICE(d)             ((BlockDevice*)d)
-//#define device_init(d)              (((Device*)d)->init((Device*)d))
+
 #define device_setopt(d,o,v)        (DEVICE(d)->setopt(DEVICE(d),o,v))
 
 #define block_device_read(d,b,l)    (BLOCK_DEVICE(d)->read(BLOCK_DEVICE(d),b,l))
@@ -63,6 +70,7 @@ typedef struct CharDevice {
 #define block_device_pos(d)         (BLOCK_DEVICE(d)->pos(BLOCK_DEVICE(d)))
 
 #define char_device_read(d)         (CHAR_DEVICE(d)->read(CHAR_DEVICE(d)))
+#define char_device_read_async(d,r) (CHAR_DEVICE(d)->read_async(CHAR_DEVICE(d),r))
 #define char_device_write(d,c)      (CHAR_DEVICE(d)->write(CHAR_DEVICE(d),c))
 
 typedef uint16_t (*DeviceTypeVisitor)   (uint32_t, DeviceType*,void*);

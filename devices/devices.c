@@ -3,6 +3,7 @@
 #include "rtl8139.h"
 #include "ide.h"
 #include "console.h"
+#include "keyboard.h"
 
 void devices_register(){
     screen_register();

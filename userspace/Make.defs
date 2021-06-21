@@ -18,4 +18,4 @@ CFLAGS=-march=i386 \
     -fno-stack-protector \
     -nolibc \
  -nostartfiles   -nostdlib  -lc
-LDFLAGS= -T $(USERSPACEDIR)/linker.ld -nostartfiles -nostdlib
+LDFLAGS= -T $(USERSPACEDIR)/linker.ld -nostdlib

@@ -10,6 +10,8 @@
 #include "kernel/isr.h"
 #include "misc/debug.h"
 #include "misc/keycodes.h"
+#include "lib/string.h"
+#include "kernel/task.h"
 
 static const uint8_t    KEY_CODES[] = {
     0,                  KEY_CODE_ESCAPE,        KEY_CODE_1,             KEY_CODE_2,             
@@ -65,7 +67,7 @@ static uint8_t  count_devices       (DeviceType* device_type);
 static Device*  instantiate         (DeviceType* device_type, uint8_t device_number);
 static void     release             (DeviceType* device_type, Device* device);
 static int16_t  setopt              (Device* device, uint32_t option, void* data);
-static int16_t  read                (CharDevice* device);
+static int16_t  read_async          (CharDevice* device,IORequest* request);
 static void     handle_keyboard_irq (InterruptFrame* frame, void* data);
 
 typedef union {
@@ -83,6 +85,8 @@ typedef struct {
     uint8_t pos;
     uint32_t ticks;
     Lock lock;
+    uint32_t wait_tid;
+    IORequest* request;
 } KeyboardDevice;
 
 #define KEYBOARD_DEVICE(d)  ((KeyboardDevice*)d)
@@ -95,21 +99,6 @@ static DeviceType DEVICE_TYPE = {
     release: release
 };
 
-static KeyboardDevice KEYBOARD = {
-    device: {
-        base: {
-            type: DEVICE_TYPE_CHAR,
-            setopt: setopt,
-        },
-        read: read,
-        write: NULL
-    },
-    key_event : { wdata : 0 },
-    pos: 0,
-    ticks: 0,
-    lock: 0
-};
-
 void keyboard_register(){
     device_register_type((DeviceType*)&DEVICE_TYPE);
 }
@@ -118,30 +107,62 @@ static uint8_t count_devices(DeviceType* device_type){
     return 1;
 }
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
-    KEYBOARD.pos = 0;
-    debug("Initiating keyboard driver\n");
+    KeyboardDevice* device = heap_alloc(sizeof(KeyboardDevice));
 
-    isr_install(PIC_IRQ_BASE + PS2_IRQ, handle_keyboard_irq, NULL);
-    return DEVICE(&KEYBOARD);
+    memset(device,0,sizeof(KeyboardDevice));
+    DEVICE(device)->async = 1;
+    DEVICE(device)->type = DEVICE_TYPE_CHAR;
+    DEVICE(device)->setopt = setopt;
+    CHAR_DEVICE(device)->read_async = read_async;
+    debug("Initiating keyboard driver\n");
+    isr_install(PIC_IRQ_BASE + PS2_IRQ, handle_keyboard_irq, device);
+
+    return DEVICE(device);
 }
 static void release(DeviceType* device_type, Device* device){
     isr_install(PIC_IRQ_BASE + PS2_IRQ, NULL, NULL);
-    release_lock(&(KEYBOARD.lock));
+    release_lock(&(KEYBOARD_DEVICE(device)->lock));
+    heap_free(device);
 }
 static int16_t setopt(Device* device, uint32_t option, void* data){
     return 0;
 }
 
-static int16_t read(CharDevice* device){
-    int16_t val;
-    if (KEYBOARD.pos == 1){
-        KEYBOARD.pos = 0;
-        return KEYBOARD.key_event.cdata[1];
-    } 
-    while (KEYBOARD.key_event.wdata == 0){
-        acquire_lock(&(KEYBOARD.lock));
+static void write_to_request(KeyboardDevice* kbd, IORequest* request){
+
+    uint8_t* buffer;
+    
+    if (request->kernel){
+        buffer = request->target_buffer;
+    } else {
+        buffer = tasks_task_to_kernel_adddress(request->tid, request->target_buffer);
     }
-    return KEYBOARD.key_event.cdata[KEYBOARD.pos++];
+
+    memcpy(buffer, kbd->key_event.cdata, 2);
+
+    kbd->pos = 0;
+    kbd->key_event.wdata = 0;
+    request->dsize+=2;
+    debug("keyboard request done\n");
+    request->result = 0;
+    request->status = TASK_IO_REQUEST_DONE;
+    kbd->request = NULL; // FIXME clean this mess
+    if (request->callback){
+        request->callback(request, request->callback_data);
+    }
+}
+static int16_t read_async(CharDevice* device,IORequest* request){
+    KeyboardDevice* kbd = KEYBOARD_DEVICE(device);
+
+    if (kbd->key_event.wdata == 0){
+        debug("KEYBOARD - adding request ");debug_i(request,16);debug("\n");
+        KEYBOARD_DEVICE(device)->request = request;
+    } else {
+        debug("Answering request\n");
+        write_to_request(kbd, request);
+    }
+
+    return 0;
 }
 
 #define FLAG_ALTCODE    0x01
@@ -154,15 +175,15 @@ static uint16_t scan_code_to_key_code(uint8_t altcode, uint8_t scan_code){
         return 0;
     }
     if (scan_code > 0 && scan_code < KEY_CODES_SIZE){
-        debug("Key code found ");debug_c(KEY_CODES[scan_code]);
-        debug(", ");debug_i(scan_code,16);debug("\n");
+        //debug("Key code found ");debug_c(KEY_CODES[scan_code]);
+        //debug(", ");debug_i(scan_code,16);debug("\n");
         return KEY_CODES[scan_code];
     }
     debug("Unknown key code ");debug_i(scan_code,16);debug("\n");
     return 0;
 }
 
-static void read_keyboard(){
+static void read_keyboard(KeyboardDevice* device){
     uint8_t state = 0;
     uint8_t val;
     uint16_t key_code;
@@ -173,26 +194,31 @@ static void read_keyboard(){
         val = ps2_read(0);
     }
     if (val & 0x80){
-        debug("Release\n");
+        //debug("Release\n");
         state |= FLAG_BREAK;
         val &= 0x7F;
     }
     key_code = scan_code_to_key_code(state & FLAG_ALTCODE, val);
     if (key_code){
-        KEYBOARD.key_event.press_release = (state & FLAG_ALTCODE) != 0;
-        KEYBOARD.key_event.keycode = key_code;
+        device->key_event.press_release = (state & FLAG_BREAK) == 0;
+        device->key_event.keycode = key_code;
+    }
+
+    if (device->request){
+        debug("Request present\n");
+        write_to_request(device, device->request);
+    } else {
+        debug("No request ");debug_i(device->request,16);debug("\n");
     }
 }
 
 static void handle_keyboard_irq (InterruptFrame* frame, void* data){
-   cli();
    debug("Keyboard input\n");
+   KeyboardDevice* keyboard = data;
 
-   read_keyboard();
+   read_keyboard(keyboard);
 
-   release_lock(&(KEYBOARD.lock));
    pic_eoi1();
-   sti();
 }
 
 

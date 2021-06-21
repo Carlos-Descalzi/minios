@@ -4,6 +4,7 @@
 #include "lib/string.h"
 #include "lib/stdlib.h"
 #include "misc/debug.h"
+#include "lib/heap.h"
 
 /**
  * This device is just a wrapper over raw console API.
@@ -18,39 +19,34 @@
 #define MODE_TEXT   0
 #define MODE_ESCAPE 1
 
+typedef struct {
+    CharDevice device;
+    uint8_t mode;
+    uint8_t buff_index;
+    char buff[8];
+    uint8_t saved_x;
+    uint8_t saved_y;
+} ScreenDevice;
+
+#define SCREEN_DEVICE(d)    ((ScreenDevice*)d)
+
 static int16_t  screen_setopt       (Device* device, uint32_t option, void* data);
 static int16_t  screen_read         (CharDevice* device);
 static int16_t  screen_write        (CharDevice* device, uint8_t chr);
-uint8_t         handle_escape_char  (uint8_t chr);
-static void     move_cursor_up      (void);
-static void     move_cursor_dn      (void);
-static void     move_cursor_right   (void);
-static void     move_cursor_left    (void);
-static void     move_cursor         (void);
-static void     save_cursor         (void);
-static void     restore_cursor      (void);
-static void     set_color           (void);
-static uint8_t  count_devices       (struct DeviceType* device_type);
-static Device*  instantiate         (struct DeviceType* device_type, uint8_t device_number);
-static void     release             (struct DeviceType* device_type, Device* device);
-static void     clear_buff          (void);
+uint8_t         handle_escape_char  (ScreenDevice* screen, uint8_t chr);
+static void     move_cursor_up      (ScreenDevice* screen);
+static void     move_cursor_dn      (ScreenDevice* screen);
+static void     move_cursor_right   (ScreenDevice* screen);
+static void     move_cursor_left    (ScreenDevice* screen);
+static void     move_cursor         (ScreenDevice* screen);
+static void     save_cursor         (ScreenDevice* screen);
+static void     restore_cursor      (ScreenDevice* screen);
+static void     set_color           (ScreenDevice* screen);
+static uint8_t  count_devices       (DeviceType* device_type);
+static Device*  instantiate         (DeviceType* device_type, uint8_t device_number);
+static void     release             (DeviceType* device_type, Device* device);
+static void     clear_buff          (ScreenDevice* screen);
 
-static uint8_t mode;
-static uint8_t buff_index;
-static char buff[8];
-static uint8_t saved_x;
-static uint8_t saved_y;
-/*
-static CharDevice SCREEN_DEVICE = {
-    .base = {
-        .type = DEVICE_TYPE_CHAR,
-        //subtype: DEVICE_SUBTYPE_SCREEN,
-        .setopt = screen_setopt,
-    },
-    .read = screen_read,
-    .write = screen_write
-};
-*/
 static DeviceType SCREEN_DEVICE_TYPE = {
     kind: VIDEO,
     count_devices: count_devices,
@@ -58,25 +54,25 @@ static DeviceType SCREEN_DEVICE_TYPE = {
     release: release
 };
 
-static uint8_t count_devices(struct DeviceType* device_type){
+
+static uint8_t count_devices(DeviceType* device_type){
     return 1;
 }
 
-static Device* instantiate(struct DeviceType* device_type, uint8_t device_number){
+static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     console_init();
-    CharDevice* device = heap_alloc(sizeof(CharDevice));
-    //clear_buff();
-    mode = MODE_TEXT;
-    saved_x = 0;
-    saved_y = 0;
-    device->read = screen_read;
-    device->write = screen_write;
-    device->base.setopt = screen_setopt;
-    debug("Device:");debug_i(device,16);debug("\n");
+    ScreenDevice* device = heap_alloc(sizeof(ScreenDevice));
+    
+    device->mode = MODE_TEXT;
+    device->saved_x = 0;
+    device->saved_y = 0;
+    device->device.read = screen_read;
+    device->device.write = screen_write;
+    device->device.base.setopt = screen_setopt;
     return DEVICE(device);
 }
 
-static void release(struct DeviceType* device_type, Device* device){
+static void release(DeviceType* device_type, Device* device){
     heap_free(device);
 }
 
@@ -102,22 +98,23 @@ static int16_t screen_read(CharDevice* device){
 }
 
 static int16_t screen_write(CharDevice* device, uint8_t chr){
-    debug("screen write 2\n");
-    if (mode == MODE_ESCAPE){
+    ScreenDevice* screen = SCREEN_DEVICE(device);
+
+    if (screen->mode == MODE_ESCAPE){
         if (chr != ']'){
             // exit escape mode, just send the esc character
-            mode = MODE_TEXT;
+            screen->mode = MODE_TEXT;
             console_put(27);
             console_put(chr);
         } else {
-            if (handle_escape_char(chr)){
-                mode = MODE_TEXT;
+            if (handle_escape_char(screen, chr)){
+                screen->mode = MODE_TEXT;
             }
         }
     } else {
         if (chr == 27){
-            clear_buff();
-            mode = MODE_ESCAPE;
+            clear_buff(screen);
+            screen->mode = MODE_ESCAPE;
         } else {
             console_put(chr);
         }
@@ -126,22 +123,22 @@ static int16_t screen_write(CharDevice* device, uint8_t chr){
 }
 
 
-uint8_t handle_escape_char(uint8_t chr){
+uint8_t handle_escape_char(ScreenDevice* device, uint8_t chr){
     switch (chr){
         case 'A':
-            move_cursor_up();
+            move_cursor_up(device);
             return 1;
         case 'B':
-            move_cursor_dn();
+            move_cursor_dn(device);
             return 1;
         case 'C':
-            move_cursor_right();
+            move_cursor_right(device);
             return 1;
         case 'D':
-            move_cursor_left();
+            move_cursor_left(device);
             return 1;
         case 'f':
-            move_cursor();
+            move_cursor(device);
             return 1;
         case 'J':
             console_clear_screen();
@@ -151,29 +148,29 @@ uint8_t handle_escape_char(uint8_t chr){
         case 'p':
             return 1;
         case 's':
-            save_cursor();
+            save_cursor(device);
             return 1;
         case 'u':
-            restore_cursor();
+            restore_cursor(device);
             return 1;
         case 'm':
-            set_color();
+            set_color(device);
             return 1;
         default:
-            buff[buff_index++] = chr;
+            device->buff[device->buff_index++] = chr;
             break;
     }
     return 0;
 }
 
-static void move_cursor_up(){
+static void move_cursor_up(ScreenDevice* screen){
     uint8_t x;
     uint8_t y;
     uint8_t dy;
     console_get_cursor_pos(&x,&y);
 
-    if (strlen(buff)){
-        dy = atoi(buff);
+    if (strlen(screen->buff)){
+        dy = atoi(screen->buff);
     } else {
         dy = 1;
     }
@@ -185,14 +182,14 @@ static void move_cursor_up(){
     }
     console_gotoxy(x,y);
 }
-static void move_cursor_dn(){
+static void move_cursor_dn(ScreenDevice* screen){
     uint8_t x;
     uint8_t y;
     uint8_t dy;
     console_get_cursor_pos(&x,&y);
 
-    if (strlen(buff)){
-        dy = atoi(buff);
+    if (strlen(screen->buff)){
+        dy = atoi(screen->buff);
     } else {
         dy = 1;
     }
@@ -205,12 +202,12 @@ static void move_cursor_dn(){
     console_gotoxy(x,y);
 }
 
-static void move_cursor_right(){
+static void move_cursor_right(ScreenDevice* screen){
     uint8_t x;
     uint8_t y;
     uint8_t dx;
     console_get_cursor_pos(&x,&y);
-    dx = atoi(buff+1);
+    dx = atoi(screen->buff+1);
 
     x+=dx;
     if (x > 79){
@@ -219,12 +216,12 @@ static void move_cursor_right(){
     console_gotoxy(x,y);
 }
 
-static void move_cursor_left(){
+static void move_cursor_left(ScreenDevice* screen){
     uint8_t x;
     uint8_t y;
     uint8_t dx;
     console_get_cursor_pos(&x,&y);
-    dx = atoi(buff+1);
+    dx = atoi(screen->buff+1);
     if (dx < x){
         x = 0;
     } else {
@@ -233,42 +230,42 @@ static void move_cursor_left(){
     console_gotoxy(x, y);
 }
 
-static void move_cursor(){
+static void move_cursor(ScreenDevice* screen){
     int x;
     int y;
     char* c;
 
-    c = strrchr(buff,';');
+    c = strrchr(screen->buff,';');
     if (c){
         x = atoi(c+1);
         *c = '\0';
-        y = atoi(buff+1);
+        y = atoi(screen->buff+1);
         console_gotoxy(x,y);
     }
 }
 
-static void save_cursor(){
-    console_get_cursor_pos(&saved_x,&saved_y);
+static void save_cursor(ScreenDevice* screen){
+    console_get_cursor_pos(&(screen->saved_x),&(screen->saved_y));
 }
 
-static void restore_cursor(){
-    console_gotoxy(saved_x, saved_y);
+static void restore_cursor(ScreenDevice* screen){
+    console_gotoxy(screen->saved_x, screen->saved_y);
 }
 
-static void set_color(){
+static void set_color(ScreenDevice* screen){
     int bg;
     int fg;
     //int b;
     char* c;
 
-    c = strrchr(buff,';');
+    c = strrchr(screen->buff,';');
 
     if (c){
         if (strlen(c+1)){
             bg = atoi(c+1);
         }
         *c='\0';
-        c = strrchr(buff,';');
+        c = strrchr(screen->buff,';');
         if (strlen(c+1)){
             fg = atoi(c+1);
         }
@@ -279,7 +276,7 @@ static void set_color(){
     console_color(bg << 4 | fg); // TODO: Intensity
 }
 
-static inline void clear_buff(){
-    memset(buff,0,8);
-    buff_index = 0;
+static inline void clear_buff(ScreenDevice* screen){
+    memset(screen->buff,0,8);
+    screen->buff_index = 0;
 }

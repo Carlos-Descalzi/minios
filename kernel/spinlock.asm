@@ -5,6 +5,7 @@ global acquire_lock, release_lock
 acquire_lock:
     mov             ebx,    [esp+4]
     lock bts dword  [ebx],  0
+    jc              .wait
     ret
 
 .wait:

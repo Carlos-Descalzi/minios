@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "misc/debug.h"
 #include "io/streams.h"
 #include "lib/heap.h"
@@ -12,6 +13,7 @@ typedef struct {
 #define CHAR_STREAM(s)  ((CharStream*)s)
 
 static int16_t read_byte(Stream* stream);
+static int16_t read_async(Stream* stream, IORequest* request);
 static int16_t write_byte(Stream* stream, uint8_t data);
 static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size);
 static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size);
@@ -23,7 +25,9 @@ static void close(Stream* stream);
 Stream* char_device_stream  (CharDevice* device, int mode){
     CharStream* stream = heap_alloc(sizeof(CharStream));
     memset(stream,0,sizeof(CharStream));
+    STREAM(stream)->async = DEVICE(device)->async;
     STREAM(stream)->read_byte = read_byte;
+    STREAM(stream)->read_async = read_async;
     STREAM(stream)->read_bytes = read_bytes;
     STREAM(stream)->write_byte = write_byte;
     STREAM(stream)->write_bytes = write_bytes;
@@ -45,6 +49,12 @@ static int16_t read_byte(Stream* stream){
 static int16_t write_byte(Stream* stream, uint8_t data){
     return char_device_write(CHAR_STREAM(stream)->device, data);
 }
+static int16_t read_async(Stream* stream, IORequest* request){
+    debug("Char stream read async ");
+    debug_i(CHAR_DEVICE(CHAR_STREAM(stream)->device)->read_async,16);
+    debug("\n");
+    return char_device_read_async(CHAR_STREAM(stream)->device, request);
+}
 
 static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size){
     for (int i=0;i< size;i++){
@@ -54,8 +64,6 @@ static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size){
 }
 
 static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size){
-    debug("writing bytes\n");
-    debug_i(CHAR_STREAM(stream)->device,16);
     for (int i=0;i<size;i++){
         char_device_write(CHAR_STREAM(stream)->device,buffer[i]);
     }

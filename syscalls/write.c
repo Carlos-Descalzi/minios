@@ -24,9 +24,6 @@ void syscall_write(InterruptFrame* f){
 
     Stream* stream = task->streams[stream_num];
 
-    debug("Stream:");debug_i(stream_num,16);debug("\n");
-    debug("Stream:");debug_i(stream,16);debug("\n");
-
     if (stream){
         f->ebx = (uint32_t)stream_write_bytes(stream, buff, size);
     } else {

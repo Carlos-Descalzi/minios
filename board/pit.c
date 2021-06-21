@@ -101,11 +101,16 @@ uint16_t pit_get_count(){
     return count;
 }
 void pit_set_freq(uint16_t freq){
-    uint32_t div = 119180 / freq; 
+    /*
+    uint32_t div = 0xFFFF;// 119180 / freq; 
 
     outb(PORT_CMD, 0x36);
     outb(PORT_CH0, div & 0xFF);
     outb(PORT_CH0, div >> 8);
+    */
+    outb(PORT_CMD, 0x31);
+    outb(PORT_CH0,  1);
+    outb(PORT_CH0,  0);
 }
 
 static void timer_handler(InterruptFrame* frame, void* data){

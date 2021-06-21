@@ -1,3 +1,4 @@
+#define NODEBUG
 #include "kernel/isr.h"
 #include "misc/debug.h"
 #include "lib/string.h"
@@ -75,7 +76,8 @@ void trap_install(uint16_t interrupt_number, Isr isr, void* callback_data){
     }
 }
 static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
-    if (frame->flags.privilege_level != 0){
+    int user_space = (frame->cr3 & 3) != 0;
+    if (user_space){
         asm volatile(
             "\tmov %0, %%eax\n"
             "\tmov %%eax,%%cr3\n"
@@ -86,12 +88,15 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
             "\tmov %%ax, %%fs\n"
             ::"Nd"(KERNEL_PAGE_DIR_ADDRESS)
         );
+        //debug(">>>>");debug_i(frame->cr3 & 3,16);debug("\n");
+        tasks_update_current(frame);
+    } else {
+        debug("Interrupt in kernel space\n");
     }
 
-    tasks_update_current(frame);
     isr_handlers[isr_num].isr(frame, isr_handlers[isr_num].callback_data);
     
-    if (frame->flags.privilege_level != 0){
+    if (user_space){
         asm volatile(
             "\tmov %0, %%eax\n"
             "\tmov %%eax, %%cr3\n"
@@ -107,22 +112,26 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
 
 inline void sti(void){
     interrupts_enabled = 1;
+    debug("on\n");
     asm volatile("sti");
 }
 
 inline void cli(void){
     asm volatile("cli");
+    debug("off\n");
     interrupts_enabled = 0;
 }
 
 inline void pausei(void){
     if (interrupts_enabled){
+        debug("paused\n");
         asm volatile("cli");
     }
 }
 
 inline void resumei(void){
     if (interrupts_enabled){
+        debug("enabled\n");
         asm volatile("sti");
     }
 }

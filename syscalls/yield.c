@@ -4,6 +4,5 @@
 
 void syscall_yield(InterruptFrame* frame){
     debug("Calling yield\n");
-    tasks_next();
-    frame->eax = 0;
+    asm volatile("jmp do_task_exit");
 }

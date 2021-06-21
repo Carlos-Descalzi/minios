@@ -9,7 +9,7 @@ ASFLAGS=-f elf32
 CFLAGS=-march=i386 -m32 -mno-80387 -I$(TOPDIR)/include -nodefaultlibs -no-pie -fno-PIC -Wall \
     -Wno-address-of-packed-member
 CFLAGS+=-DDEBUGMODE
-KLDFLAGS=-T linker.ld -no-pie 
+KLDFLAGS=-T linker.ld 
 IMAGE=os.img
 IMAGESIZE=66048
 OBJDIR=$(TOPDIR)/obj
