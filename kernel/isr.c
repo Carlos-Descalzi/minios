@@ -14,7 +14,6 @@ typedef struct {
 } IsrHandler;
 
 static IsrHandler isr_handlers[96];
-static uint8_t interrupts_enabled;
 
 typedef struct {
     uint16_t offset1;
@@ -111,31 +110,12 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
 }
 
 inline void sti(void){
-    interrupts_enabled = 1;
-    debug("on\n");
     asm volatile("sti");
 }
 
 inline void cli(void){
     asm volatile("cli");
-    debug("off\n");
-    interrupts_enabled = 0;
 }
-
-inline void pausei(void){
-    if (interrupts_enabled){
-        debug("paused\n");
-        asm volatile("cli");
-    }
-}
-
-inline void resumei(void){
-    if (interrupts_enabled){
-        debug("enabled\n");
-        asm volatile("sti");
-    }
-}
-
 inline void cld(void){
     asm volatile("cld");
 }
@@ -153,8 +133,6 @@ inline void cld(void){
 
 void isr_init(){
     int i;
-
-    interrupts_enabled = 0;
 
     for (i=0;i<32;i++){
         isr_handlers[i].isr = dummy_trap_handler;

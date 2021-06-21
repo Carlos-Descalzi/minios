@@ -143,7 +143,6 @@ static void write_to_request(KeyboardDevice* kbd, IORequest* request){
     kbd->pos = 0;
     kbd->key_event.wdata = 0;
     request->dsize+=2;
-    debug("keyboard request done\n");
     request->result = 0;
     request->status = TASK_IO_REQUEST_DONE;
     kbd->request = NULL; // FIXME clean this mess
@@ -155,10 +154,8 @@ static int16_t read_async(CharDevice* device,IORequest* request){
     KeyboardDevice* kbd = KEYBOARD_DEVICE(device);
 
     if (kbd->key_event.wdata == 0){
-        debug("KEYBOARD - adding request ");debug_i(request,16);debug("\n");
         KEYBOARD_DEVICE(device)->request = request;
     } else {
-        debug("Answering request\n");
         write_to_request(kbd, request);
     }
 
@@ -175,8 +172,8 @@ static uint16_t scan_code_to_key_code(uint8_t altcode, uint8_t scan_code){
         return 0;
     }
     if (scan_code > 0 && scan_code < KEY_CODES_SIZE){
-        //debug("Key code found ");debug_c(KEY_CODES[scan_code]);
-        //debug(", ");debug_i(scan_code,16);debug("\n");
+        debug("Key code found ");debug_c(KEY_CODES[scan_code]);
+        debug(", ");debug_i(scan_code,16);debug("\n");
         return KEY_CODES[scan_code];
     }
     debug("Unknown key code ");debug_i(scan_code,16);debug("\n");
@@ -194,7 +191,6 @@ static void read_keyboard(KeyboardDevice* device){
         val = ps2_read(0);
     }
     if (val & 0x80){
-        //debug("Release\n");
         state |= FLAG_BREAK;
         val &= 0x7F;
     }
@@ -205,11 +201,8 @@ static void read_keyboard(KeyboardDevice* device){
     }
 
     if (device->request){
-        debug("Request present\n");
         write_to_request(device, device->request);
-    } else {
-        debug("No request ");debug_i(device->request,16);debug("\n");
-    }
+    } 
 }
 
 static void handle_keyboard_irq (InterruptFrame* frame, void* data){

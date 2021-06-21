@@ -1,3 +1,4 @@
+//#define NODEBUG
 #include "board/memory.h"
 #include "board/minfo.h"
 #include "lib/string.h"
@@ -24,7 +25,9 @@ uint32_t memory_alloc_block(void){
         for (j=0;j<32;j++){
             if ((USER_MEMORY_BITMAP[i] & 1 << j) == 0){
                 USER_MEMORY_BITMAP[i] |= 1 << j;
-                return USER_MEMORY_START_ADDRESS + (i * 32 + j) * MEMORY_BLOCK_SIZE;
+                uint32_t block = USER_MEMORY_START_ADDRESS + (i * 32 + j) * MEMORY_BLOCK_SIZE;
+                debug("Allocated block at ");debug_i(block,16);debug("\n");
+                return block;
             }
         }
     }

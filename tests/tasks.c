@@ -18,13 +18,21 @@
 #include "bin/elf.h"
 #include "fs/ext2.h"
 
+static void load_program(Ext2FileSystem* fs, const char* path){
+    console_print("Loading ");console_print(path);
+    Stream* stream = ext2_file_stream_open(fs, path,0);
+    uint32_t task_id = tasks_new(stream);
+    stream_close(stream);
+    debug("New task id:");debug_i(task_id,10);debug("\n");
+}
+
 void test_task(){
     Ext2FileSystem* fs;
     Device* device;
     Stream* stream;
     uint32_t task_id;
 
-    console_print("Loading program /hello.elf in memory ...\n");
+    console_print("Loading programs in memory ...\n");
 
     device = device_find(DISK, 0);
     if (!device){
@@ -33,18 +41,17 @@ void test_task(){
     }
     fs = ext2_open(BLOCK_DEVICE(device));
 
+    /*
     stream = ext2_file_stream_open(fs, "/hello.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
-    
-    stream = ext2_file_stream_open(fs, "/task2.elf",0);
-    task_id = tasks_new(stream);
-    stream_close(stream);
-    debug("New task id:");debug_i(task_id,10);debug("\n");
-    
-    console_print("Running program ...\n\n");
-    sti();
+    */
+    load_program(fs, "/task1.elf");
+    load_program(fs, "/task2.elf");
+
+    console_print("Running programs ...\n\n");
+    //sti();
     do{
         tasks_loop();
         //asm volatile("pause");

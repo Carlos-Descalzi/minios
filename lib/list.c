@@ -1,4 +1,5 @@
 #include "lib/list.h"
+#include "lib/stddef.h"
 
 ListNode* list_add      (ListNode* list, ListNode* node){
     ListNode* ptr;
@@ -10,6 +11,7 @@ ListNode* list_add      (ListNode* list, ListNode* node){
         ptr = ptr->next;
     }
     ptr->next = node;
+    node->next = NULL;
     return list;
 }
 
@@ -30,5 +32,6 @@ ListNode* list_remove   (ListNode* list, ListNode* node){
     if (ptr->next == node){
         ptr->next = ptr->next->next;
     }
+    node->next = NULL;
     return list;
 }

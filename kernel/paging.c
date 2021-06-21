@@ -216,34 +216,10 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
                     (prg_header.flags & 0x2) != 0);
             }
         } else {
-            debug("PAGING - Segment type:");debug_i(prg_header.segment_type,16);debug("\n");
+            //debug("PAGING - Segment type:");debug_i(prg_header.segment_type,16);debug("\n");
         }
     }
-    /*
-    for (i=0;i<header.section_header_table_entry_count;i++){
-        if (elf_read_section_header(stream, &header, i, &section_header) >= 0){
-            if (section_header.flags & SHF_ALLOC != 0 && section_header.address != 0){
-                debug("PAGING - Reading section ");debug_i(i,10);
-                debug(", type:");debug_i(section_header.type,16);
-                debug(", flags:");debug_i(section_header.flags,16);
-                debug(", address:");debug_i(section_header.address,16);
-                debug("\n");
 
-                blocks = TO_PAGES(section_header.size);
-
-                for (j=0;j<blocks;j++){
-                    uint32_t phys_block = memory_alloc_block();
-                    set_exchange_page(phys_block);
-                    elf_read_section_page(stream,&section_header, local_ptr, j, PAGE_SIZE);
-                    setup_page(dir, 
-                        (VirtualAddress)(section_header.address + ( j * PAGE_SIZE )), 
-                        phys_block, 
-                        (section_header.flags & SHF_WRITE) != 0 
-                    );
-                }
-            }
-        }
-    }*/
     return header.program_entry_position;
 }
 
@@ -317,7 +293,7 @@ PageDirectoryEntry* paging_new_task_space(void){
     local_table[PAGE_LAST-1].present = 1;
     local_table[PAGE_LAST-1].read_write = 1;
     local_table[PAGE_LAST-1].user_supervisor = 1;
-    local_table[PAGE_LAST-1].physical_page_address = stack_block;
+    local_table[PAGE_LAST-1].physical_page_address = stack_block >> 12;
 
     return (PageDirectoryEntry*)(directory | 3);
 }

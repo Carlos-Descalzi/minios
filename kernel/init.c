@@ -56,6 +56,7 @@ extern void     crash               (void);
 extern void     check_e2fs          (void);
 extern void     test_elf            (void);
 extern void     test_task           (void);
+static void     list_pci            (void);
 
 void init(){
     debug("Kernel initializing\n");
@@ -74,6 +75,7 @@ void init(){
     //sti();
     //isr_install(PIC_IRQ_BASE+0x01, handle_keyboard);
     //while(1);
+    list_pci();
 
     paging_init();
     console_print("Testing ISR\n");
@@ -252,4 +254,37 @@ static void start_init(void){
     debug("New task id:");debug_i(task_id,10);debug("\n");
     tasks_loop();
     console_print("System shutdown\n");
+}
+
+static void show_pci(uint8_t a,uint8_t b, uint8_t c, PCIHeader* header, void*data){
+    debug("Device:");
+    debug(itoa(a,buff,16));
+    debug("-");
+    debug(itoa(b,buff,16));
+    debug("-");
+    debug(itoa(c,buff,16));
+    debug(":");
+    debug(itoa(header->base.header_type.type,buff,16));
+    debug("\n");
+    if (header->base.header_type.type == 0){
+        for (int i=0;i<6;i++){
+            if (header->type00.base_addresses[i]){
+                debug("\tBase address:");
+                debug(itoa(header->type00.base_addresses[i],buff,16));
+                debug("\n");
+            }
+        }
+    } else if (header->base.header_type.type == 1){
+        debug("\tBase address:");
+        debug(itoa(header->type01.memory_base,buff,16));
+        debug("\n");
+    } else if (header->base.header_type.type == 2){
+        debug("\tBase address:");
+        debug(itoa(header->type02.memory_base_0,buff,16));
+        debug("\n");
+    }
+}
+
+static void list_pci(void){
+    pci_list_all_buses(show_pci, NULL);
 }

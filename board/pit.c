@@ -114,7 +114,7 @@ void pit_set_freq(uint16_t freq){
 }
 
 static void timer_handler(InterruptFrame* frame, void* data){
-    cli();
+    //cli();
     ticks++;
     for (int i=0;i<MAX_SLOTS;i++){
         if (slots[i].ticks && slots[i].callback){
@@ -126,5 +126,5 @@ static void timer_handler(InterruptFrame* frame, void* data){
     }
 
     pic_eoi1();
-    sti();
+    //sti();
 }
