@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "board/memory.h"
 #include "board/minfo.h"
 #include "lib/string.h"

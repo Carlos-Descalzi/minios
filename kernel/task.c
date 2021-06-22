@@ -164,24 +164,19 @@ static int check_pending_io_requests(Task* task){
 }
 
 static void check_io_wait_list(){
-    int done = 0;
-    while(!done){
-        int any_pending = 0;
-        for (ListNode* node = io_wait_list; node; node = node->next){
-            if (!check_pending_io_requests(&(TASK_NODE(node)->task))){
-                io_wait_list = list_remove(io_wait_list, node);
-                TASK_NODE(node)->task.status = TASK_STATUS_IDLE;
-                task_list = list_add(task_list, node);
-                debug("Task ");debug_i(TASK_NODE(node)->task.tid,10);debug("moved to idle state\n");
+    debug("looping io wait\n");
+    for (ListNode* node = io_wait_list; node; node = node->next){
+        if (!check_pending_io_requests(&(TASK_NODE(node)->task))){
+            io_wait_list = list_remove(io_wait_list, node);
+            TASK_NODE(node)->task.status = TASK_STATUS_IDLE;
+            task_list = list_add(task_list, node);
+            node = io_wait_list;
+            if (!node){
                 break;
-            } else {
-                any_pending = 1;
             }
-        }
-        if (!any_pending){
-            done = 1;
-        }
+        } 
     }
+    debug("Exit loop\n");
 }
 
 static void remove_current_task(){
@@ -208,21 +203,15 @@ static void move_to_wait_list(){
 
 void tasks_loop(){
     check_io_wait_list();
-    //pausei();
+    
     current_task = next_task();
     debug("TASK - Next task:");debug_i(current_task->tid,10);debug("\n");
     if (current_task && current_task->status != TASK_STATUS_NONE){
         if (current_task->status == TASK_STATUS_IDLE){
             current_task->status = TASK_STATUS_RUNNING;
-            debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run, address: ");
-            debug_i(current_task->cpu_state.cr3,16);debug(":");
-            debug_i(current_task->cpu_state.eip,16);debug("\n");
-
-            //resumei();
+            debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run\n");
 
             task_run();
-
-            //pausei();
 
             debug("TASK - Task ");debug_i(current_task->tid,10);debug(" left cpu\n");
 
@@ -245,11 +234,10 @@ void tasks_loop(){
         debug("TASK - No tasks to run\n");
     }
     debug("TASK - Leave tasks loop\n");
-    //resumei();
 }
 
 void tasks_finish(uint32_t task_id, uint32_t exit_code){
-    //pausei();
+
     debug("TASK - Task finish:");debug_i(task_id,10);debug("\n");
 
     for (ListNode* task_node = task_list; task_node; task_node = task_node->next){
@@ -261,12 +249,10 @@ void tasks_finish(uint32_t task_id, uint32_t exit_code){
             break;
         }
     }
-    //resumei();
 }
 
 void tasks_update_current(InterruptFrame* frame){
     if (current_task){
-        //debug("TASK - Updating current task\n");
         memcpy(&(current_task->cpu_state), frame, sizeof(InterruptFrame));
     }
 }
@@ -314,7 +300,6 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
                 task->streams[stream_num],
                 &(task->io_requests[i])
             );
-            //debug("Task set to IO Wait status\n");
             break;
         }
     }

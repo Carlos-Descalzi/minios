@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/syscall.h"
 #include "lib/stdint.h"
 #include "kernel/isr.h"

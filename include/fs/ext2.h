@@ -152,6 +152,8 @@ int32_t         ext2_load_inode         (Ext2FileSystem* fs, uint32_t inodenum, 
 int32_t         ext2_load               (Ext2FileSystem* fs, Ext2Inode* inode, void* dest);
 uint32_t        ext2_read_block         (Ext2FileSystem* fs, Ext2Inode* inode, 
                                         uint32_t block, uint8_t* dest, uint32_t length);
+int32_t         ext2_get_direntry       (Ext2FileSystem* fs, Ext2Inode* inode, uint32_t offset,
+                                        Ext2DirEntry* direntry);
 
 #define     FS_MODE_R               0
 #define     FS_MODE_W               1

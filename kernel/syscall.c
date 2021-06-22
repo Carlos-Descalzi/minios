@@ -25,6 +25,8 @@ void syscall_init(){
     syscalls[3] = syscall_close;
     syscalls[4] = syscall_exec;
     syscalls[5] = syscall_yield;
+    // ....
+    syscalls[78] = syscall_getdents;
     // ... to be filled
     // ... leave these for last
     syscalls[0x98] = syscall_debug;

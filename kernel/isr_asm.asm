@@ -17,9 +17,11 @@ handle_isr_%1:
     push eax
     mov eax, %1
     push eax
+    sti
     
     call [handle_isr_ref] 
-    
+
+    cli
     pop eax
     pop eax
     pop eax
@@ -43,9 +45,11 @@ handle_isr_%1:
     push eax
     mov eax, %1
     push eax
+    sti
     
     call [handle_isr_ref] 
-    
+
+    cli
     pop eax
     pop eax
     pop eax

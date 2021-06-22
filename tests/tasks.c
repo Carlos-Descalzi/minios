@@ -47,15 +47,15 @@ void test_task(){
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
     */
-    load_program(fs, "/task1.elf");
-    load_program(fs, "/task2.elf");
+    //load_program(fs, "/hello.elf");
+    load_program(fs, "/shell.elf");
 
     console_print("Running programs ...\n\n");
-    //sti();
+    sti();
     do{
         tasks_loop();
-        //asm volatile("pause");
-        debug("loop\n");
+        asm volatile("pause");
+        //debug("loop\n");
     } while (1);
     debug("END\n");
 }

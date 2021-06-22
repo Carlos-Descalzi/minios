@@ -44,7 +44,7 @@ const struct {
 //static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
 //static void     display_memory      (void);
 //static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
-//static void     test_timer          (void);
+static void     test_timer          (void);
 static void     test_isr            (InterruptFrame* frame, void* data);
 static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
@@ -75,7 +75,7 @@ void init(){
     //sti();
     //isr_install(PIC_IRQ_BASE+0x01, handle_keyboard);
     //while(1);
-    list_pci();
+    //list_pci();
 
     paging_init();
     console_print("Testing ISR\n");
@@ -111,23 +111,25 @@ static void test_isr(InterruptFrame* frame, void *data){
 /*
 static int timer_count;
 
-static void timer_handler(InterruptFrame* frame){
+static void timer_handler(InterruptFrame* frame, void* data){
     timer_count++;
     console_print("Timer called, IRQ: ");
     console_print(utoa(pic_get_irq(),buff,16));
     console_put('\n');
-    pic_eoi();
+    pic_eoi1();
 }
+
 static void test_timer(){
     console_print("Testing timer\n");
     timer_count = 0;
-    isr_install(0x20, timer_handler); 
+    isr_install(0x20, timer_handler, NULL); 
     sti();
-    while(timer_count < 3);
+    while(timer_count < 1);
     cli();
-    isr_install(0x20, NULL); 
+    isr_install(0x20, NULL, NULL); 
 }
 */
+
 static void bsod(InterruptFrame* frame, void* data){
     int i;
     //console_gotoxy(0,0);

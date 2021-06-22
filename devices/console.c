@@ -19,6 +19,14 @@ typedef union {
     uint8_t byte;
 } KeyboardStatus;
 
+typedef union {
+    struct {
+        uint8_t echo:1
+
+    };
+    uint8_t byte;
+} ConsoleStatus;
+
 typedef struct {
     CharDevice device;
     CharDevice* screen;
@@ -27,6 +35,7 @@ typedef struct {
     IORequest console_request;
     uint8_t buffer[2];
     KeyboardStatus keyboard_status;
+    ConsoleStatus console_status;
 } ConsoleDevice;
 
 #define CONSOLE_DEVICE(d)               ((ConsoleDevice*)d)
@@ -72,6 +81,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->console_request.callback = request_callback;
     device->console_request.target_buffer = device->buffer;
     device->keyboard_status.byte = 0;
+    device->console_status.byte = 1;
     reset_console_request(device);
     CHAR_DEVICE(device)->read_async = console_read_async;
     CHAR_DEVICE(device)->write = console_write;
@@ -157,6 +167,10 @@ static void request_callback(IORequest* request, void* data){
             device->user_request->dsize = 1;
             device->user_request->result = 0;
             device->user_request->status = TASK_IO_REQUEST_DONE;
+
+            if (device->console_status.echo){
+                char_device_write(CONSOLE_DEVICE(device)->screen,buffer[0]);
+            }
 
             if (device->user_request->callback){
                 device->user_request->callback(

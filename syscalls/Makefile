@@ -7,6 +7,7 @@ OBJS=exit.o	\
 	read.o 	\
 	close.o \
 	write.o	\
-	yield.o
+	yield.o \
+	getdents.o
 
 all: $(OBJS)

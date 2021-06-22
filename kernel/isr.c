@@ -110,10 +110,12 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
 }
 
 inline void sti(void){
+    debug("int enabled\n");
     asm volatile("sti");
 }
 
 inline void cli(void){
+    debug("int disabled\n");
     asm volatile("cli");
 }
 inline void cld(void){

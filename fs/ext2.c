@@ -381,6 +381,24 @@ static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t n
 
     return 0;
 }
+int32_t ext2_get_direntry(Ext2FileSystem* fs, Ext2Inode* inode, uint32_t offset, Ext2DirEntry* direntry){
+
+    if (inode->type != EXT2_INODE_TYPE_DIRECTORY){
+        debug("Not a directory\n");
+        return -1;
+    }
+
+    uint32_t block = offset / fs->block_size;
+    uint32_t block_offset = offset % fs->block_size;
+
+    ext2_device_gotoblock(fs, block);
+    ext2_device_read_block(fs);
+
+    Ext2DirEntry* entry = (fs->block_buffer + block_offset);
+    memcpy(direntry, entry, entry->rec_len);
+
+    return 0;
+}
 
 static void ext2_list_dir_inode(Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data){
     uint32_t *blocks;

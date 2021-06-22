@@ -23,7 +23,9 @@ ListNode* list_remove   (ListNode* list, ListNode* node){
     }
 
     if (list == node){
-        return list->next;
+        ListNode* next = list->next;
+        list->next = NULL;
+        return next;
     }
     ptr = list;
     while (ptr->next && ptr->next != node){

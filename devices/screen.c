@@ -1,3 +1,4 @@
+//#define NODEBUG
 #include "screen.h"
 #include "kernel/device.h"
 #include "board/console.h"
@@ -101,18 +102,22 @@ static int16_t screen_write(CharDevice* device, uint8_t chr){
     ScreenDevice* screen = SCREEN_DEVICE(device);
 
     if (screen->mode == MODE_ESCAPE){
-        if (chr != ']'){
+        debug_c(chr);debug(" ");debug_i(screen->buff_index,10);debug("\n");
+        if (chr != '[' && screen->buff_index == 0){
             // exit escape mode, just send the esc character
+            debug("exit escape mode\n");
             screen->mode = MODE_TEXT;
             console_put(27);
             console_put(chr);
         } else {
+            debug("add to buffer\n");
             if (handle_escape_char(screen, chr)){
                 screen->mode = MODE_TEXT;
             }
         }
     } else {
         if (chr == 27){
+            debug("escape mode\n");
             clear_buff(screen);
             screen->mode = MODE_ESCAPE;
         } else {
@@ -141,7 +146,9 @@ uint8_t handle_escape_char(ScreenDevice* device, uint8_t chr){
             move_cursor(device);
             return 1;
         case 'J':
+            debug("clear screen\n");
             console_clear_screen();
+            console_gotoxy(0,0);
             return 1;
         case 'K':
             return 1;
@@ -156,7 +163,9 @@ uint8_t handle_escape_char(ScreenDevice* device, uint8_t chr){
         case 'm':
             set_color(device);
             return 1;
+        case '[':
         default:
+            debug("added\n");
             device->buff[device->buff_index++] = chr;
             break;
     }

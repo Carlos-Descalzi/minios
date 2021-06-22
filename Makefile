@@ -58,7 +58,7 @@ padding:
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
 
-e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf
+e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf userspace/bin/shell.elf
 	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
 	@mkdir -p tmp
 	@mke2fs -b 1024 e2fs.img
@@ -72,6 +72,7 @@ e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf
 	@sudo cp userspace/bin/init.elf tmp/
 	@sudo cp userspace/bin/task1.elf tmp/
 	@sudo cp userspace/bin/task2.elf tmp/
+	@sudo cp userspace/bin/shell.elf tmp/
 	@sudo umount tmp
 	@rm -rf tmp
 

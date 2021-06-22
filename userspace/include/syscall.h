@@ -8,6 +8,8 @@
 #define SYS_EXEC    0x04
 #define SYS_YIELD   0x05
 
+#define SYS_GETDENT 0x4E
+
 #define SYS_DEBUG   0x98
 #define SYS_EXIT    0x99
 
