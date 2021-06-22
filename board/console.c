@@ -100,5 +100,5 @@ static void do_clear(){
 }
 void console_get_cursor_pos(unsigned char* x, unsigned char* y){
     *y = pos / SCREEN_WIDTH;
-    *x = pos % SCREEN_HEIGHT;
+    *x = pos % SCREEN_WIDTH;
 }
