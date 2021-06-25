@@ -3,7 +3,7 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices fs board tests testfiles bin syscalls userspace io
+SUBDIRS=kernel lib devices fs board tests testfiles bin syscalls userspace io 
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
@@ -58,7 +58,8 @@ padding:
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
 
-e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf userspace/bin/shell.elf
+
+e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf userspace/bin/shell.elf drivers
 	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
 	@mkdir -p tmp
 	@mke2fs -b 1024 e2fs.img
@@ -73,16 +74,28 @@ e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf use
 	@sudo cp userspace/bin/task1.elf tmp/
 	@sudo cp userspace/bin/task2.elf tmp/
 	@sudo cp userspace/bin/shell.elf tmp/
+	@sudo mkdir tmp/drivers
+	@sudo cp drivers/serial/*.elf tmp/drivers
+	@sudo cp drivers/console/*.elf tmp/drivers
+	@sudo cp drivers/screen/*.elf tmp/drivers
+	@sudo cp drivers/keyboard/*.elf tmp/drivers
 	@sudo umount tmp
 	@rm -rf tmp
 
-kernel.bin: kernel.elf
+kernel.bin: kernel.elf 
 	@mkdir -p $(LSTDIR)
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin
 	objdump -d $< > $(LSTDIR)/kernel.lst
 
 kernel.elf: $(SUBDIRS)
 	i686-gnu-ld $(KLDFLAGS) $(KOBJS) -o kernel.elf
+	nm $@ > kernel.symtable
+	awk -f mklib.awk kernel.symtable > kernellib.asm
+	$(AS) $(ASFLAGS) -o kernellib.o kernellib.asm
+
+drivers: kernel.elf
+	@echo "Entering $@"
+	@$(MAKE) -C $@ $(MAKECMDGOALS)
 
 boot:
 	@echo "Entering $@"

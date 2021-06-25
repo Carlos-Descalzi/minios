@@ -2,7 +2,6 @@
 #define _STREAMS_H_
 
 #include "lib/stdlib.h"
-#include "kernel/device.h"
 #include "kernel/iobase.h"
 
 typedef struct Stream {
@@ -31,7 +30,5 @@ typedef struct Stream {
 
 #define STREAM_READ     0x01
 #define STREAM_WRITE    0x02
-
-Stream* char_device_stream          (CharDevice* device, int mode);
 
 #endif

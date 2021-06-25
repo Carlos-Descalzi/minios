@@ -114,7 +114,6 @@ int16_t read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     uint32_t bytes_read;
 
     if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.size){
-        debug(">>>> ACA\n");
         return -1;
     }
     block_size = FILE_STREAM(stream)->fs->block_size;
@@ -122,6 +121,8 @@ int16_t read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     block = FILE_STREAM(stream)->pos / block_size;
     nblocks = size / block_size + (size % block_size ? 1 : 0);
     bytes_read = 0;
+
+    debug("EXT2STREAM - Block:");debug_i(block,10);debug("\n");
 
     for (i=0;i<nblocks;i++){
         ext2_read_block(

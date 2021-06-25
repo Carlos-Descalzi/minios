@@ -1,5 +1,4 @@
-//#define NODEBUG
-#include "screen.h"
+#define NODEBUG
 #include "kernel/device.h"
 #include "board/console.h"
 #include "lib/string.h"
@@ -49,13 +48,19 @@ static void     release             (DeviceType* device_type, Device* device);
 static void     clear_buff          (ScreenDevice* screen);
 static void     backspace           (ScreenDevice* screen);
 
+void device_register();
+
 static DeviceType SCREEN_DEVICE_TYPE = {
-    kind: VIDEO,
-    count_devices: count_devices,
-    instantiate: instantiate,
-    release: release
+    .kind = VIDEO
 };
 
+void device_register(){
+    SCREEN_DEVICE_TYPE.count_devices = count_devices;
+    SCREEN_DEVICE_TYPE.instantiate = instantiate;
+    SCREEN_DEVICE_TYPE.release = release;
+    device_register_type((DeviceType*)&SCREEN_DEVICE_TYPE);
+    debug("** Screen device type registered\n");
+}
 
 static uint8_t count_devices(DeviceType* device_type){
     return 1;
@@ -64,6 +69,7 @@ static uint8_t count_devices(DeviceType* device_type){
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     console_init();
     ScreenDevice* device = heap_alloc(sizeof(ScreenDevice));
+    debug("SCREEN WRITE:");debug_i(screen_write,16);debug("\n");
     
     device->mode = MODE_TEXT;
     device->saved_x = 0;
@@ -78,9 +84,6 @@ static void release(DeviceType* device_type, Device* device){
     heap_free(device);
 }
 
-void screen_register(){
-    device_register_type((DeviceType*)&SCREEN_DEVICE_TYPE);
-}
 
 
 static int16_t screen_setopt(Device* device, uint32_t option, void* data){
@@ -118,7 +121,7 @@ static int16_t screen_write(CharDevice* device, uint8_t chr){
             clear_buff(screen);
             screen->mode = MODE_ESCAPE;
         } else if (chr == 8){
-            backspace(device);
+            backspace(SCREEN_DEVICE(device));
         } else {
             console_put(chr);
         }

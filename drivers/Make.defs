@@ -1,0 +1,28 @@
+# vim: syntax=make
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
+DRIVERSDIR=$(MAKEFILE_DIR)
+CC=gcc
+LD=i686-gnu-ld 
+AS=nasm
+ASFLAGS=-f elf32
+KLIB=$(DRIVERSDIR)/../kernellib.o
+
+CFLAGS=-march=i386 \
+	-m32 \
+	-mno-80387 \
+	-I$(DRIVERSDIR)/../include \
+	-nodefaultlibs \
+	-Wall \
+    -Wno-address-of-packed-member \
+    -mno-tls-direct-seg-refs \
+    -fno-stack-protector \
+    -nolibc \
+    -nostartfiles \
+    -fpie \
+    -nostdlib \
+    -DDEBUGMODE
+
+LDFLAGS=-nostdlib\
+    -T$(DRIVERSDIR)/linker.ld \
+    -pie 

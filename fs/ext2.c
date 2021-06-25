@@ -283,15 +283,32 @@ int32_t ext2_load(Ext2FileSystem* fs, Ext2Inode* inode, void* dest){
 static uint32_t get_block_by_index(Ext2FileSystem* fs, Ext2Inode* inode, uint32_t block_index){
     uint32_t entries_per_block = fs->block_size / sizeof(uint32_t);
 
+    debug("EXT2 - get_block_by_index:");debug_i(block_index,10);
+    debug("\n");
+
+    for (int i=0;i<15;i++){
+        debug("EXT2 - Block:");
+        debug_i(i,10);
+        debug(",");debug_i(inode->blocks[i],10);debug("\n");
+    }
+
     if (block_index < 12){
         return inode->blocks[block_index];
     } else {
-        ext2_device_gotoblock(fs, inode->blocks[block_index]);
+        uint32_t iblock = inode->blocks[12];
+        debug("EXT2 - Indirect block:");debug_i(iblock,10);debug("\n");
+        ext2_device_gotoblock(fs, iblock);
         ext2_device_read_block(fs);
-        block_index -= 12;
-        if (block_index < entries_per_block){
-            return ((uint32_t*)fs->block_buffer)[block_index];
-        }
+        block_index-=12;
+        //if (block_index < entries_per_block){
+            debug("XXXXXXXXXX ");debug_i(block_index,10);debug("\n");
+            uint32_t bnum = ((uint32_t*)fs->block_buffer)[block_index];
+
+            debug("Indirect block number:");debug_i(bnum,10);debug("\n");
+
+            return bnum;
+        //}
+        //debug("ACAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
         // TODO SEGUIR DE ACA
 
     }

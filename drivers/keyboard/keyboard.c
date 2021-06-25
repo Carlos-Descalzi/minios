@@ -1,6 +1,5 @@
 #define NODEBUG
 #include "lib/stddef.h"
-#include "keyboard.h"
 #include "kernel/device.h"
 #include "kernel/isr.h"
 #include "board/ps2.h"
@@ -93,14 +92,15 @@ typedef struct {
 
 
 static DeviceType DEVICE_TYPE = {
-    kind: KBD,
-    count_devices: count_devices,
-    instantiate: instantiate,
-    release: release
+    .kind = KBD
 };
 
-void keyboard_register(){
+void device_register(){
+    DEVICE_TYPE.count_devices = count_devices;
+    DEVICE_TYPE.instantiate = instantiate;
+    DEVICE_TYPE.release = release;
     device_register_type((DeviceType*)&DEVICE_TYPE);
+    debug("** Keyboard device type registered\n");
 }
 
 static uint8_t count_devices(DeviceType* device_type){

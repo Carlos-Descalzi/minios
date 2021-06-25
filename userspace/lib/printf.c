@@ -115,8 +115,11 @@ struct _FILE {
 };
 
 int fputc(int c, FILE* fp){
-    write(fp->fd,&c,1);
-    return 0;
+    if (fp && fp->fd){
+        write(fp->fd,&c,1);
+        return 0;
+    }
+    return -1;
 }
 
 static void parse_format(const char* format, int* pos, char* buffer, Format* tformat){

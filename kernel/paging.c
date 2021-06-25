@@ -32,9 +32,16 @@
     KERNEL_EXCHANGE_PAGE.present = 1; \
     paging_invalidate_cache(); \
 }
+// Convenience macros, map the page I use for exchange to different structures
+// which I use dpending the situation
+#define local_page_dir  ((PageDirectoryEntry*)KERNEL_EXCHANGE_ADDRESS)
+#define local_table     ((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS)
+#define local_ptr       ((void*)KERNEL_EXCHANGE_ADDRESS)
 
-static void     handle_page_fault       (InterruptFrame *frame, void* data);
-static void     setup_isr_page          (PageTableEntry* page_table,uint8_t us);
+static void     handle_page_fault           (InterruptFrame *frame, void* data);
+static void     setup_isr_page              (PageTableEntry* page_table,uint8_t us);
+static uint32_t paging_kernel_alloc_pages   (uint32_t nblocks, uint8_t rw);
+
 
 void paging_init(){
     int i;
@@ -108,11 +115,6 @@ static void setup_isr_page(PageTableEntry* page_table, uint8_t us){
     debug("PAGING - Last page of table directory used to map ISR handlers: ");
     debug_i((PAGE_LAST << 22) | (PAGE_LAST << 12),16);debug("\n");
 }
-// Convenience macros, map the page I use for exchange to different structures
-// which I use dpending the situation
-#define local_page_dir  ((PageDirectoryEntry*)KERNEL_EXCHANGE_ADDRESS)
-#define local_table     ((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS)
-#define local_ptr       ((void*)KERNEL_EXCHANGE_ADDRESS)
 
 static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_t physical_address, uint8_t rw){
     uint32_t index = vaddress.page_dir_index;
@@ -143,59 +145,54 @@ static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_
 }
 
 
+static void show_elf_info(ElfHeader* header){
+    /*
+    debug("Magic number:");
+    debug_i(header->magic_number,16);
+    debug(", Binary type:");
+    debug_i(header->bin_type,10);
+    debug(", Arch:");
+    debug(header->arch == 1 ? "32bit" : "64bit");
+    debug(",");
+    debug(header->endianess == 1 ? "Little endian" : "Big Endian");console_print("\n");
+    debug(", Header size:");
+    debug_i(header->header_size,10);
+    debug("\n");
+    debug("Program entry position:");
+    debug_i(header->program_entry_position,16);
+    debug("\n");
+    debug("Program header position:");
+    debug_i(header->program_header_table_position,10);
+    debug(", entry size:");
+    debug_i(header->program_header_table_entry_size,10);
+    debug("\n");
+    debug("Section header position:");
+    debug_i(header->section_header_table_position,10);
+    debug(", entry size:");
+    debug_i(header->section_header_table_entry_size,10);
+    debug("\n");
+    */
+}
 /**
  * TODO: Move somewhere else
  **/
 uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
     ElfHeader header;
     ElfProgramHeader prg_header;
-    ElfSectionHeader section_header;
     uint32_t blocks;
-    uint32_t size;
     uint32_t i;
     uint32_t j;
 
     debug("PAGING - Reading elf header\n");
     elf_read_header(stream, &header);
 
-    debug("Magic number:");
-    debug_i(header.magic_number,16);
-    debug(", Binary type:");
-    debug_i(header.bin_type,10);
-    debug(", Arch:");
-    debug(header.arch == 1 ? "32bit" : "64bit");
-    debug(",");
-    debug(header.endianess == 1 ? "Little endian" : "Big Endian");console_print("\n");
-    debug(", Header size:");
-    debug_i(header.header_size,10);
-    debug("\n");
-    debug("Program entry position:");
-    debug_i(header.program_entry_position,16);
-    debug("\n");
-    debug("Program header position:");
-    debug_i(header.program_header_table_position,10);
-    debug("\n");
-    debug("Program header size:");
-    debug_i(header.program_header_table_entry_size,10);
-    debug("\n");
-    debug("Section header position:");
-    debug_i(header.section_header_table_position,10);
-    debug("\n");
-    debug("Program header:\n");
-
+    show_elf_info(&header);
 
     for (i=0;i< header.program_header_table_entry_count;i++){
 
         elf_read_program_header(stream, &header, i, &prg_header);
 
         if (prg_header.segment_type == ELF_PH_PT_LOAD){
-            debug("Loading prg section:");
-            debug_i(i,10);
-            debug(",flags:");debug_i(prg_header.flags,16);
-            debug(",address:");debug_i(prg_header.virtual_address,16);
-            debug(",alignment:");debug_i(prg_header.alignment,16);
-            debug(",v offset:");debug_i(prg_header.virtual_address % PAGE_SIZE,16);
-            debug("\n");
 
             blocks = TO_PAGES(prg_header.segment_mem_size);
 
@@ -221,6 +218,86 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
     }
 
     return header.program_entry_position;
+}
+
+uint32_t paging_kernel_load_code(Stream* stream){
+    ElfHeader header;
+    ElfProgramHeader prg_header;
+    ElfSectionHeader section_header;
+    uint32_t blocks;
+    uint32_t size;
+    uint32_t i;
+    uint32_t j;
+
+    debug("PAGING - Loading code in kernel space\n");
+    elf_read_header(stream, &header);
+
+    if (header.magic_number != MAGIC_NUMBER_ELF){
+        debug("Not ELF\n");
+        return 0;
+    }
+    show_elf_info(&header);
+
+    uint32_t target_address = 0;
+
+    for (i=0;i< header.program_header_table_entry_count;i++){
+        elf_read_program_header(stream, &header, i, &prg_header);
+
+        if (prg_header.segment_type == ELF_PH_PT_LOAD){
+            debug("PAGING - Segment type pt load\n");
+
+            if (prg_header.segment_mem_size > 0){
+                blocks = TO_PAGES(prg_header.segment_mem_size);
+
+                uint32_t address = paging_kernel_alloc_pages(
+                    blocks, 
+                    (prg_header.flags & ELF_PRG_HEADER_W) != 0
+                );
+
+                if (!target_address && (prg_header.flags & ELF_PRG_HEADER_X)) {
+                    target_address = address;
+                }
+    
+                for (j=0;j<blocks;j++){
+                    debug("PAGING - Writing page at :");debug_i(address + j * PAGE_SIZE,16);debug("\n");
+                    elf_read_program_page(
+                        stream, 
+                        &prg_header, 
+                        address + j * PAGE_SIZE,
+                        j, 
+                        PAGE_SIZE);
+                }
+            }
+
+        } else if (prg_header.segment_type == ELF_PH_PT_DYNAMIC){
+            debug("PAGING - Segment type dynamic\n");
+        } else {
+            debug("PAGING - Segment type:");debug_i(prg_header.segment_type,16);debug("\n");
+        }
+    }
+
+    /*
+    for (i=0;i<header.section_header_table_entry_count;i++){
+        if (elf_read_section_header(stream, &header, i, &section_header)){
+            debug("Unable to read section header\n");
+        } else {
+            if (section_header.type == ELF_SEC_HEADER_PROGBITS){
+                debug("Program bits\n");
+            } else if (section_header.type == ELF_SEC_HEADER_REL){
+                debug("Relocations section\n");
+
+            } else if (section_header.type == ELF_SEC_HEADER_RELA){
+                debug("Relocations section 2\n");
+
+            } else {
+                debug("Unknown section ");
+                debug_i(section_header.type,16);
+                debug("\n");
+            }
+        }
+    }
+    */
+    return target_address + header.program_entry_position;
 }
 
 PageDirectoryEntry* paging_new_task_space(void){
@@ -352,7 +429,7 @@ void* paging_to_kernel_space(uint32_t physical_address){
 static void handle_page_fault(InterruptFrame *frame, void* data){
     debug("PAGING - Page fault\n");
     debug("PAGING - \tCR2:");          debug_i(frame->cr2,16);debug("\n");
-    debug("PAGING - \tCR2:");          debug_i(frame->cr3,16);debug("\n");
+    debug("PAGING - \tCR3:");          debug_i(frame->cr3,16);debug("\n");
 
     set_exchange_page(frame->cr3);
     VirtualAddress address = {.address = frame->cr2};
@@ -392,3 +469,41 @@ static void handle_page_fault(InterruptFrame *frame, void* data){
     }
 }
 
+static uint32_t paging_kernel_alloc_pages   (uint32_t nblocks, uint8_t rw){
+    // skip first page dir
+    VirtualAddress start_address;
+    debug("Allocating ");debug_i(nblocks,10);debug(" pages for kernel\n");
+    for (int page_dir_index = 1;page_dir_index<PAGES_MAX;page_dir_index++){
+        if (KERNEL_PAGE_DIR[page_dir_index].present == 0){
+            uint32_t address = memory_alloc_block();
+            KERNEL_PAGE_DIR[page_dir_index].present = 1;
+            KERNEL_PAGE_DIR[page_dir_index].read_write = 1;
+            KERNEL_PAGE_DIR[page_dir_index].user_supervisor = 0;
+            KERNEL_PAGE_DIR[page_dir_index].page_table_address = address >> 12;
+            KERNEL_PAGE_DIR[page_dir_index].page_size = 0;
+            
+            set_exchange_page(address);
+            memset(local_ptr,0,sizeof(PageDirectoryEntry)*PAGES_MAX);
+        } else {
+            set_exchange_page(KERNEL_PAGE_DIR[page_dir_index].page_table_address << 12);
+        }
+        for (int page_index = 0;page_index<PAGES_MAX;page_index++){
+            if (!local_table[page_index].present){
+                start_address.page_dir_index = page_dir_index;
+                start_address.page_index = page_index;
+                start_address.offset = 0;
+
+                for (int i=0;i<nblocks;i++){
+
+                    local_table[page_index+i].physical_page_address = memory_alloc_block() >> 12;
+                    local_table[page_index+i].read_write = rw;
+                    local_table[page_index+i].user_supervisor = 0;
+                    local_table[page_index+i].present = 1;
+                }
+
+                return start_address.address;
+            }
+        }
+    }
+    return 0;
+}

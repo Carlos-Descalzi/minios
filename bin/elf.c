@@ -1,6 +1,7 @@
 #include "bin/elf.h"
 #include "misc/debug.h"
 
+
 int32_t elf_read_header(Stream* stream, ElfHeader* header){
     if (!stream || stream_read_bytes(stream, (uint8_t*)header, sizeof(ElfHeader)) < 0){
         return -1;

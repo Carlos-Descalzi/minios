@@ -1,4 +1,3 @@
-#include "serial.h"
 #include "kernel/device.h"
 #include "board/bda.h"
 #include "board/io.h"
@@ -21,13 +20,13 @@ typedef struct {
 #define SERIAL_DEVICE(d)    ((SerialDevice*)d)
 
 static DeviceType SERIAL_DEVICE_TYPE = {
-    kind: SER,
-    count_devices: count_devices,
-    instantiate: instantiate,
-    release: release
+    .kind = SER
 };
 
-void serial_register(){
+void device_register(){
+    SERIAL_DEVICE_TYPE.count_devices = count_devices;
+    SERIAL_DEVICE_TYPE.instantiate = instantiate;
+    SERIAL_DEVICE_TYPE.release = release;
     device_register_type((DeviceType*)&SERIAL_DEVICE_TYPE);
 }
 

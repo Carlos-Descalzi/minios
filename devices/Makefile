@@ -1,11 +1,12 @@
 include ../Make.defs
 include ../Make.rules
 OBJS=devices.o 	\
-	 screen.o 	\
-	 serial.o 	\
-	 ide.o 		\
-	 keyboard.o	\
-	 console.o
+	 ide.o 		#\
+#	 screen.o 	\
+#	 keyboard.o	#\
+#	 console.o
 #	 rtl8139.o 
+#	 serial.o 	\
+#
 
 all: $(OBJS)

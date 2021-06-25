@@ -1,5 +1,4 @@
 #define NODEBUG
-#include "console.h"
 #include "kernel/device.h"
 #include "lib/heap.h"
 #include "misc/debug.h"
@@ -21,7 +20,7 @@ typedef union {
 
 typedef union {
     struct {
-        uint8_t echo:1
+        uint8_t echo:1;
 
     };
     uint8_t byte;
@@ -51,14 +50,15 @@ static void     reset_console_request   (ConsoleDevice* device);
 static void     set_keyboard_request    (ConsoleDevice* device);
 
 static DeviceType DEVICE_TYPE = {
-    kind: TERM,
-    count_devices: count_devices,
-    instantiate: instantiate,
-    release: release
+    .kind = TERM
 };
 
-void console_register(){
+void device_register(){
+    DEVICE_TYPE.count_devices = count_devices;
+    DEVICE_TYPE.instantiate = instantiate;
+    DEVICE_TYPE.release = release;
     device_register_type((DeviceType*)&DEVICE_TYPE);
+    debug("** Console device type registered\n");
 }
 
 static void release(DeviceType* device_type, Device* device){
@@ -94,6 +94,7 @@ static uint8_t count_devices(struct DeviceType* device_type){
 }
 
 static int16_t console_write(CharDevice* device, uint8_t data){
+    debug("CONSOLE WRITE:");debug_i(CONSOLE_DEVICE(device)->screen->write,16);debug("\n");
     return char_device_write(CONSOLE_DEVICE(device)->screen,data);
 }
 

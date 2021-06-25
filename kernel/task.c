@@ -10,6 +10,7 @@
 #include "board/memory.h"
 #include "board/cpu.h"
 #include "lib/list.h"
+#include "io/streamimpl.h"
 
 typedef struct {
     ListNode head;
@@ -276,12 +277,16 @@ void* tasks_task_to_kernel_adddress(uint32_t tid, void* address){
 static void setup_console(Task* task){
     // TODO Rework console stuff
     task->console = CHAR_DEVICE(device_find(TERM,0));
-    // stdin
-    task->streams[0] = char_device_stream(task->console,STREAM_READ);
-    // stdout
-    task->streams[1] = char_device_stream(task->console,STREAM_WRITE);
-    // stderr
-    task->streams[2] = char_device_stream(task->console,STREAM_WRITE);
+    if (task->console){
+        // stdin
+        task->streams[0] = char_device_stream(task->console,STREAM_READ);
+        // stdout
+        task->streams[1] = char_device_stream(task->console,STREAM_WRITE);
+        // stderr
+        task->streams[2] = char_device_stream(task->console,STREAM_WRITE);
+    } else {
+        debug("NO CONSOLE!\n");
+    }
 }
 void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, uint32_t size){
     Task* task = current_task;

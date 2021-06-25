@@ -1,6 +1,6 @@
 #define NODEBUG
 #include "misc/debug.h"
-#include "io/streams.h"
+#include "io/streamimpl.h"
 #include "lib/heap.h"
 #include "lib/string.h"
 

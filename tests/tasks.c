@@ -20,6 +20,7 @@
 
 static void load_program(Ext2FileSystem* fs, const char* path){
     console_print("Loading ");console_print(path);
+    console_print("\n");
     Stream* stream = ext2_file_stream_open(fs, path,0);
     uint32_t task_id = tasks_new(stream);
     stream_close(stream);

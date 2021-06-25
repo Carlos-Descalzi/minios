@@ -2,6 +2,7 @@
 #define _DEVICE_H_
 
 #include "kernel/iobase.h"
+#include "io/streams.h"
 #include "lib/stdint.h"
 
 #define DEVICE_TYPE_CHAR             1
@@ -56,6 +57,11 @@ typedef struct CharDevice {
     int16_t     (*write)            (struct CharDevice*, uint8_t);
 } CharDevice;
 
+/**
+ * yeah it sucks, TODO: fix all the module relocation
+ * Only for loadable device drivers.
+ **/
+
 #define DEVICE(d)                   ((Device*)d)
 #define CHAR_DEVICE(d)              ((CharDevice*)d)
 #define BLOCK_DEVICE(d)             ((BlockDevice*)d)
@@ -82,4 +88,5 @@ int16_t device_register_type            (DeviceType* device);
 void    device_init_devices             (void);
 void    device_list                     (DeviceVisitor visitor, void *data);
 Device* device_find                     (uint8_t kind, uint8_t instance);
+
 #endif

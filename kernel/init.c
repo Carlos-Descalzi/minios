@@ -57,6 +57,7 @@ extern void     check_e2fs          (void);
 extern void     test_elf            (void);
 extern void     test_task           (void);
 static void     list_pci            (void);
+static void     load_drivers        (void);
 
 void init(){
     debug("Kernel initializing\n");
@@ -85,7 +86,9 @@ void init(){
     device_init();
     devices_register();
     device_init_devices();
+    load_drivers();
     //test_elf();
+    
     tasks_init();
     syscall_init();
     trap_install(0xd,bsod, NULL);
@@ -289,4 +292,42 @@ static void show_pci(uint8_t a,uint8_t b, uint8_t c, PCIHeader* header, void*dat
 
 static void list_pci(void){
     pci_list_all_buses(show_pci, NULL);
+}
+static void load_driver(Ext2FileSystem* fs, const char* path){
+    console_print("Loading driver ");
+    console_print(path);
+    console_print("\n");
+
+    debug("Loading ");debug(path);debug("\n");
+
+    Stream* stream = ext2_file_stream_open(fs, path,0);
+
+    void(*function)(void) = (void*)paging_kernel_load_code(stream);
+
+    if (function){
+        debug("Driver entry point:");debug_i(function,16);debug("\n");
+        function();
+        debug("Driver loaded\n");
+    } else {
+        console_print("Unable to load driver\n");
+    }
+
+    stream_close(stream);
+}
+static void load_drivers(void){
+    debug("Loading drivers\n");
+    Device* device = device_find(DISK, 0);
+    if (device){
+        Ext2FileSystem* fs = ext2_open(BLOCK_DEVICE(device));
+        if (fs){
+            load_driver(fs, "/drivers/screen.elf");
+            load_driver(fs, "/drivers/keyboard.elf");
+            load_driver(fs, "/drivers/console.elf");
+            debug("Drivers loaded\n");
+        } else {
+            debug("No fs\n");
+        }
+    } else {
+        debug("No device\n");
+    }
 }

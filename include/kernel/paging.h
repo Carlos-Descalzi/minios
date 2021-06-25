@@ -61,7 +61,10 @@ uint32_t            physical_address            (uint32_t page_dir, uint32_t add
  * Loads a given ELF binary into memory
  **/
 uint32_t            paging_load_code            (Stream* stream, PageDirectoryEntry* dir);
-
+/**
+ *
+ **/
+uint32_t            paging_kenel_load_code      (Stream* stream);
 /**
  * Returns a page directory configured for a new task
  **/

@@ -4,6 +4,7 @@
 #include "board/ps2.h"
 #include "board/bda.h"
 #include "misc/debug.h"
+#include "kernel/paging.h"
 
 static const char* kinds[] = {
     "video",
@@ -22,9 +23,13 @@ typedef struct DeviceInstance {
 
 // TODO: Use some dynamic structure
 #define MAX_DEVICE_TYPES    20
-#define MAX_DEVICES        40
+#define MAX_DEVICES         40
 static DeviceType* device_types[MAX_DEVICE_TYPES];
 static DeviceInstance devices[MAX_DEVICES];
+static int initialized = 0;
+
+static void init_devices        (DeviceType* device_type);
+static void do_init_device      (DeviceType* device_type, int*device_index);
 
 void device_init(){
     memset(device_types,0,sizeof(device_types));
@@ -45,37 +50,27 @@ int16_t device_register_type (DeviceType* device_type){
     for (i=0;i<MAX_DEVICE_TYPES;i++){
         if (!device_types[i]){
             device_types[i] = device_type;
+
+            if (initialized){
+                init_devices(device_type);
+            }
             return 0;
         }
     }
     return -1;
 }
 void device_init_devices(void){
-    char buff[10];
-    int i, j, device_index, device_count;
+    int i, device_index;
 
     device_index = 0;
     for (i=0;i< MAX_DEVICE_TYPES;i++){
-
         if (device_types[i]){
-            device_count = device_types[i]->count_devices(device_types[i]);
-
-            for (j=0;j<device_count;j++){
-                devices[device_index].device_type = device_types[i];
-                devices[device_index].device = device_types[i]->instantiate(device_types[i], j);
-                if (devices[device_index].device){
-                    devices[device_index].device->kind = device_types[i]->kind;
-                    devices[device_index].device->instance_number = j;
-                    console_print("Registered device: ");
-                    console_print(kinds[device_types[i]->kind]);
-                    console_print(itoa(devices[device_index].device->instance_number,buff,10));
-                    console_print("\n");
-                    device_index++;
-                }
-            }
+            do_init_device(device_types[i], &device_index);
         }
     }
+    initialized = 1;
 }
+
 void device_list (DeviceVisitor visitor, void *data){
     int i;
 
@@ -97,3 +92,31 @@ Device* device_find(uint8_t kind, uint8_t instance){
     }
     return NULL;
 }
+
+static void init_devices(DeviceType* device_type){
+    int device_index;
+
+    for (device_index = 0;devices[device_index].device;device_index++);
+
+    do_init_device(device_type,&device_index);
+}
+
+static void do_init_device(DeviceType* device_type, int*device_index){
+    int j;
+    char buff[10];
+    int device_count = device_type->count_devices(device_type);
+
+    for (j=0;j<device_count;j++){
+        devices[*device_index].device_type = device_type;
+        devices[*device_index].device = device_type->instantiate(device_type, j);
+        if (devices[*device_index].device){
+            devices[*device_index].device->kind = device_type->kind;
+            devices[*device_index].device->instance_number = j;
+            console_print(kinds[device_type->kind]);
+            console_print(itoa(devices[*device_index].device->instance_number,buff,10));
+            console_print("\n");
+            (*device_index)++;
+        }
+    }
+}
+

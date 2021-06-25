@@ -4,6 +4,8 @@
 #include "lib/stdint.h"
 #include "io/streams.h"
 
+#define MAGIC_NUMBER_ELF    0x464C457F
+
 #define ELF_ARCH_UNDEFINED  0x00
 #define ELF_ARCH_SPARC      0x02
 #define ELF_ARCH_X86        0x03
@@ -16,6 +18,7 @@
 
 #define ELF_PH_PT_NULL      0x00
 #define ELF_PH_PT_LOAD      0x01
+#define ELF_PH_PT_DYNAMIC   0x02
 
 
 typedef struct {
@@ -40,6 +43,10 @@ typedef struct {
     uint16_t section_names_index;
 } ElfHeader;
 
+#define ELF_PRG_HEADER_X    0x01
+#define ELF_PRG_HEADER_W    0x02
+#define ELF_PRG_HEADER_R    0x04
+
 typedef struct {
     uint32_t segment_type;
     uint32_t offset;
@@ -53,6 +60,10 @@ typedef struct {
 
 #define SHF_WRITE   0x1
 #define SHF_ALLOC   0x2
+
+#define ELF_SEC_HEADER_REL      0x09
+#define ELF_SEC_HEADER_RELA     0x04
+#define ELF_SEC_HEADER_PROGBITS 0x01
 
 typedef struct {
     uint32_t name;
