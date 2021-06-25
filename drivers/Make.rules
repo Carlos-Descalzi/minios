@@ -1,6 +1,7 @@
-
+# vim: syntax=make
 all: $(BINS)
 
 %.elf: %.o
 	$(LD) $(LDFLAGS) $< $(KLIB) -o $@ -M > $@.map
 	objdump -drwC $@ > $@.lst
+

@@ -3,7 +3,8 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-SUBDIRS=kernel lib devices fs board tests testfiles bin syscalls userspace io 
+MODULES=kernel lib devices fs board tests testfiles bin syscalls io 
+SUBDIRS=$(MODULES) userspace drivers
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
@@ -87,15 +88,11 @@ kernel.bin: kernel.elf
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin
 	objdump -d $< > $(LSTDIR)/kernel.lst
 
-kernel.elf: $(SUBDIRS)
+kernel.elf: $(MODULES)
 	i686-gnu-ld $(KLDFLAGS) $(KOBJS) -o kernel.elf
 	nm $@ > kernel.symtable
 	awk -f mklib.awk kernel.symtable > kernellib.asm
 	$(AS) $(ASFLAGS) -o kernellib.o kernellib.asm
-
-drivers: kernel.elf
-	@echo "Entering $@"
-	@$(MAKE) -C $@ $(MAKECMDGOALS)
 
 boot:
 	@echo "Entering $@"
