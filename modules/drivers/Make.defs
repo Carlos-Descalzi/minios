@@ -6,12 +6,12 @@ CC=gcc
 LD=i686-gnu-ld 
 AS=nasm
 ASFLAGS=-f elf32
-KLIB=$(DRIVERSDIR)/../kernellib.o
+KLIB=$(DRIVERSDIR)/../../kernellib.o
 
 CFLAGS=-march=i386 \
 	-m32 \
 	-mno-80387 \
-	-I$(DRIVERSDIR)/../include \
+	-I$(DRIVERSDIR)/../../include \
 	-nodefaultlibs \
 	-Wall \
     -Wno-address-of-packed-member \

@@ -18,6 +18,7 @@
 #include "bin/elf.h"
 #include "fs/ext2.h"
 #include "kernel/syscall.h"
+#include "kernel/modules.h"
 
 typedef struct {
     uint32_t total_ram;
@@ -28,22 +29,6 @@ typedef struct {
 
 static char buff[32];
 
-const struct {
-    char* kind;
-    char* description;
-} KINDS[] = {
-    {"video", "video"},
-    {"ser", "serial"},
-    {"disk", "disk drive"},
-    {"net", "network interface"},
-    {"kbd", "keyboard"},
-    {"mouse", "mouse"}
-};
-
-//static void     dummy_handler       (void);
-//static uint8_t  show_memory_region  (MemoryRegion* region, uint8_t, void* data);
-//static void     display_memory      (void);
-//static uint16_t show_device         (uint32_t number, uint8_t kind, Device* device, void* data);
 static void     test_timer          (void);
 static void     test_isr            (InterruptFrame* frame, void* data);
 static void     bsod                (InterruptFrame* frame, void* data);
@@ -56,7 +41,7 @@ extern void     crash               (void);
 extern void     check_e2fs          (void);
 extern void     test_elf            (void);
 extern void     test_task           (void);
-static void     list_pci            (void);
+//static void     list_pci            (void);
 static void     load_drivers        (void);
 
 void init(){
@@ -70,24 +55,18 @@ void init(){
     memory_init();
     isr_init();
 
-    pit_init();
-    pic_init();
-    //test_timer();
-    //sti();
-    //isr_install(PIC_IRQ_BASE+0x01, handle_keyboard);
-    //while(1);
-    //list_pci();
 
     paging_init();
-    console_print("Testing ISR\n");
-    isr_install(0x30, test_isr, NULL);
-    asm volatile("int $0x30");
     heap_init();
     device_init();
     devices_register();
     device_init_devices();
     load_drivers();
     //test_elf();
+    // while(1);
+
+    pic_init();
+    pit_init();
     
     tasks_init();
     syscall_init();
@@ -111,28 +90,6 @@ static void test_isr(InterruptFrame* frame, void *data){
     console_print("flags:");console_print(itoa(frame->flags.dwflags,buff,16));console_print("\n");
 }
 
-/*
-static int timer_count;
-
-static void timer_handler(InterruptFrame* frame, void* data){
-    timer_count++;
-    console_print("Timer called, IRQ: ");
-    console_print(utoa(pic_get_irq(),buff,16));
-    console_put('\n');
-    pic_eoi1();
-}
-
-static void test_timer(){
-    console_print("Testing timer\n");
-    timer_count = 0;
-    isr_install(0x20, timer_handler, NULL); 
-    sti();
-    while(timer_count < 1);
-    cli();
-    isr_install(0x20, NULL, NULL); 
-}
-*/
-
 static void bsod(InterruptFrame* frame, void* data){
     int i;
     //console_gotoxy(0,0);
@@ -150,96 +107,8 @@ static void bsod(InterruptFrame* frame, void* data){
     console_print("+------------------------+");
     asm volatile("hlt");
 }
-/*
 
-static void display_memory(){
-    MemData mem_data = {0,0,0};
-    console_print("------\nChecking RAM:\n");
 
-    minfo_iterate_regions(show_memory_region, &mem_data);
-    console_print("Total Memory:");
-    console_print(utoa(mem_data.total_ram,buff, 10));
-    console_print(" Bytes free\n");
-
-    console_print("Region #0 will be used for Kernel\n");
-    console_print("Region #");
-    console_print(utoa(mem_data.biggest_region,buff,10));
-    console_print(" will be used for programs\n");
-
-}
-static uint8_t show_memory_region(MemoryRegion* region, uint8_t region_num, void* data){
-    MemData* mem_data = (MemData*)data;
-
-    console_print("Region#");
-    console_print(utoa(region_num,buff,10));
-    console_print(":");
-    console_print(utoa(region->base_address,buff,16));
-    console_print(" ");
-    console_print(utoa(region->length,buff,10));
-    if (region->type == MEM_TYPE_FREE){
-        mem_data->total_ram+=region->length;
-        console_print(" (Free)\n");
-        if (region->length > mem_data->biggest_region_size){
-            mem_data->biggest_region = region_num;
-            mem_data->biggest_region_address = region->base_address;
-            mem_data->biggest_region_size = region->length;
-        }
-    } else {
-        console_print(" (Reserved)\n");
-    }
-    return 0;
-}
-
-static void check_bda(){
-    int i;
-    console_print("------\nSerial Ports:\n");
-    for (i=0;i<4;i++){
-        if (BDA->com_ports[i]){
-            console_print("Serial port ");
-            console_print(utoa(i,buff,10));
-            console_print(" ");
-            console_print(utoa(BDA->com_ports[i],buff,16));
-            console_print("\n");
-        }
-    }
-}
-static void check_ps2(){
-    PS2Port ps2;
-    console_print("------\nPS/2:\n");
-
-    ps2_get_status(&ps2);
-
-    console_print("Controller: ");
-    if (ps2.controller_present){
-        console_print("Ok\n");
-    } else {
-        console_print("Not present\n");
-    }
-    console_print("Port 1: ");
-    if (ps2.port1_present){
-        console_print("Ok\n");
-    } else {
-        console_print("Not present\n");
-    }
-    console_print("Port 2: ");
-    if (ps2.port2_present){
-        console_print("Ok\n");
-    } else {
-        console_print("Not present\n");
-    }
-}
-
-static uint16_t show_device(uint32_t number, uint8_t kind, Device* device, void* data){
-    console_print("  * ");
-    console_print(KINDS[kind].kind);
-    console_print(itoa(device->instance_number,buff,10));
-    console_print(" (");
-    console_print(KINDS[kind].description);
-    console_print(")\n");
-    return 0;
-}
-
-*/
 static void start_init(void){
     Ext2FileSystem* fs;
     Device* device;
@@ -260,7 +129,7 @@ static void start_init(void){
     tasks_loop();
     console_print("System shutdown\n");
 }
-
+/*
 static void show_pci(uint8_t a,uint8_t b, uint8_t c, PCIHeader* header, void*data){
     debug("Device:");
     debug(itoa(a,buff,16));
@@ -293,36 +162,16 @@ static void show_pci(uint8_t a,uint8_t b, uint8_t c, PCIHeader* header, void*dat
 static void list_pci(void){
     pci_list_all_buses(show_pci, NULL);
 }
-static void load_driver(Ext2FileSystem* fs, const char* path){
-    console_print("Loading driver ");
-    console_print(path);
-    console_print("\n");
-
-    debug("Loading ");debug(path);debug("\n");
-
-    Stream* stream = ext2_file_stream_open(fs, path,0);
-
-    void(*function)(void) = (void*)paging_kernel_load_code(stream);
-
-    if (function){
-        debug("Driver entry point:");debug_i(function,16);debug("\n");
-        function();
-        debug("Driver loaded\n");
-    } else {
-        console_print("Unable to load driver\n");
-    }
-
-    stream_close(stream);
-}
+*/
 static void load_drivers(void){
     debug("Loading drivers\n");
     Device* device = device_find(DISK, 0);
     if (device){
         Ext2FileSystem* fs = ext2_open(BLOCK_DEVICE(device));
         if (fs){
-            load_driver(fs, "/drivers/screen.elf");
-            load_driver(fs, "/drivers/keyboard.elf");
-            load_driver(fs, "/drivers/console.elf");
+            modules_load(fs, "/drivers/screen.elf");
+            modules_load(fs, "/drivers/keyboard.elf");
+            modules_load(fs, "/drivers/console.elf");
             debug("Drivers loaded\n");
         } else {
             debug("No fs\n");

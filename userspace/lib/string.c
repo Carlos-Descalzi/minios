@@ -63,3 +63,9 @@ int strncmp(const char*s1, const char* s2, size_t n){
     }
     return d;
 }
+char* strcat(char* dest, const char* src){
+    int i;
+    for (i=0;dest[i];i++);
+    strcpy(dest+i,src);
+    return dest;
+}

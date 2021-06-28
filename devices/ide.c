@@ -360,15 +360,17 @@ static void ide_read_reg_buffer(IDEChannel* channel, uint8_t reg, uint32_t* buff
 static int8_t ide_poll(IDEChannel* channel, uint32_t check){
     int i;
 
-    for (i=0;i<4;i++){
-        ide_read_reg(channel, ATA_REG_ALTSTATUS);
-    }
+    //for (i=0;i<5;i++){
+    //    ide_read_reg(channel, ATA_REG_ALTSTATUS);
+   // }
 
+    while (ide_read_reg(channel, ATA_REG_STATUS) & ATA_STATUS_BUSY == 0);
     while (ide_read_reg(channel, ATA_REG_STATUS) & ATA_STATUS_BUSY);
 
     if (check){
 
         uint8_t state = ide_read_reg(channel, ATA_REG_STATUS);
+        debug("IDE - poll status:");debug_i(state,16);debug("\n");
 
         if (state & ATA_STATUS_ERROR){
             return 2;
@@ -399,6 +401,7 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
     memset(lbaio,0,6);
 
     if (lba >= 0x10000000){
+        debug("IDE - lba 1\n");
         lbamode = 2;
         lbaio[0] = lba & 0xFF;
         lbaio[1] = (lba & 0xFF00) >> 8;
@@ -406,12 +409,14 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
         lbaio[3] = (lba & 0xFF000000) >> 24;
         head = 0;
     } else if (device->drive.capabilities & 0x200){
+        debug("IDE - lba 2\n");
         lbamode = 1;
         lbaio[0] = lba & 0xFF;
         lbaio[1] = (lba & 0xFF00) >> 8;
         lbaio[2] = (lba & 0xFF0000) >> 16;
         head = (lba & 0xFF000000) >> 24;
     } else {
+        debug("IDE - lba 3\n");
         lbamode = 0;
         sector = (lba % 63) +1;
         cylinder = (lba + 1 - sector) / (16 * 63);
@@ -419,12 +424,13 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
         lbaio[1] = cylinder & 0xFF;
         lbaio[2] = (cylinder >> 8) & 0xFF;
         head = ((lba + 1 - sector) % (16 * 63)) / 63;
-        //debug("IDE - read, lba:");debug_i(lba,10);
-        //debug(",head:");debug_i(head,10);
-        //debug(",cylinder:");debug_i(cylinder,10);
-        //debug(",sector:");debug_i(sector,10);debug("\n");
+        debug("IDE - read, lba:");debug_i(lba,10);
+        debug(",head:");debug_i(head,10);
+        debug(",cylinder:");debug_i(cylinder,10);
+        debug(",sector:");debug_i(sector,10);debug("\n");
     }
-    while (ide_read_reg(&(device->drive.channel), ATA_REG_STATUS) & ATA_STATUS_BUSY);
+    //while (ide_read_reg(&(device->drive.channel), ATA_REG_STATUS) & ATA_STATUS_BUSY);
+    ide_poll(&(device->drive.channel),0);
 
     // TODO slavebit
     if (lbamode == 0){
@@ -453,14 +459,13 @@ static int8_t ide_ata_access(IDEDevice* device, uint32_t lba, uint8_t nsectors, 
     if (dma){
     } else {
         if (action == IDE_ACTION_READ){
-            if ((err = ide_poll(&(device->drive.channel),1))){
-                return err;
-            }
             for (i=0;i<nsectors;i++){
+                if ((err = ide_poll(&(device->drive.channel),1))){
+                    return err;
+                }
                 for (j=0;j<256;j++){
                     ((uint16_t*)device->sector_buffer)[j] = inw(device->drive.channel.base);
                 }
-                //show_sector(device->sector_buffer);
                 if (callback){
                     callback(device, device->sector_buffer, callback_data);
                 }
@@ -523,6 +528,14 @@ static void read_callback(IDEDevice* device, uint8_t* sector, ReadRequest* reque
     request->remaining-=to_read;
 }
 
+static uint32_t block_crc(uint8_t* block, uint16_t size){
+    uint32_t crc = 0;
+    for (int i=0;i<size;i++){
+        crc += block[i];
+    }
+    return crc;
+}
+
 static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
     ReadRequest read_request = {
         .buffer=buffer, 
@@ -531,15 +544,21 @@ static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
     };
     uint32_t sector = IDE_DEVICE(device)->current_pos >> 9;
     uint8_t nsectors = size / 512 + (size % 512 ? 1 : 0);
+    debug("IDE - ide_read:");debug_i(IDE_DEVICE(device)->current_pos,10);debug(",");debug_i(sector,10);debug("\n");
     
-    ide_ata_access(
+    if (ide_ata_access(
         IDE_DEVICE(device),
         sector,
         nsectors,
         IDE_ACTION_READ, 
         (ReadCallback)read_callback, 
         &read_request
-    );
+    )){
+        debug("IDE - Error reading block\n");
+        debug("\tCRC:");debug_i(block_crc(buffer, size),16);debug("\n");
+        return -1;
+    }
+    debug("\tCRC:");debug_i(block_crc(buffer, size),16);debug("\n");
     IDE_DEVICE(device)->current_pos+=SECTOR_SIZE * nsectors;
     return 0;
 }

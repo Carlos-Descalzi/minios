@@ -93,17 +93,39 @@ Device* device_find(uint8_t kind, uint8_t instance){
     return NULL;
 }
 
+Device* device_find_by_name(const char* name){
+    uint8_t kind;
+    uint8_t instance;
+
+    if (device_parse_name(name,&kind,&instance)){
+        return NULL;
+    }
+    return device_find(kind, instance);
+}
+
+int device_parse_name(const char* name, uint8_t* kind, uint8_t* instance){
+    if (!name){
+        return -1;
+    }
+    for (uint8_t i=0;i<sizeof(kinds)/sizeof(char*);i++){
+        uint8_t l = strlen(kinds[i]);
+        if(!strncmp(name,kinds[i],l)){
+            *kind = i;
+            *instance = atoi(name+l);
+            return 0;
+        }
+    }
+    return -2;
+}
+
 static void init_devices(DeviceType* device_type){
     int device_index;
-
     for (device_index = 0;devices[device_index].device;device_index++);
-
     do_init_device(device_type,&device_index);
 }
 
 static void do_init_device(DeviceType* device_type, int*device_index){
     int j;
-    char buff[10];
     int device_count = device_type->count_devices(device_type);
 
     for (j=0;j<device_count;j++){
@@ -112,9 +134,6 @@ static void do_init_device(DeviceType* device_type, int*device_index){
         if (devices[*device_index].device){
             devices[*device_index].device->kind = device_type->kind;
             devices[*device_index].device->instance_number = j;
-            console_print(kinds[device_type->kind]);
-            console_print(itoa(devices[*device_index].device->instance_number,buff,10));
-            console_print("\n");
             (*device_index)++;
         }
     }

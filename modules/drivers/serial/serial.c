@@ -23,7 +23,7 @@ static DeviceType SERIAL_DEVICE_TYPE = {
     .kind = SER
 };
 
-void device_register(){
+void module_init(){
     SERIAL_DEVICE_TYPE.count_devices = count_devices;
     SERIAL_DEVICE_TYPE.instantiate = instantiate;
     SERIAL_DEVICE_TYPE.release = release;

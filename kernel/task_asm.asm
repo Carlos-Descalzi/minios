@@ -82,7 +82,7 @@ task_run:
 
     pop eax
 
-    sti
+    ;sti
     iret
 
 do_task_exit:

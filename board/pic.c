@@ -1,5 +1,6 @@
 #include "board/pic.h"
 #include "board/io.h"
+#include "misc/debug.h"
 
 #define PIC1            0x20
 #define PIC2            0xa0
@@ -60,6 +61,7 @@ void pic_init(){
 
     outb(PIC1_DATA, p1_mask);
     outb(PIC2_DATA, p2_mask);
+    debug("PIC initialized\n");
 }
 
 
@@ -74,17 +76,19 @@ inline void pic_eoi2(void){
 uint16_t pic_get_irq_reg(){
     outb(PIC1_CMD, PIC_ISR);
     outb(PIC2_CMD, PIC_ISR);
-    return (inb(PIC2_CMD) << 3) | inb(PIC1_CMD);
+    uint8_t pic1 = inb(PIC1_CMD);
+    uint8_t pic2 = inb(PIC2_CMD);
+    return ((pic2 << 4) | pic1);
 }
 
 uint16_t pic_get_irq(){
     uint16_t reg = pic_get_irq_reg();
     uint16_t val = 0;
-    if (reg & 0x7){
-        reg &= 0x7;
+    if (reg & 0xF){
+        reg &= 0xF;
         val=PIC1_IRQ_OFFSET-1;
-    } else if (reg & 0x38){
-        reg >>=3;
+    } else if (reg & 0xF0){
+        reg >>=4;
         val=PIC2_IRQ_OFFSET-1;
     }
     while(reg){

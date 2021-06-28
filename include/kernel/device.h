@@ -13,13 +13,13 @@
 #define DEVICE_READ_WAIT            1
 
 typedef enum {
-    VIDEO = 0,
-    SER,
-    DISK,
-    NET,
-    KBD,
-    MOUSE,
-    TERM
+    VIDEO   = 0,
+    SER     = 1,
+    DISK    = 2,
+    NET     = 3,
+    KBD     = 4,
+    MOUSE   = 5,
+    TERM    = 6
 } DeviceKind;
 
 typedef struct Device Device;
@@ -57,11 +57,6 @@ typedef struct CharDevice {
     int16_t     (*write)            (struct CharDevice*, uint8_t);
 } CharDevice;
 
-/**
- * yeah it sucks, TODO: fix all the module relocation
- * Only for loadable device drivers.
- **/
-
 #define DEVICE(d)                   ((Device*)d)
 #define CHAR_DEVICE(d)              ((CharDevice*)d)
 #define BLOCK_DEVICE(d)             ((BlockDevice*)d)
@@ -88,5 +83,10 @@ int16_t device_register_type            (DeviceType* device);
 void    device_init_devices             (void);
 void    device_list                     (DeviceVisitor visitor, void *data);
 Device* device_find                     (uint8_t kind, uint8_t instance);
+Device* device_find_by_name             (const char* name);
+
+#define device_find_by_id(id)           device_find((id)>>8,(id)&0xFF)
+#define device_make_id(k,i)             ((k<<8)|i)
+int     device_parse_name               (const char* name, uint8_t* kind, uint8_t* instance);
 
 #endif

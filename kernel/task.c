@@ -36,6 +36,7 @@ static void     setup_console               (Task* task);
 static void     remove_current_task         (void);
 static void     check_io_wait_list          (void);
 static int      check_pending_io_requests   (Task* task);
+static int      wait_tid                    (Task* task);
 
 void tasks_init(){
     next_tid = 1;
@@ -165,9 +166,21 @@ static int check_pending_io_requests(Task* task){
 }
 
 static void check_io_wait_list(){
-    debug("looping io wait\n");
+    //debug("looping io wait\n");
     for (ListNode* node = io_wait_list; node; node = node->next){
-        if (!check_pending_io_requests(&(TASK_NODE(node)->task))){
+        int activate = 0;
+        if (TASK_NODE(node)->task.status == TASK_STATUS_IOWAIT){
+            if (!check_pending_io_requests(&(TASK_NODE(node)->task))){
+                activate = 1;
+            } 
+        } else if (TASK_NODE(node)->task.status == TASK_STATUS_WAITCND){
+            Task* task = &(TASK_NODE(node)->task);
+            if (task->waitcond(task)){
+                activate = 1;
+            }
+        }
+
+        if (activate){
             io_wait_list = list_remove(io_wait_list, node);
             TASK_NODE(node)->task.status = TASK_STATUS_IDLE;
             task_list = list_add(task_list, node);
@@ -175,9 +188,9 @@ static void check_io_wait_list(){
             if (!node){
                 break;
             }
-        } 
+        }
     }
-    debug("Exit loop\n");
+    //debug("Exit loop\n");
 }
 
 static void remove_current_task(){
@@ -206,7 +219,7 @@ void tasks_loop(){
     check_io_wait_list();
     
     current_task = next_task();
-    debug("TASK - Next task:");debug_i(current_task->tid,10);debug("\n");
+    //debug("TASK - Next task:");debug_i(current_task->tid,10);debug("\n");
     if (current_task && current_task->status != TASK_STATUS_NONE){
         if (current_task->status == TASK_STATUS_IDLE){
             current_task->status = TASK_STATUS_RUNNING;
@@ -220,7 +233,8 @@ void tasks_loop(){
                 if (current_task->status == TASK_STATUS_RUNNING){
                     debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set idle\n");
                     current_task->status = TASK_STATUS_IDLE;
-                } else if (current_task->status == TASK_STATUS_IOWAIT){
+                } else if (current_task->status == TASK_STATUS_IOWAIT
+                    || current_task->status == TASK_STATUS_WAITCND){
                     move_to_wait_list();
                     current_task = NULL;
                 }
@@ -232,9 +246,9 @@ void tasks_loop(){
         }
 
     } else {
-        debug("TASK - No tasks to run\n");
+        //debug("TASK - No tasks to run\n");
     }
-    debug("TASK - Leave tasks loop\n");
+    //debug("TASK - Leave tasks loop\n");
 }
 
 void tasks_finish(uint32_t task_id, uint32_t exit_code){
@@ -308,4 +322,19 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
             break;
         }
     }
+}
+void tasks_wait_tid(uint32_t tid){
+    Task* task = current_task;
+
+    task->status = TASK_STATUS_WAITCND;
+    task->waitcond = wait_tid;
+    task->cond_data = (void*)tid;
+}
+
+static int wait_tid(Task* task){
+    if (!get_task_by_tid((uint32_t) task->cond_data)){
+        debug("Condition finished\n");
+        return 1;
+    }
+    return 0;
 }

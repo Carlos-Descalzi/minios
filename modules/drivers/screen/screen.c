@@ -47,18 +47,17 @@ static Device*  instantiate         (DeviceType* device_type, uint8_t device_num
 static void     release             (DeviceType* device_type, Device* device);
 static void     clear_buff          (ScreenDevice* screen);
 static void     backspace           (ScreenDevice* screen);
+static void     tab                 (ScreenDevice* screen);
+static void     newline             (ScreenDevice* screen);
 
-void device_register();
+static DeviceType DEVICE_TYPE;
 
-static DeviceType SCREEN_DEVICE_TYPE = {
-    .kind = VIDEO
-};
-
-void device_register(){
-    SCREEN_DEVICE_TYPE.count_devices = count_devices;
-    SCREEN_DEVICE_TYPE.instantiate = instantiate;
-    SCREEN_DEVICE_TYPE.release = release;
-    device_register_type((DeviceType*)&SCREEN_DEVICE_TYPE);
+void module_init(){
+    DEVICE_TYPE.kind = VIDEO;
+    DEVICE_TYPE.count_devices = count_devices;
+    DEVICE_TYPE.instantiate = instantiate;
+    DEVICE_TYPE.release = release;
+    device_register_type((DeviceType*)&DEVICE_TYPE);
     debug("** Screen device type registered\n");
 }
 
@@ -122,6 +121,10 @@ static int16_t screen_write(CharDevice* device, uint8_t chr){
             screen->mode = MODE_ESCAPE;
         } else if (chr == 8){
             backspace(SCREEN_DEVICE(device));
+        } else if (chr == 9){
+            tab(SCREEN_DEVICE(device));
+        } else if (chr == 10){
+            newline(SCREEN_DEVICE(device));
         } else {
             console_put(chr);
         }
@@ -251,6 +254,17 @@ static void move_cursor(ScreenDevice* screen){
         y = atoi(screen->buff+1);
         console_gotoxy(x,y);
     }
+}
+static void tab(ScreenDevice* screen){
+    uint8_t x,y;
+    console_get_cursor_pos(&x,&y);
+
+    uint8_t new_x = x / 8 + 8;
+    if (new_x <= x){new_x+=8;}
+    console_gotoxy(new_x, y);
+}
+static void newline(ScreenDevice* screen){
+    console_put('\n');
 }
 static void backspace(ScreenDevice* screen){
     uint8_t x,y;

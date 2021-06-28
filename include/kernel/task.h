@@ -12,6 +12,7 @@
 #define TASK_STATUS_IDLE    2
 #define TASK_STATUS_RUNNING 3
 #define TASK_STATUS_IOWAIT  4
+#define TASK_STATUS_WAITCND 5
 
 /**
  * Task structure definition
@@ -25,6 +26,8 @@ typedef struct Task {
     Stream*             streams[32];        // max open files
     CharDevice*         console;            // console associated to task.
     IORequest           io_requests[4];     // max active IO requests
+    int                 (*waitcond)(struct Task*); // wait condition
+    void*               cond_data;
 } Task;
 
 /**
@@ -72,4 +75,5 @@ void*       tasks_task_to_kernel_adddress   (uint32_t tid, void* address);
 void        tasks_add_io_request            (uint32_t type, uint32_t stream_num, 
                                             uint8_t* buffer, uint32_t size);
 
+void        tasks_wait_tid                  (uint32_t tid);
 #endif

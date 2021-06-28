@@ -49,11 +49,10 @@ static int16_t  console_read_async      (CharDevice* device, IORequest* request)
 static void     reset_console_request   (ConsoleDevice* device);
 static void     set_keyboard_request    (ConsoleDevice* device);
 
-static DeviceType DEVICE_TYPE = {
-    .kind = TERM
-};
+static DeviceType DEVICE_TYPE;
 
-void device_register(){
+void module_init(){
+    DEVICE_TYPE.kind = TERM;
     DEVICE_TYPE.count_devices = count_devices;
     DEVICE_TYPE.instantiate = instantiate;
     DEVICE_TYPE.release = release;

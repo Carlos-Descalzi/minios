@@ -1,4 +1,4 @@
-ENTRY(device_register)
+ENTRY(module_init)
 PHDRS
 {
   headers PT_PHDR PHDRS ;

@@ -75,6 +75,7 @@ void trap_install(uint16_t interrupt_number, Isr isr, void* callback_data){
     }
 }
 static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
+    cli();
     int user_space = (frame->cr3 & 3) != 0;
     if (user_space){
         asm volatile(
@@ -92,9 +93,10 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
     } else {
         debug("Interrupt in kernel space\n");
     }
+    sti();
 
     isr_handlers[isr_num].isr(frame, isr_handlers[isr_num].callback_data);
-    
+    cli();
     if (user_space){
         asm volatile(
             "\tmov %0, %%eax\n"
@@ -106,16 +108,19 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
             "\tmov %%ax, %%gs\n"
             ::"Nd"(frame->cr3)
         );
+    } else {
+        debug("Exit from interrupt in kernel space\n");
     }
+    sti();
 }
 
 inline void sti(void){
-    debug("int enabled\n");
+    //debug("int enabled\n");
     asm volatile("sti");
 }
 
 inline void cli(void){
-    debug("int disabled\n");
+    //debug("int disabled\n");
     asm volatile("cli");
 }
 inline void cld(void){
@@ -238,13 +243,20 @@ void isr_init(){
 }
 
 static void dummy_trap_handler(InterruptFrame* frame, void* data){
-    debug("Trap!");
+    debug("Trap!\n");
+    asm volatile("cli");
     asm volatile("hlt");
 }
 
 static void dummy_isr_pic_handler(InterruptFrame* frame, void* data){
-    pic_eoi1();
-    pic_eoi2();
+    uint8_t val = pic_get_irq_reg();
+    debug("PIC interrupt:");debug_i(val,16);debug("\n");
+    if (val & 0xF){
+        pic_eoi1();
+    } 
+    if (val & 0xF0){
+        pic_eoi2();
+    }
 }
 
 static void dummy_isr_handler(InterruptFrame* frame, void* data){

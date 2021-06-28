@@ -1,14 +1,17 @@
 #ifndef _DIRENT_H_
 #define _DIRENT_H_
 
-#define DT_BLK      0x00
-#define DT_CHR      0x01
-#define DT_DIR      0x02
-#define DT_FIFO     0x03
-#define DT_LNK      0x04
-#define DT_REG      0x05
-#define DT_SOCK     0x06
-#define DT_UNKNOWN  0x07
+#include "stdint.h"
+
+#define DT_UNKNOWN  0
+#define DT_REG      1
+#define DT_DIR      2
+#define DT_CHR      3
+#define DT_BLK      4
+#define DT_FIFO     5
+#define DT_SOCK     6
+#define DT_LNK      7
+#define DT_WTH      8
 
 typedef struct DIR_ DIR;
 

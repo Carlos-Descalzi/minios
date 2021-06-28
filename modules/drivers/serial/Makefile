@@ -8,4 +8,4 @@ include ../Make.rules
 #	$(LD) $(LDFLAGS) $< -o $@
 #	objdump -d $@ > $@.lst
 
-include ../../Make.rules
+include ../../../Make.rules

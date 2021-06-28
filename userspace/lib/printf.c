@@ -110,6 +110,11 @@ int puts(const char* str){
     return 0;
 }
 
+int putchar(char c){
+    fputc(c,stdout);
+    return 0;
+}
+
 struct _FILE {
     int fd;
 };

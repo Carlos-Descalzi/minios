@@ -7,8 +7,8 @@ garbage:
 %macro isr_handler 1
 global handle_isr_%1
 handle_isr_%1:
-    pushad
     cli
+    pushad
     mov eax, cr3
     push eax
     mov eax, cr2
@@ -17,7 +17,7 @@ handle_isr_%1:
     push eax
     mov eax, %1
     push eax
-    sti
+    ;sti
     
     call [handle_isr_ref] 
 
@@ -28,15 +28,15 @@ handle_isr_%1:
     pop eax
     
     popad
-    sti
+    ;sti
     iret
 %endmacro
 
 %macro trap_handler 1
 global handle_isr_%1
 handle_isr_%1:
-    pushad
     cli
+    pushad
     mov eax, cr3
     push eax
     mov eax, cr2
@@ -45,7 +45,7 @@ handle_isr_%1:
     push eax
     mov eax, %1
     push eax
-    sti
+    ;sti
     
     call [handle_isr_ref] 
 
@@ -57,7 +57,7 @@ handle_isr_%1:
     
     popad
     pop dword [garbage]
-    sti
+    ;sti
     iret
 %endmacro
 

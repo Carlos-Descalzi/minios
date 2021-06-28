@@ -2,6 +2,7 @@
 #include "board/pic.h"
 #include "board/io.h"
 #include "lib/string.h"
+#include "misc/debug.h"
 
 #define PORT_CH0            0x40
 #define PORT_CH1            0x41
@@ -56,6 +57,7 @@ void pit_init(){
     memset(slots,0,sizeof(slots));
     pit_set_freq(1);// TODO: fix this
     isr_install(0x20, timer_handler, NULL); 
+    debug("PIT Initialized\n");
 }
 
 inline uint64_t pit_ticks(void){
@@ -114,7 +116,9 @@ void pit_set_freq(uint16_t freq){
 }
 
 static void timer_handler(InterruptFrame* frame, void* data){
-    //cli();
+    debug("Timer interrupt:");debug_i(pic_get_irq_reg(),16);debug("\n");
+    cli();
+    pic_eoi1();
     ticks++;
     for (int i=0;i<MAX_SLOTS;i++){
         if (slots[i].ticks && slots[i].callback){
@@ -125,6 +129,5 @@ static void timer_handler(InterruptFrame* frame, void* data){
         }
     }
 
-    pic_eoi1();
-    //sti();
+    sti();
 }

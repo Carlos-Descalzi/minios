@@ -49,7 +49,7 @@ void test_task(){
     debug("New task id:");debug_i(task_id,10);debug("\n");
     */
     //load_program(fs, "/hello.elf");
-    load_program(fs, "/shell.elf");
+    load_program(fs, "/bin/shell.elf");
 
     console_print("Running programs ...\n\n");
     sti();

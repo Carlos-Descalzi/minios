@@ -7,7 +7,10 @@ OBJS=stdlib.o 	\
 	 stdlib.o	\
 	 printf.o	\
 	 string.o	\
-	 errno.o	
+	 errno.o	\
+	 modules.o	\
+	 spawn.o	\
+	 dirent.o
 
 all: $(OBJS)
 

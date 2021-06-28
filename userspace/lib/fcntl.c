@@ -58,3 +58,14 @@ int close(int fd){
     return syscall(SYS_CLOSE, (void*)fd);
 }
 
+int stat(const char* pathname, struct stat* statbuf){
+    struct {
+        const char* pathname;
+        struct stat* statbuf;
+    } stat_data = {
+        .pathname = pathname,
+        .statbuf = statbuf
+    };
+
+    return syscall(SYS_STAT,&stat_data);
+}

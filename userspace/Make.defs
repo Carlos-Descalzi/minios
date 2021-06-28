@@ -17,5 +17,7 @@ CFLAGS=-march=i386 \
     -mno-tls-direct-seg-refs \
     -fno-stack-protector \
     -nolibc \
- -nostartfiles   -nostdlib  -lc
+    -nostartfiles \
+    -nostdlib \
+    -lc
 LDFLAGS= -T $(USERSPACEDIR)/linker.ld -nostdlib

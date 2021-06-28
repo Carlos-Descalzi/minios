@@ -156,6 +156,7 @@ uint32_t pos(Stream* stream){
     return FILE_STREAM(stream)->pos;
 }
 int16_t seek(Stream* stream,uint32_t pos){
+    debug("EXT2STREAM - seek ");debug_i(pos,10);debug("\n");
     if (pos > FILE_STREAM(stream)->inode.size -1){
         return -1;
     }

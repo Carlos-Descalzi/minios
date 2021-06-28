@@ -4,7 +4,7 @@ include ./Make.rules
 TOPTARGETS=all clean
 
 MODULES=kernel lib devices fs board tests testfiles bin syscalls io 
-SUBDIRS=$(MODULES) userspace drivers
+SUBDIRS=$(MODULES) userspace modules
 
 KOBJS=$(shell find kernel -name '*.o') 
 KOBJS+=$(shell find lib -name '*.o')
@@ -45,7 +45,6 @@ debug:
 $(TOPTARGETS): $(SUBDIRS)
 
 $(IMAGE): baseimage padding e2fs.img
-	@echo "Now adding 2 Mb for filesystem"
 	cat e2fs.img >> $(IMAGE)
 
 baseimage: boot kernel.bin
@@ -60,26 +59,18 @@ padding:
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
 
 
-e2fs.img: testfiles/test1.elf userspace/bin/hello.elf userspace/bin/init.elf userspace/bin/shell.elf drivers
+e2fs.img: userspace modules
 	@dd if=/dev/zero of=e2fs.img bs=1024 count=2048 
 	@mkdir -p tmp
 	@mke2fs -b 1024 e2fs.img
 	@sudo mount e2fs.img tmp
-	@sudo mkdir tmp/folder1
-	@echo hola | sudo tee tmp/file1.txt
-	@echo hola2 | sudo tee tmp/folder1/file2.txt
-	@sudo cp testfiles/test1.elf tmp/
-	@sudo cp testfiles/helloworld.elf tmp/
-	@sudo cp userspace/bin/hello.elf tmp/
-	@sudo cp userspace/bin/init.elf tmp/
-	@sudo cp userspace/bin/task1.elf tmp/
-	@sudo cp userspace/bin/task2.elf tmp/
-	@sudo cp userspace/bin/shell.elf tmp/
+	@sudo mkdir tmp/bin
+	@sudo cp userspace/bin/*.elf tmp/bin
 	@sudo mkdir tmp/drivers
-	@sudo cp drivers/serial/*.elf tmp/drivers
-	@sudo cp drivers/console/*.elf tmp/drivers
-	@sudo cp drivers/screen/*.elf tmp/drivers
-	@sudo cp drivers/keyboard/*.elf tmp/drivers
+	@sudo cp modules/drivers/serial/*.elf tmp/drivers
+	@sudo cp modules/drivers/console/*.elf tmp/drivers
+	@sudo cp modules/drivers/screen/*.elf tmp/drivers
+	@sudo cp modules/drivers/keyboard/*.elf tmp/drivers
 	@sudo umount tmp
 	@rm -rf tmp
 

@@ -26,9 +26,14 @@ void syscall_init(){
     syscalls[4] = syscall_exec;
     syscalls[5] = syscall_yield;
     // ....
+    syscalls[77] = syscall_stat;
     syscalls[78] = syscall_getdents;
+    // ....
+    syscalls[0x80] = syscall_spawn;
+    syscalls[0x81] = syscall_waitpid;
     // ... to be filled
     // ... leave these for last
+    syscalls[0x90] = syscall_modload;
     syscalls[0x98] = syscall_debug;
     syscalls[0x99] = syscall_exit;
 

@@ -8,6 +8,18 @@ char* strcpy(char* dest, const char* src){
     return dest;
 }
 
+char* strncpy(char* dest, const char* src, size_t count){
+
+    for (int i=0;i<count;i++){
+        dest[i] = src[i];
+        if(!src[i]){
+            break;
+        }
+    }
+
+    return dest;
+}
+
 size_t strlen(const char* string){
     int len = 0;
     while(string[len]) len++;

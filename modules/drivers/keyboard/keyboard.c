@@ -91,11 +91,10 @@ typedef struct {
 #define KEYBOARD_DEVICE(d)  ((KeyboardDevice*)d)
 
 
-static DeviceType DEVICE_TYPE = {
-    .kind = KBD
-};
+static DeviceType DEVICE_TYPE;
 
-void device_register(){
+void module_init(){
+    DEVICE_TYPE.kind = KBD;
     DEVICE_TYPE.count_devices = count_devices;
     DEVICE_TYPE.instantiate = instantiate;
     DEVICE_TYPE.release = release;
@@ -206,7 +205,7 @@ static void read_keyboard(KeyboardDevice* device){
 }
 
 static void handle_keyboard_irq (InterruptFrame* frame, void* data){
-   debug("Keyboard input\n");
+   debug("Keyboard interrupt:");debug_i(pic_get_irq_reg(),16);debug("\n");
    KeyboardDevice* keyboard = data;
 
    read_keyboard(keyboard);

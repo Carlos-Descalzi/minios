@@ -6,6 +6,7 @@ OBJS=errno.o		\
 	 stdlib.o		\
 	 string.o		\
 	 string_asm.o	\
-	 list.o
+	 list.o			\
+	 path.o
 
 all: $(OBJS)

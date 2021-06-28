@@ -38,6 +38,11 @@ Ext2FileSystem* ext2_open(BlockDevice* device){
         return NULL;
     }
     fs = heap_alloc(sizeof(Ext2FileSystem));
+    if (!fs){
+        debug("No memory\n");
+        return NULL;
+    }
+    memset(fs,0,sizeof(Ext2FileSystem));
     block_device_seek(device, OFFSET + 1024); 
     debug("EXT2 - Reading superblock "); debug_i(sizeof(Ext2Superblock),10);debug("\n");
     block_device_read(device, (uint8_t*)&(fs->super_block), sizeof(Ext2Superblock));
@@ -64,13 +69,13 @@ Ext2FileSystem* ext2_open(BlockDevice* device){
         fs->cache[i].pos = fs->block_size * i;
     }
 
-    debug("EXT2 - Ext2 Block size: "); debug_i(fs->block_size,10); debug("\n");
-    debug("EXT2 - Inode size:"); debug_i(fs->super_block.inode_size,10); debug("\n");
-    debug("EXT2 - Inode count:"); debug_i(fs->super_block.inode_count,10); debug("\n");
-    debug("EXT2 - Block count:"); debug_i(fs->super_block.block_count,10); debug("\n");
-    debug("EXT2 - Blocks per group:"); debug_i(fs->super_block.blocks_per_group, 10); debug("\n");
-    debug("EXT2 - Free Inode count:"); debug_i(fs->super_block.free_inode_count,10); debug("\n");
-    debug("EXT2 - Free Block count:"); debug_i(fs->super_block.free_block_count,10); debug("\n");
+    //debug("EXT2 - Ext2 Block size: "); debug_i(fs->block_size,10); debug("\n");
+    //debug("EXT2 - Inode size:"); debug_i(fs->super_block.inode_size,10); debug("\n");
+    //debug("EXT2 - Inode count:"); debug_i(fs->super_block.inode_count,10); debug("\n");
+    //debug("EXT2 - Block count:"); debug_i(fs->super_block.block_count,10); debug("\n");
+    //debug("EXT2 - Blocks per group:"); debug_i(fs->super_block.blocks_per_group, 10); debug("\n");
+    //debug("EXT2 - Free Inode count:"); debug_i(fs->super_block.free_inode_count,10); debug("\n");
+    //debug("EXT2 - Free Block count:"); debug_i(fs->super_block.free_block_count,10); debug("\n");
     return fs;
 }
 
@@ -113,11 +118,12 @@ static void ext2_device_read_block(Ext2FileSystem* fs){
     uint8_t *block_buffer = cache_find(fs, disk_pos);
 
     if (block_buffer){
-        debug("EXT2 - Cache hit for ");debug_i(disk_pos,10);debug("\n");
+        //debug("EXT2 - Cache hit for ");debug_i(disk_pos,10);debug("\n");
         fs->block_buffer = block_buffer;
     } else {
-        debug("EXT2 - Cache miss for ");debug_i(disk_pos,10);debug("\n");
+        //debug("EXT2 - Cache miss for ");debug_i(disk_pos,10);debug("\n");
         fs->block_buffer = cache_take(fs, disk_pos);
+        //debug("\tBlock buffer:");debug_i(fs->block_buffer,16);debug("\n");
         block_device_read(fs->device, fs->block_buffer, fs->block_size); 
     }
 }
@@ -214,6 +220,9 @@ int32_t ext2_load_inode(Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode)
     uint32_t block_group_table_block = (block_group / fs->group_descritors_per_block) * fs->block_size;
     uint32_t block_group_table_offset = block_group % fs->group_descritors_per_block;
     uint32_t inode_table;
+    debug("EXT2 - ext2_load_inode:");debug_i(inodenum,10);debug(",");
+    debug_i(block_group,10);debug(",");debug_i(block_group_table_block,10);debug(",");
+    debug_i(index,10);debug("\n");
     Ext2Inode* table;
 
     ext2_device_seek(fs, fs->first_block_group_pos + block_group_table_block * fs->block_size);
@@ -237,6 +246,11 @@ uint32_t ext2_find_inode(Ext2FileSystem* fs, const char* path){
     char path_token[256];
     uint8_t pos=0;
     uint32_t current_inode = EXT2_INODE_ROOT_DIR; 
+
+    if (!strcmp(path,"/")){
+        return current_inode;
+    }
+
     memset(path_token,0,sizeof(path_token));
     while(ext2_path_tokenize(path,path_token,&pos) && current_inode){
         if (!strcmp(path_token,"/")){
@@ -283,34 +297,28 @@ int32_t ext2_load(Ext2FileSystem* fs, Ext2Inode* inode, void* dest){
 static uint32_t get_block_by_index(Ext2FileSystem* fs, Ext2Inode* inode, uint32_t block_index){
     uint32_t entries_per_block = fs->block_size / sizeof(uint32_t);
 
-    debug("EXT2 - get_block_by_index:");debug_i(block_index,10);
-    debug("\n");
+    debug("EXT2 - get_block_by_index:");debug_i(block_index,10);debug("\n");
 
-    for (int i=0;i<15;i++){
-        debug("EXT2 - Block:");
-        debug_i(i,10);
-        debug(",");debug_i(inode->blocks[i],10);debug("\n");
-    }
+    //for (int i=0;i<15;i++){
+    //    debug("EXT2 - Block:");
+    //    debug_i(i,10);
+    //    debug(",");debug_i(inode->blocks[i],10);debug("\n");
+    //}
 
     if (block_index < 12){
         return inode->blocks[block_index];
-    } else {
+    } else if (block_index >= 12 && block_index < entries_per_block + 12){
         uint32_t iblock = inode->blocks[12];
-        debug("EXT2 - Indirect block:");debug_i(iblock,10);debug("\n");
+        debug("\tIndirect block:");debug_i(iblock,10);debug("\n");
         ext2_device_gotoblock(fs, iblock);
         ext2_device_read_block(fs);
         block_index-=12;
-        //if (block_index < entries_per_block){
-            debug("XXXXXXXXXX ");debug_i(block_index,10);debug("\n");
-            uint32_t bnum = ((uint32_t*)fs->block_buffer)[block_index];
+        uint32_t bnum = ((uint32_t*)fs->block_buffer)[block_index];
+        debug("\tIndirect block number:");debug_i(bnum,10);debug("\n");
+        return bnum;
 
-            debug("Indirect block number:");debug_i(bnum,10);debug("\n");
-
-            return bnum;
-        //}
-        //debug("ACAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
-        // TODO SEGUIR DE ACA
-
+    } else if (block_index >= entries_per_block + 12){
+        // TODO Terminar
     }
     return 0;
 }
@@ -319,7 +327,7 @@ uint32_t ext2_read_block(Ext2FileSystem* fs, Ext2Inode* inode,
                          uint32_t b_index, uint8_t* dest, uint32_t length){
     uint32_t block;
 
-    debug("---");debug_i(b_index,10);debug("\n");
+    debug("EXT2 - ext2_read_block:");debug_i(b_index,10);debug("\n");
     block = get_block_by_index(fs, inode, b_index);
     ext2_device_gotoblock(fs, block);
     ext2_device_read_block_b(fs, dest, length);
@@ -345,13 +353,16 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
         .inode=0 
     };
     Ext2Inode inode;
+    debug("EXT2 - find_next_inode:");debug_i(inodenum,10);debug(",");debug(dirent_name);debug("\n");
 
     if(ext2_load_inode(fs, inodenum, &inode)){
         return 0;
     }
     if (inode.type != EXT2_INODE_TYPE_DIRECTORY){
-        debug("Not a directory\n");
+        debug("\tNot a directory:");debug(dirent_name);debug("\n");
         return 0;
+    } else {
+        debug("\tIs a directory:");debug(dirent_name);debug("\n");
     }
 
     ext2_list_dir_inode(fs,&inode, find_dirent, &dirent_find_data);
@@ -398,23 +409,29 @@ static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t n
 
     return 0;
 }
-int32_t ext2_get_direntry(Ext2FileSystem* fs, Ext2Inode* inode, uint32_t offset, Ext2DirEntry* direntry){
+int32_t ext2_get_direntry(Ext2FileSystem* fs, Ext2Inode* inode, uint32_t* offset, Ext2DirEntry* direntry){
+    debug("EXT2 - ext2_get_direntry:");debug_i(*offset,10);debug("\n");
 
     if (inode->type != EXT2_INODE_TYPE_DIRECTORY){
         debug("Not a directory\n");
         return -1;
     }
 
-    uint32_t block = offset / fs->block_size;
-    uint32_t block_offset = offset % fs->block_size;
+    uint32_t block = *offset / fs->block_size;
+    uint32_t block_offset = *offset % fs->block_size;
+    //debug("\tblock:");debug_i(block,10);debug(", offset:");
+    debug_i(block_offset,10);debug("\n");
 
-    ext2_device_gotoblock(fs, block);
+    uint32_t block_pos = get_block_by_index(fs, inode, block);
+    ext2_device_gotoblock(fs, block_pos);
     ext2_device_read_block(fs);
 
     Ext2DirEntry* entry = (fs->block_buffer + block_offset);
-    memcpy(direntry, entry, entry->rec_len);
+    memcpy(direntry, entry, sizeof(Ext2DirEntry) + entry->name_len);
+    *offset+=entry->rec_len;
+    debug("\tDir entry:");debug_i(entry->rec_len,10);debug("\n");
 
-    return 0;
+    return *offset == fs->block_size ? 1 : 0;
 }
 
 static void ext2_list_dir_inode(Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data){
