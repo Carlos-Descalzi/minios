@@ -13,6 +13,7 @@ So far these features are implemented (barely):
 * Process loading and execution.
 * Loadable kernel modules, used for device drivers.
 * Barebones userspace C library.
+* Minimall command line interface.
 * System calls for:
   * Open/close/read files, directories and stream handling.
   * Exit current process.
