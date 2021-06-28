@@ -11,6 +11,7 @@ So far these features are implemented (barely):
 * Paging.
 * Context switching.
 * Process loading and execution.
+* Loadable kernel modules, used for device drivers.
 * Barebones userspace C library.
 * System calls for:
   * Open/close/read files, directories and stream handling.
