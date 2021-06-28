@@ -5,7 +5,6 @@
 int32_t modules_load(FileSystem* fs, const char* path){
     debug("Loading module ");debug(path);debug(" ...\n");
     Stream* stream = fs_file_stream_open(fs, path,0);
-    debug("1\n");
 
     if (!stream){
         debug("Module not found\n");

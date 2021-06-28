@@ -298,15 +298,10 @@ static void close(FileSystem* fs){
 }
 
 static int32_t load_inode(FileSystem* fs, uint32_t inodenum, Inode* inode){
-    debug("10\n");
     uint32_t block_group = (inodenum - 1) / E2FS(fs)->super_block.inodes_per_group;
-    debug("11\n");
     uint32_t index = (inodenum - 1) % E2FS(fs)->super_block.inodes_per_group;
-    debug("12 ");debug_i(E2FS(fs)->group_descritors_per_block,10);debug("\n");
     uint32_t block_group_table_block = (block_group / E2FS(fs)->group_descritors_per_block) * fs->block_size;
-    debug("13\n");
     uint32_t block_group_table_offset = block_group % E2FS(fs)->group_descritors_per_block;
-    debug("14\n");
     uint32_t inode_table;
 
     debug("EXT2 - ext2_load_inode:");debug_i(inodenum,10);debug(",");
@@ -322,9 +317,7 @@ static int32_t load_inode(FileSystem* fs, uint32_t inodenum, Inode* inode){
 
     ext2_device_read_block(E2FS(fs));
     inode_table = ((Ext2BlockGroupDescriptor*)E2FS(fs)->block_buffer)[block_group_table_offset].inode_table;
-    debug("1\n");
     inode_table += (index / E2FS(fs)->inodes_per_block);
-    debug("2\n");
 
     ext2_device_gotoblock(E2FS(fs),inode_table);
     index = index % E2FS(fs)->inodes_per_block;
@@ -655,7 +648,6 @@ Stream* ext2_stream_open(FileSystem* fs, const char* path, uint8_t mode){
         stream->mode = mode;
         debug("EXT2 - inode size:");debug_i(fs->block_size,10);debug("\n");
         stream->numblocks = stream->inode.inode.size / fs->block_size;
-        debug("3\n");
         if (stream->inode.inode.size % fs->block_size){
             stream->numblocks++;
         }
@@ -699,9 +691,7 @@ int16_t ext2_stream_read_byte(Stream* stream){
 
     if (!(FILE_STREAM(stream)->pos % fs->block_size)){
         FILE_STREAM(stream)->current_block++;
-        debug("4\n");
         block = FILE_STREAM(stream)->pos / fs->block_size;
-        debug("5\n");
         read_block(
             FILE_SYSTEM(FILE_STREAM(stream)->fs),  
             INODE(&(FILE_STREAM(stream)->inode)),
@@ -730,11 +720,8 @@ int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     }
     block_size = FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size;
     offset = FILE_STREAM(stream)->pos % block_size;
-    debug("6\n");
     block = FILE_STREAM(stream)->pos / block_size;
-    debug("7\n");
     nblocks = size / block_size + (size % block_size ? 1 : 0);
-    debug("8\n");
     bytes_read = 0;
 
     debug("EXT2 - Block:");debug_i(block,10);debug("\n");
