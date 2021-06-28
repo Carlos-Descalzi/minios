@@ -13,9 +13,11 @@ So far these features are implemented (barely):
 * Process loading and execution.
 * Barebones userspace C library.
 * System calls for:
-  * Open/close/read files
+  * Open/close/read files, directories and stream handling.
   * Exit current process.
   * Yield process.
+  * Spawn processes.
+  * Wait for process finalization.
 
 ![screenshot](screenshot.png)
 
