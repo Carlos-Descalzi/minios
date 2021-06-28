@@ -4,6 +4,7 @@
 #include "lib/stdint.h"
 #include "kernel/device.h"
 #include "io/streams.h"
+#include "fs/fs.h"
 
 typedef struct __attribute__((__packed__)){
     uint32_t block_bitmap;
@@ -27,18 +28,7 @@ typedef struct __attribute__((__packed__)){
 
 
 typedef struct __attribute__((__packed__)){
-    uint16_t mode:12,
-             type:4;
-    uint16_t uid;
-    uint32_t size;
-    uint32_t atime;
-    uint32_t ctime;
-    uint32_t mtime;
-    uint32_t dtime;
-    uint16_t gid;
-    uint16_t link_count;
-    uint32_t block_count;
-    uint32_t flags;
+    Inode inode;
     uint32_t osd1;
     uint32_t blocks[15];
     uint32_t generation;
@@ -47,6 +37,8 @@ typedef struct __attribute__((__packed__)){
     uint32_t faddr;
     uint8_t osd2[12];
 } Ext2Inode;
+
+#define E2INODE(i)  ((Ext2Inode*)(i))
 
 typedef struct __attribute__((__packed__)){
     uint32_t inode_count;
@@ -104,31 +96,10 @@ typedef struct __attribute__((__packed__)){
     uint8_t unused2[760];
 } Ext2Superblock;
 
-typedef struct __attribute__((__packed__)){
-    uint32_t inode;
-    uint16_t rec_len;
-    uint8_t name_len;
-    uint8_t file_type;
-    char name[1];
-} Ext2DirEntry;
-
 typedef struct {
     uint32_t disk_pos;
     uint32_t pos;
 } BlockPtr;
-
-typedef struct {
-    BlockDevice* device;
-    Ext2Superblock super_block;
-    uint32_t block_size;
-    uint32_t first_block_group_pos;
-    uint32_t inodes_per_block;
-    uint32_t group_descritors_per_block;
-    uint32_t block_group_count;
-    uint8_t* block_buffer;
-    BlockPtr cache[5];
-    uint8_t* block_cache;
-} Ext2FileSystem;
 
 #define EXT2_DIR_ENTRY_UNKNOWN  0
 #define EXT2_DIR_ENTRY_FILE     1
@@ -139,21 +110,22 @@ typedef struct {
 #define EXT2_DIR_ENTRY_SOCKET   6
 #define EXT2_DIR_ENTRY_SYMLINK  7
 
-typedef int8_t (*InodeVisitor)(Ext2FileSystem*,uint32_t,Ext2Inode* inode, void*);
-typedef int8_t (*DirVisitor)(Ext2FileSystem*, Ext2DirEntry*, void*);
 
-Ext2FileSystem* ext2_open               (BlockDevice* device);
-void            ext2_list_inodes        (Ext2FileSystem* fs, InodeVisitor visitor, void*data);
-void            ext2_close              (Ext2FileSystem* fs);
-void            ext2_list_directory     (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, 
-                                        void* data);
-uint32_t        ext2_find_inode         (Ext2FileSystem* fs, const char* path);
-int32_t         ext2_load_inode         (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
-int32_t         ext2_load               (Ext2FileSystem* fs, Ext2Inode* inode, void* dest);
-uint32_t        ext2_read_block         (Ext2FileSystem* fs, Ext2Inode* inode, 
-                                        uint32_t block, uint8_t* dest, uint32_t length);
-int32_t         ext2_get_direntry       (Ext2FileSystem* fs, Ext2Inode* inode, uint32_t* offset,
-                                        Ext2DirEntry* direntry);
+
+void            ext2_register_type      (void);
+
+//Ext2FileSystem* ext2_open               (BlockDevice* device);
+//void            ext2_list_inodes        (Ext2FileSystem* fs, InodeVisitor visitor, void*data);
+//void            ext2_close              (Ext2FileSystem* fs);
+//void            ext2_list_directory     (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, 
+//                                        void* data);
+//uint32_t        ext2_find_inode         (Ext2FileSystem* fs, const char* path);
+//int32_t         ext2_load_inode         (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
+//int32_t         ext2_load               (Ext2FileSystem* fs, Ext2Inode* inode, void* dest);
+//uint32_t        ext2_read_block         (Ext2FileSystem* fs, Ext2Inode* inode, 
+//                                        uint32_t block, uint8_t* dest, uint32_t length);
+//int32_t         ext2_get_direntry       (Ext2FileSystem* fs, Ext2Inode* inode, uint32_t* offset,
+//                                        Ext2DirEntry* direntry);
 
 #define     FS_MODE_R               0
 #define     FS_MODE_W               1
@@ -161,5 +133,5 @@ int32_t         ext2_get_direntry       (Ext2FileSystem* fs, Ext2Inode* inode, u
 #define     FS_MODE_WA              3
 #define     FS_MODE_RWA             4
 
-Stream*         ext2_file_stream_open   (Ext2FileSystem* fs, const char* path, uint8_t mode);
+//Stream*         ext2_file_stream_open   (Ext2FileSystem* fs, const char* path, uint8_t mode);
 #endif

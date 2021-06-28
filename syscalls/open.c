@@ -67,8 +67,8 @@ void syscall_open(InterruptFrame* f){
 
     debug("Opening file ");debug(file_path);debug("\n");
 
-    Ext2FileSystem* fs = fs_get_filesystem(device);
-    task->streams[pos] = ext2_file_stream_open(fs, file_path, open_data->mode);
+    FileSystem* fs = fs_get_filesystem(device);
+    task->streams[pos] = fs_file_stream_open(fs, file_path, open_data->mode);
     
     if (!task->streams[pos]){
         debug("File not found\n");

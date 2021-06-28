@@ -6,14 +6,12 @@
 #include "kernel/task.h"
 #include "kernel/device.h"
 #include "fs/fs.h"
-#include "fs/ext2.h"
 
 void syscall_getdents(InterruptFrame* f){
-    Ext2Inode inode;
     struct {
         uint16_t device_id;
         uint32_t offset_next;
-        Ext2DirEntry direntry;
+        DirEntry direntry;
     } * getdent_data = tasks_to_kernel_address((void*)f->ebx);
 
     debug("device id:");debug_i(getdent_data->device_id,16);debug("\n");
@@ -27,7 +25,8 @@ void syscall_getdents(InterruptFrame* f){
         return;
     }
 
-    Ext2FileSystem* fs = ext2_open(BLOCK_DEVICE(device));
+    FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
+    Inode* inode = fs_alloc_inode(fs);
 
     if (!fs){
         debug(">12\n");
@@ -35,16 +34,16 @@ void syscall_getdents(InterruptFrame* f){
         return;
     }
 
-    if (ext2_load_inode(fs, getdent_data->direntry.inode, &inode)){
+    if (fs_load_inode(fs, getdent_data->direntry.inode, inode)){
         f->ebx = (uint32_t)-3;
         debug(">13\n");
         return;
     }
 
-    f->ebx = ext2_get_direntry(fs, &inode, &(getdent_data->offset_next), &(getdent_data->direntry));
+    f->ebx = fs_get_direntry(fs, inode, &(getdent_data->offset_next), &(getdent_data->direntry));
 
     debug("getdents:");debug(getdent_data->direntry.name);debug("\n");
 
-    ext2_close(fs);
+    fs_close(fs);
     debug("done.\n");
 }

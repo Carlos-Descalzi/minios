@@ -2,7 +2,7 @@
 #include "kernel/modules.h"
 #include "kernel/task.h"
 #include "lib/string.h"
-#include "fs/ext2.h"
+#include "fs/fs.h"
 #include "kernel/device.h"
 
 void syscall_modload(InterruptFrame* f){
@@ -26,14 +26,14 @@ void syscall_modload(InterruptFrame* f){
         f->ebx = ((uint32_t)-2);
         return;
     } 
-    Ext2FileSystem* fs = ext2_open(BLOCK_DEVICE(device));
+    FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if (fs){
         int32_t result = modules_load(fs, path);
 
         f->ebx = ((uint32_t) 10 * result);
 
-        ext2_close(fs);
+        fs_close(fs);
     } else {
         // no fs
         f->ebx = ((uint32_t)-3);

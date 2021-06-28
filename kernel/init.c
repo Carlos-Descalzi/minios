@@ -16,6 +16,7 @@
 #include "lib/heap.h"
 #include "misc/debug.h"
 #include "bin/elf.h"
+#include "fs/fs.h"
 #include "fs/ext2.h"
 #include "kernel/syscall.h"
 #include "kernel/modules.h"
@@ -38,7 +39,6 @@ extern void     test_call           (void);
 extern void     handle_gpf          (void);
 extern void     devices_register    (void);
 extern void     crash               (void);
-extern void     check_e2fs          (void);
 extern void     test_elf            (void);
 extern void     test_task           (void);
 //static void     list_pci            (void);
@@ -58,6 +58,10 @@ void init(){
 
     paging_init();
     heap_init();
+
+    fs_init();
+    ext2_register_type();
+
     device_init();
     devices_register();
     device_init_devices();
@@ -110,7 +114,7 @@ static void bsod(InterruptFrame* frame, void* data){
 
 
 static void start_init(void){
-    Ext2FileSystem* fs;
+    FileSystem* fs;
     Device* device;
     Stream* stream;
     uint32_t task_id;
@@ -121,8 +125,8 @@ static void start_init(void){
         console_print("Device not found\n");
         return;
     }
-    fs = ext2_open(BLOCK_DEVICE(device));
-    stream = ext2_file_stream_open(fs, "/init.elf",0);
+    fs = fs_get_filesystem(device);
+    stream = fs_file_stream_open(fs, "/init.elf",0);
     task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
@@ -167,7 +171,7 @@ static void load_drivers(void){
     debug("Loading drivers\n");
     Device* device = device_find(DISK, 0);
     if (device){
-        Ext2FileSystem* fs = ext2_open(BLOCK_DEVICE(device));
+        FileSystem* fs = fs_get_filesystem(device);
         if (fs){
             modules_load(fs, "/drivers/screen.elf");
             modules_load(fs, "/drivers/keyboard.elf");

@@ -34,9 +34,9 @@
 }
 // Convenience macros, map the page I use for exchange to different structures
 // which I use dpending the situation
-#define local_page_dir  ((PageDirectoryEntry*)KERNEL_EXCHANGE_ADDRESS)
-#define local_table     ((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS)
-#define local_ptr       ((void*)KERNEL_EXCHANGE_ADDRESS)
+#define local_page_dir          ((PageDirectoryEntry*)KERNEL_EXCHANGE_ADDRESS)
+#define local_table             ((PageTableEntry*)KERNEL_EXCHANGE_ADDRESS)
+#define local_ptr               ((void*)KERNEL_EXCHANGE_ADDRESS)
 
 static void     handle_page_fault           (InterruptFrame *frame, void* data);
 static void     setup_isr_page              (PageTableEntry* page_table,uint8_t us);
@@ -145,34 +145,6 @@ static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_
 }
 
 
-static void show_elf_info(ElfHeader* header){
-    /*
-    debug("Magic number:");
-    debug_i(header->magic_number,16);
-    debug(", Binary type:");
-    debug_i(header->bin_type,10);
-    debug(", Arch:");
-    debug(header->arch == 1 ? "32bit" : "64bit");
-    debug(",");
-    debug(header->endianess == 1 ? "Little endian" : "Big Endian");console_print("\n");
-    debug(", Header size:");
-    debug_i(header->header_size,10);
-    debug("\n");
-    debug("Program entry position:");
-    debug_i(header->program_entry_position,16);
-    debug("\n");
-    debug("Program header position:");
-    debug_i(header->program_header_table_position,10);
-    debug(", entry size:");
-    debug_i(header->program_header_table_entry_size,10);
-    debug("\n");
-    debug("Section header position:");
-    debug_i(header->section_header_table_position,10);
-    debug(", entry size:");
-    debug_i(header->section_header_table_entry_size,10);
-    debug("\n");
-    */
-}
 /**
  * TODO: Move somewhere else
  **/
@@ -185,8 +157,6 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
 
     debug("PAGING - Reading elf header\n");
     elf_read_header(stream, &header);
-
-    show_elf_info(&header);
 
     for (i=0;i< header.program_header_table_entry_count;i++){
 
@@ -236,7 +206,6 @@ uint32_t paging_kernel_load_code(Stream* stream){
         debug("Not ELF\n");
         return 0;
     }
-    show_elf_info(&header);
 
     uint32_t target_address = 0;
 
@@ -276,27 +245,6 @@ uint32_t paging_kernel_load_code(Stream* stream){
         }
     }
 
-    /*
-    for (i=0;i<header.section_header_table_entry_count;i++){
-        if (elf_read_section_header(stream, &header, i, &section_header)){
-            debug("Unable to read section header\n");
-        } else {
-            if (section_header.type == ELF_SEC_HEADER_PROGBITS){
-                debug("Program bits\n");
-            } else if (section_header.type == ELF_SEC_HEADER_REL){
-                debug("Relocations section\n");
-
-            } else if (section_header.type == ELF_SEC_HEADER_RELA){
-                debug("Relocations section 2\n");
-
-            } else {
-                debug("Unknown section ");
-                debug_i(section_header.type,16);
-                debug("\n");
-            }
-        }
-    }
-    */
     return target_address + header.program_entry_position;
 }
 

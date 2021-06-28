@@ -16,19 +16,19 @@
 #include "lib/heap.h"
 #include "misc/debug.h"
 #include "bin/elf.h"
-#include "fs/ext2.h"
+#include "fs/fs.h"
 
-static void load_program(Ext2FileSystem* fs, const char* path){
+static void load_program(FileSystem* fs, const char* path){
     console_print("Loading ");console_print(path);
     console_print("\n");
-    Stream* stream = ext2_file_stream_open(fs, path,0);
+    Stream* stream = fs_file_stream_open(fs, path,0);
     uint32_t task_id = tasks_new(stream);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
 }
 
 void test_task(){
-    Ext2FileSystem* fs;
+    FileSystem* fs;
     Device* device;
     Stream* stream;
     uint32_t task_id;
@@ -40,7 +40,7 @@ void test_task(){
         console_print("Device not found\n");
         return;
     }
-    fs = ext2_open(BLOCK_DEVICE(device));
+    fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     /*
     stream = ext2_file_stream_open(fs, "/hello.elf",0);

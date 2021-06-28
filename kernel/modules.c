@@ -2,9 +2,10 @@
 #include "io/streams.h"
 #include "misc/debug.h"
 
-int32_t modules_load(Ext2FileSystem* fs, const char* path){
+int32_t modules_load(FileSystem* fs, const char* path){
     debug("Loading module ");debug(path);debug(" ...\n");
-    Stream* stream = ext2_file_stream_open(fs, path,0);
+    Stream* stream = fs_file_stream_open(fs, path,0);
+    debug("1\n");
 
     if (!stream){
         debug("Module not found\n");

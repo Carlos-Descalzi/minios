@@ -3,7 +3,7 @@
 #include "kernel/task.h"
 #include "lib/path.h"
 #include "kernel/device.h"
-#include "fs/ext2.h"
+#include "fs/fs.h"
 #include "misc/debug.h"
 
 void syscall_spawn(InterruptFrame* f){
@@ -27,7 +27,7 @@ void syscall_spawn(InterruptFrame* f){
         return;
     }
 
-    Ext2FileSystem* fs = ext2_open(BLOCK_DEVICE(device));
+    FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if (!fs){
         debug("No fs\n");
@@ -35,7 +35,7 @@ void syscall_spawn(InterruptFrame* f){
         return;
     }
 
-    Stream* stream = ext2_file_stream_open(fs, filepath,0);
+    Stream* stream = fs_file_stream_open(fs, filepath,0);
 
     if (stream){
         uint32_t task_id = tasks_new(stream);
@@ -47,5 +47,5 @@ void syscall_spawn(InterruptFrame* f){
     }
 
     stream_close(stream);
-    ext2_close(fs);
+    fs_close(fs);
 }
