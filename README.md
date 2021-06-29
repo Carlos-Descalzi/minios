@@ -1,5 +1,5 @@
 # minios
-A very basic bootloader and attempt of minimal i386 operating system, just for self learning.
+A very simple operating system for i386 with its own bootloaded, just for self learning.
 So far these features are implemented (barely):
 * bootloader with available memory detection.
 * Basic chipset and buses: PCI, PIC, PIT, Serial, PS/2 in progress.
