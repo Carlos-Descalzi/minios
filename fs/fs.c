@@ -34,7 +34,6 @@ FileSystem* fs_get_filesystem(BlockDevice* device){
     for (i=0;i<FS_MAX;i++){
         if (file_systems[i].file_system &&
             file_systems[i].file_system->device == device){
-            debug("fs found\n");
             file_systems[i].ref_count++;
             return file_systems[i].file_system;
         }
@@ -42,7 +41,6 @@ FileSystem* fs_get_filesystem(BlockDevice* device){
 
     for (i=0;i<FS_MAX;i++){
         if (!file_systems[i].file_system){
-            debug("opening fs\n");
             file_systems[i].file_system = create(device);
 
             if (file_systems[i].file_system){
@@ -57,13 +55,14 @@ FileSystem* fs_get_filesystem(BlockDevice* device){
 }
 
 void fs_release_filesystem(FileSystem* fs){
-    for (int i=0;i<10;i++){
+    for (int i=0;i<FS_MAX;i++){
         if (file_systems[i].file_system == fs){
             file_systems[i].ref_count--;
 
             if (file_systems[i].ref_count == 0){
-                fs_close(file_systems[i].file_system);
-                file_systems[i].file_system = NULL;
+                //fs_close(file_systems[i].file_system);
+                //file_systems[i].file_system = NULL;
+                fs_release_resources(fs);
             }
             break;
         }

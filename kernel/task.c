@@ -100,7 +100,9 @@ static Task* get_next_free_task(){
     return &(task_node->task);
 }
 
-uint32_t tasks_new(Stream* exec_stream){
+uint32_t tasks_new(Stream* exec_stream,
+    int nargs, char** args,
+    int nenvs, char** envs){
     //pausei();
     VirtualAddress v_address;
     Task* task = get_next_free_task();
@@ -124,12 +126,18 @@ uint32_t tasks_new(Stream* exec_stream){
     v_address.page_dir_index = 1023;
     v_address.page_index = 1022;
     v_address.offset = 0xFFF;
+    task->nargs = nargs;
+    task->nenvs = nenvs;
+    task->args = args;
+    task->envs = envs;
     task->cpu_state.esp = v_address.address;
     task->cpu_state.source_esp = v_address.address;
     task->cpu_state.flags.privilege_level = 3;
     task->cpu_state.flags.reserved_1 = 1;
     task->cpu_state.flags.interrupt_enable = 1;
     setup_console(task);
+
+    paging_write_env(task->page_directory, nargs, args, nenvs, envs);
 
     //resumei();
     return task->tid;
@@ -203,6 +211,17 @@ static void remove_current_task(){
     }
 
     task_list = list_remove(LIST_NODE(task_list), LIST_NODE(current_task_list_node));
+
+    paging_release_task_space(TASK_NODE(current_task_list_node)->task.page_directory);
+
+    if (TASK_NODE(current_task_list_node)->task.args){
+        heap_free(TASK_NODE(current_task_list_node)->task.args);
+    }
+
+    if (TASK_NODE(current_task_list_node)->task.envs){
+        heap_free(TASK_NODE(current_task_list_node)->task.envs);
+    }
+
     heap_free(current_task_list_node);
     current_task_list_node = new_current;
 }
@@ -258,7 +277,6 @@ void tasks_finish(uint32_t task_id, uint32_t exit_code){
     for (ListNode* task_node = task_list; task_node; task_node = task_node->next){
         if (TASK_NODE(task_node)->task.tid == task_id){
             Task* task = &(TASK_NODE(task_node)->task);
-            paging_release_task_space(task->page_directory);
             task->status = TASK_STATUS_NONE;
             debug("TASK - Task finished\n");
             break;

@@ -2,6 +2,7 @@
 #include "unistd.h"
 #include "syscall.h"
 #include "stdio.h"
+#include "string.h"
 
 struct DIR_ {
     uint32_t inode;

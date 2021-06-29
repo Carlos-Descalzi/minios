@@ -7,6 +7,7 @@ static void spc(int n){
         printf(" ");
     }
 }
+
 static const char* typename(uint8_t type){
     switch(type){
         case DT_FIFO:
@@ -28,17 +29,36 @@ static const char* typename(uint8_t type){
     }
 }
 
-int main(int argc, char** argv){
-
+int main(int argc, char* argv[]){
+    char pathbuff[256];
     struct dirent* entry;
 
-    DIR* dir = opendir("disk0:/drivers");
+    if (argc){
+        char* path = argv[0];
+        if (strlen(path)){
+            if (path[0] == '/'){
+                strcpy(pathbuff,"disk0:");
+                strcat(pathbuff,path);
+            } else if (strchr(path,':')){
+                strcpy(pathbuff,path);
+            } else {
+                strcpy(pathbuff,"disk0:/");
+                strcat(pathbuff,path);
+            }
+        } else {
+            strcpy(pathbuff,"disk0:/");
+        }
+    } else {
+        strcpy(pathbuff,"disk0:/");
+    }
+
+    DIR* dir = opendir(pathbuff);
 
     if (!dir){
-        printf("No directory\n");
+        printf("Directory not found\n");
         return 1;
     }
-    printf("Listing directory:\n\n");
+    printf("Listing directory %s:\n\n",pathbuff);
     int i=0;
     while ((entry = readdir(dir))){
         printf("%s",entry->d_name);

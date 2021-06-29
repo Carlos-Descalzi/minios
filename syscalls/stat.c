@@ -34,7 +34,11 @@ void syscall_stat(InterruptFrame* f){
     char* pathname = stat_data->pathname;
     struct stat* statbuf = stat_data->statbuf;
 
+    debug("Stat:");
+
     pathname = tasks_to_kernel_address(pathname);
+    debug(pathname);
+    debug("\n");
 
     if (path_parse(pathname, &device_id, filepath)){
         f->ebx = ((uint32_t)-1);
@@ -76,6 +80,8 @@ void syscall_stat(InterruptFrame* f){
         statbuf->st_atim = inode->atime;
         statbuf->st_mtim = inode->mtime;
         statbuf->st_ctim = inode->ctime;
+
+        fs_free_inode(fs, inode);
 
         f->ebx = 0;
 

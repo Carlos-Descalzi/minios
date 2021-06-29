@@ -23,6 +23,10 @@ typedef struct Task {
     CPUState            cpu_state; 
     uint32_t            parent_tid;
     PageDirectoryEntry* page_directory;
+    uint32_t            nargs;
+    char**              args;
+    uint32_t            nenvs;
+    char**              envs;
     Stream*             streams[32];        // max open files
     CharDevice*         console;            // console associated to task.
     IORequest           io_requests[4];     // max active IO requests
@@ -45,7 +49,9 @@ Task*       tasks_current_task              (void);
 /**
  * Creates a new task by loading elf binary from a stream
  **/
-uint32_t    tasks_new                       (Stream* exec_stream);
+uint32_t    tasks_new                       (Stream* exec_stream,
+                                            int nargs, char** args,
+                                            int nenvs, char** envs);
 /**
  * Finishes a given task
  **/

@@ -1,11 +1,15 @@
 global _start, __stack_chk_fail
 extern main
 
+params_ptr: equ 0xFFFFD000
+
+
 _start:
     ; TODO: initialization
-    xor     eax,    eax
-    push    eax     ; argc
-    push    eax     ; argv
+    mov     eax,    params_ptr+4
+    push            eax
+    mov     eax,    params_ptr
+    push    dword   [eax]
     call    main
 
     ; Now system call for exit 

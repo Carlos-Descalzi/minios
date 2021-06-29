@@ -253,6 +253,7 @@ PageDirectoryEntry* paging_new_task_space(void){
     uint32_t table_address_1;
     uint32_t table_address_2;
     uint32_t stack_block;
+    uint32_t env_block;
     int i;
 
     directory = memory_alloc_block();
@@ -283,6 +284,14 @@ PageDirectoryEntry* paging_new_task_space(void){
         memory_free_block(table_address_2);
         return NULL;
     }
+    env_block = memory_alloc_block();
+    if (!env_block){
+        memory_free_block(directory);
+        memory_free_block(table_address_1);
+        memory_free_block(table_address_2);
+        memory_free_block(stack_block);
+    }
+
     debug("PAGING - Allocated page table 0 at ");debug_i(table_address_1,16);debug("\n");
     debug("PAGING - Allocated page table 1 at ");debug_i(table_address_2,16);debug("\n");
 
@@ -312,13 +321,18 @@ PageDirectoryEntry* paging_new_task_space(void){
     }
 
     set_exchange_page(table_address_2);
-    // Last page (1023) of last table maps to ISRs
-    setup_isr_page(local_table, 1);
+    // Page 1021 of last table is 2k for arguments + 2k for environment
+    local_table[PAGE_LAST-2].present = 1;
+    local_table[PAGE_LAST-2].read_write = 1;
+    local_table[PAGE_LAST-2].user_supervisor = 1;
+    local_table[PAGE_LAST-2].physical_page_address = env_block >> 12;
     // Page 1022 of last table maps to stack.
     local_table[PAGE_LAST-1].present = 1;
     local_table[PAGE_LAST-1].read_write = 1;
     local_table[PAGE_LAST-1].user_supervisor = 1;
     local_table[PAGE_LAST-1].physical_page_address = stack_block >> 12;
+    // Last page (1023) of last table maps to ISRs
+    setup_isr_page(local_table, 1);
 
     return (PageDirectoryEntry*)(directory | 3);
 }
@@ -454,4 +468,47 @@ static uint32_t paging_kernel_alloc_pages   (uint32_t nblocks, uint8_t rw){
         }
     }
     return 0;
+}
+
+/**
+ * FIXME, change parameter passing
+ **/
+static int calc_params_size(int nparams, char** params){
+    char* ptr = params[nparams-1] + ((uint32_t)params);
+    int len = strlen(ptr);
+    return len + 1 + ((uint32_t)ptr) - ((uint32_t)params);
+}
+
+static void copy_params(void* ptr, int nparams, char** params){
+    *((uint32_t*)ptr)=nparams;
+    void* arr_ptr= ptr + sizeof(uint32_t);
+
+    int params_size = calc_params_size(nparams, params);
+    memcpy(arr_ptr, params, params_size);
+
+    for (int i=0;i<nparams;i++){
+        ((char**)arr_ptr)[i]+=(PAGE_LAST << 22) | ((PAGE_LAST-2) << 12) + 4;
+    }
+}
+
+void paging_write_env(PageDirectoryEntry* dir,
+    int nargs, char** args,
+    int nenvs, char** envs){
+    
+    if (nargs || nenvs){
+        set_exchange_page(dir);
+    
+        uint32_t address = local_page_dir[PAGE_LAST].page_table_address << 12;
+        set_exchange_page(address);
+    
+        address = local_table[PAGE_LAST-2].physical_page_address << 12;
+        set_exchange_page(address);
+
+        if (nargs){
+            copy_params(local_ptr, nargs, args);
+        }
+        if (nenvs){
+            copy_params(local_ptr + PAGE_SIZE / 2, nenvs, envs);
+        }
+    }
 }

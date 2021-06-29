@@ -44,55 +44,59 @@ typedef int8_t (*DirVisitor)(Ext2FileSystem*, DirEntry*, void*);
 #define E2FS(f)     ((Ext2FileSystem*)(f))
 #define INODE(i)    ((Inode*)(i))
 
+static const char FS_TYPE_NAME[] = "ext2";
+
 static FileSystemType FS_TYPE;
 
 #define OFFSET      (512 + 65536)   // boot sector + kernel
 
-static FileSystem*      create_fs           (FileSystemType* fs_type, BlockDevice* device);
-static void             list_inodes         (FileSystem* fs, InodeVisitor visitor, void*data);
-static void             close               (FileSystem* fs);
-static int32_t          load_inode          (FileSystem* fs, uint32_t inodenum, Inode* inode);
-static uint32_t         find_inode          (FileSystem* fs, const char* path);
-static int32_t          load                (FileSystem* fs, Inode* inode, void* dest);
-static uint32_t         read_block          (FileSystem* fs, Inode* inode, 
-                                            uint32_t b_index, uint8_t* dest, uint32_t length);
-static int32_t          get_direntry        (FileSystem* fs, Inode* inode, 
-                                            uint32_t* offset, DirEntry* direntry);
-static Inode*           alloc_inode         (FileSystem* fs);
-static Stream*          ext2_stream_open         (FileSystem* fs, const char* path, uint8_t mode);
-int16_t                 ext2_stream_read_byte    (Stream*);
-int16_t                 ext2_stream_write_byte   (Stream*,uint8_t);
-int16_t                 ext2_stream_read_bytes   (Stream*,uint8_t*,int16_t);
-int16_t                 ext2_stream_write_bytes  (Stream*,uint8_t*,int16_t);
-uint32_t                ext2_stream_pos          (Stream*);
-int16_t                 ext2_stream_seek         (Stream*,uint32_t);
-uint32_t                ext2_stream_size         (Stream*);
-void                    ext2_stream_close        (Stream*);
+static FileSystem*      create_fs               (FileSystemType* fs_type, BlockDevice* device);
+static void             list_inodes             (FileSystem* fs, InodeVisitor visitor, void*data);
+static void             close                   (FileSystem* fs);
+static int32_t          load_inode              (FileSystem* fs, uint32_t inodenum, Inode* inode);
+static uint32_t         find_inode              (FileSystem* fs, const char* path);
+static int32_t          load                    (FileSystem* fs, Inode* inode, void* dest);
+static uint32_t         read_block              (FileSystem* fs, Inode* inode, 
+                                                uint32_t b_index, uint8_t* dest, uint32_t length);
+static int32_t          get_direntry            (FileSystem* fs, Inode* inode, 
+                                                uint32_t* offset, DirEntry* direntry);
+static Inode*           alloc_inode             (FileSystem* fs);
+static void             free_inode              (FileSystem* fs, Inode* inode);
+static void             release_resources       (FileSystem* fs);
+static Stream*          ext2_stream_open        (FileSystem* fs, const char* path, uint8_t mode);
+int16_t                 ext2_stream_read_byte   (Stream*);
+int16_t                 ext2_stream_write_byte  (Stream*,uint8_t);
+int16_t                 ext2_stream_read_bytes  (Stream*,uint8_t*,int16_t);
+int16_t                 ext2_stream_write_bytes (Stream*,uint8_t*,int16_t);
+uint32_t                ext2_stream_pos         (Stream*);
+int16_t                 ext2_stream_seek        (Stream*,uint32_t);
+uint32_t                ext2_stream_size        (Stream*);
+void                    ext2_stream_close       (Stream*);
 
 
 
 
-static char*            ext2_path_tokenize  (const char* path, char* buffer, uint8_t* pos);
-static int16_t          ext2_iter_dir_block (Ext2FileSystem* fs, uint32_t block_num, DirVisitor visitor, 
-                                            void* func_data);
-static void             ext2_list_dir_inode (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, 
-                                            void* func_data);
-static uint32_t         find_next_inode     (Ext2FileSystem* fs, uint32_t inodenum, const char* dirent_name);
-static DirEntry*        next_entry          (DirEntry* entry);
-static int8_t           find_dirent         (Ext2FileSystem*fs, DirEntry* dirent, void* data);
-static uint8_t*         cache_find          (Ext2FileSystem* fs, uint32_t disk_pos);
-static uint8_t*         cache_take          (Ext2FileSystem* fs, uint32_t disk_pos);
-static void             ext2_device_read_block
-                                            (Ext2FileSystem* fs); 
+static char*            ext2_path_tokenize      (const char* path, char* buffer, uint8_t* pos);
+static int16_t          ext2_iter_dir_block     (Ext2FileSystem* fs, uint32_t block_num, DirVisitor visitor, 
+                                                void* func_data);
+static void             ext2_list_dir_inode     (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, 
+                                                void* func_data);
+static uint32_t         find_next_inode         (Ext2FileSystem* fs, uint32_t inodenum, const char* dirent_name);
+static DirEntry*        next_entry              (DirEntry* entry);
+static int8_t           find_dirent             (Ext2FileSystem*fs, DirEntry* dirent, void* data);
+static uint8_t*         cache_find              (Ext2FileSystem* fs, uint32_t disk_pos);
+static uint8_t*         cache_take              (Ext2FileSystem* fs, uint32_t disk_pos);
+static void             ext2_device_read_block  (Ext2FileSystem* fs); 
 static void             ext2_device_read_block_b
-                                            (Ext2FileSystem* fs, void* buffer, uint32_t length);
-static uint32_t         get_block_by_index  (Ext2FileSystem* fs, Ext2Inode* inode, uint32_t block_index);
+                                                (Ext2FileSystem* fs, void* buffer, uint32_t length);
+static uint32_t         get_block_by_index      (Ext2FileSystem* fs, Ext2Inode* inode, uint32_t block_index);
 
-#define ext2_device_seek(fs, pos)           { block_device_seek(FILE_SYSTEM(fs)->device, (pos) + OFFSET); } 
-#define ext2_device_gotoblock(fs, block)    { ext2_device_seek(fs, FILE_SYSTEM(fs)->block_size*(block)); }
-#define ext2_device_pos(fs)                 (block_device_pos(FILE_SYSTEM(fs)->device) - OFFSET)
+#define ext2_device_seek(fs, pos)               { block_device_seek(FILE_SYSTEM(fs)->device, (pos) + OFFSET); } 
+#define ext2_device_gotoblock(fs, block)        { ext2_device_seek(fs, FILE_SYSTEM(fs)->block_size*(block)); }
+#define ext2_device_pos(fs)                     (block_device_pos(FILE_SYSTEM(fs)->device) - OFFSET)
 
 void ext2_register_type(void){
+    FS_TYPE.type_name = FS_TYPE_NAME;
     FS_TYPE.create = create_fs;
     fs_register_type(&FS_TYPE);
 }
@@ -101,18 +105,22 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     int i;
     Ext2FileSystem* fs;
     debug("EXT2 - Opening ext2 filesystem\n");
+
     if (!device){
         debug("No device\n");
         return NULL;
     }
+
     fs = heap_alloc(sizeof(Ext2FileSystem));
+
     if (!fs){
         debug("No memory\n");
         return NULL;
     }
+
     memset(fs,0,sizeof(Ext2FileSystem));
+
     block_device_seek(BLOCK_DEVICE(device), OFFSET + 1024); 
-    debug("EXT2 - Reading superblock "); debug_i(sizeof(Ext2Superblock),10);debug("\n");
     block_device_read(BLOCK_DEVICE(device), (uint8_t*)&(fs->super_block), sizeof(Ext2Superblock));
 
     if (fs->super_block.magic != 0xef53){
@@ -124,6 +132,7 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     } else {
         debug("EXT2 - Magic number found\n");
     }
+
     FILE_SYSTEM(fs)->type = fs_type;
     FILE_SYSTEM(fs)->device = device;
     FILE_SYSTEM(fs)->list_inodes = list_inodes;
@@ -134,9 +143,13 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     FILE_SYSTEM(fs)->read_block = read_block;
     FILE_SYSTEM(fs)->get_direntry = get_direntry;
     FILE_SYSTEM(fs)->alloc_inode = alloc_inode;
+    FILE_SYSTEM(fs)->free_inode = free_inode;
     FILE_SYSTEM(fs)->stream_open = ext2_stream_open;
+    FILE_SYSTEM(fs)->release_resources = release_resources;
     FILE_SYSTEM(fs)->inode_size = sizeof(Ext2Inode);
     FILE_SYSTEM(fs)->block_size = 1024 << fs->super_block.log_block_size;
+
+
     debug("Block size:");debug_i(FILE_SYSTEM(fs)->block_size,10);debug("\n");
 
     fs->block_buffer = NULL;
@@ -145,13 +158,16 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     fs->inodes_per_block = FILE_SYSTEM(fs)->block_size / sizeof(Ext2Inode);
     fs->group_descritors_per_block = FILE_SYSTEM(fs)->block_size / sizeof(Ext2BlockGroupDescriptor);
     fs->block_group_count = fs->super_block.block_count / fs->super_block.blocks_per_group;
-    debug("Group descriptors per block:");debug_i(fs->group_descritors_per_block,10);debug("\n");
-    debug("Block group block:");debug_i(fs->block_group_count,10);debug("\n");
+
+    // Allocate space for 5 blocks 
+
     fs->block_cache = heap_alloc(FILE_SYSTEM(fs)->block_size * 5);
+
     for (i=0;i<5;i++){
         fs->cache[i].disk_pos = 0;
         fs->cache[i].pos = FILE_SYSTEM(fs)->block_size * i;
     }
+
     return FILE_SYSTEM(fs);
 }
 
@@ -194,12 +210,9 @@ static void ext2_device_read_block(Ext2FileSystem* fs){
     uint8_t *block_buffer = cache_find(fs, disk_pos);
 
     if (block_buffer){
-        //debug("EXT2 - Cache hit for ");debug_i(disk_pos,10);debug("\n");
         fs->block_buffer = block_buffer;
     } else {
-        //debug("EXT2 - Cache miss for ");debug_i(disk_pos,10);debug("\n");
         fs->block_buffer = cache_take(fs, disk_pos);
-        //debug("\tBlock buffer:");debug_i(fs->block_buffer,16);debug("\n");
         block_device_read(FILE_SYSTEM(fs)->device, fs->block_buffer, FILE_SYSTEM(fs)->block_size); 
     }
 }
@@ -275,7 +288,8 @@ static void list_inodes(FileSystem* fs, InodeVisitor visitor, void*data){
         ext2_device_seek(E2FS(fs), pos);
         ext2_device_read_block_b(E2FS(fs), descriptors,0);
         pos = ext2_device_pos(E2FS(fs));
-        do_list_inodes(E2FS(fs), 
+        do_list_inodes(
+            E2FS(fs), 
             visitor, 
             data, 
             descriptors, 
@@ -288,9 +302,6 @@ static void list_inodes(FileSystem* fs, InodeVisitor visitor, void*data){
     heap_free(inode_table);
     heap_free(descriptors);
 }
-//void ext2_list_directory (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, void* data){
-//    ext2_list_dir_inode(fs, inode, visitor, data);
-//}
 
 static void close(FileSystem* fs){
     heap_free(E2FS(fs)->block_cache);
@@ -304,9 +315,6 @@ static int32_t load_inode(FileSystem* fs, uint32_t inodenum, Inode* inode){
     uint32_t block_group_table_offset = block_group % E2FS(fs)->group_descritors_per_block;
     uint32_t inode_table;
 
-    debug("EXT2 - ext2_load_inode:");debug_i(inodenum,10);debug(",");
-    debug_i(block_group,10);debug(",");debug_i(block_group_table_block,10);debug(",");
-    debug_i(index,10);debug("\n");
     Ext2Inode* table;
 
     ext2_device_seek(E2FS(fs), 
@@ -409,7 +417,6 @@ static uint32_t read_block(FileSystem* fs, Inode* inode,
                          uint32_t b_index, uint8_t* dest, uint32_t length){
     uint32_t block;
 
-    debug("EXT2 - read_block:");debug_i(b_index,10);debug("\n");
     block = get_block_by_index(E2FS(fs), E2INODE(inode), b_index);
     ext2_device_gotoblock(E2FS(fs), block);
     ext2_device_read_block_b(E2FS(fs), dest, length);
@@ -435,7 +442,6 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
         .inode=0 
     };
     Ext2Inode inode;
-    debug("EXT2 - find_next_inode:");debug_i(inodenum,10);debug(",");debug(dirent_name);debug("\n");
 
     if(load_inode(FILE_SYSTEM(fs), inodenum, INODE(&inode))){
         debug("EXT2 - find_next_inode - error\n");
@@ -449,8 +455,6 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
     }
 
     ext2_list_dir_inode(fs, &inode, find_dirent, &dirent_find_data);
-
-    debug("EXT2 - find_next_inode:");debug_i(dirent_find_data.inode,10);debug("\n");
 
     return dirent_find_data.inode;
 }
@@ -495,7 +499,6 @@ static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t n
     return 0;
 }
 static int32_t get_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
-    debug("EXT2 - ext2_get_direntry:");debug_i(*offset,10);debug("\n");
 
     if (inode->type != EXT2_INODE_TYPE_DIRECTORY){
         debug("Not a directory\n");
@@ -504,8 +507,6 @@ static int32_t get_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirE
 
     uint32_t block = *offset / fs->block_size;
     uint32_t block_offset = *offset % fs->block_size;
-    //debug("\tblock:");debug_i(block,10);debug(", offset:");
-    debug_i(block_offset,10);debug("\n");
 
     uint32_t block_pos = get_block_by_index(E2FS(fs), E2INODE(inode), block);
     ext2_device_gotoblock(E2FS(fs), block_pos);
@@ -514,7 +515,6 @@ static int32_t get_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirE
     DirEntry* entry = (DirEntry*)(E2FS(fs)->block_buffer + block_offset);
     memcpy(direntry, entry, sizeof(DirEntry) + entry->name_len);
     *offset+=entry->rec_len;
-    debug("\tDir entry:");debug_i(entry->rec_len,10);debug("\n");
 
     return *offset == fs->block_size ? 1 : 0;
 }
@@ -772,4 +772,19 @@ static Inode* alloc_inode(FileSystem* fs){
     }
     debug("EXT2 - alloc_inode: No more inodes\n");
     return NULL;
+}
+static void free_inode(FileSystem* fs, Inode* inode){
+    for (int i=0;i<5;i++){
+        if (&(E2FS(fs)->work_inodes[i].inode) == inode){
+            E2FS(fs)->work_inodes[i].in_use = 0;
+            break;
+        }
+    }
+}
+static void release_resources(FileSystem* fs){
+    for (int i=0;i<5;i++){
+        if (E2FS(fs)->work_inodes[i].in_use){
+            E2FS(fs)->work_inodes[i].in_use = 0;
+        }
+    }
 }

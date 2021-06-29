@@ -83,10 +83,16 @@ uint32_t            paging_physical_address     (PageDirectoryEntry* page_dir, v
  **/
 void*               paging_to_kernel_space      (uint32_t physical_address);
 /**
+ * Writes arguments and enviroment in a page
+ **/
+void                paging_write_env            (PageDirectoryEntry* dir,
+                                                int nargs, char** args,
+                                                int nenvs, char** envs);
+/**
  * Invalidates processor's TLB
  **/
 void                paging_invalidate_cache     (void);
             
-uint32_t current_page_dir();
+uint32_t            current_page_dir            (void);
 
 #endif

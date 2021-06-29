@@ -19,7 +19,7 @@ int main(int argc,char **argv){
         modules_load(buff);
     }
 
-    spawn("disk0:/shell.elf");
+    spawn("disk0:/shell.elf",0,NULL,0,NULL);
     /*
     printmessage("Opening file /file1.txt\n");
 

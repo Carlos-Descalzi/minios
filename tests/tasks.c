@@ -22,7 +22,7 @@ static void load_program(FileSystem* fs, const char* path){
     console_print("Loading ");console_print(path);
     console_print("\n");
     Stream* stream = fs_file_stream_open(fs, path,0);
-    uint32_t task_id = tasks_new(stream);
+    uint32_t task_id = tasks_new(stream,0,NULL,0,NULL);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
 }

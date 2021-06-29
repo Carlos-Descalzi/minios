@@ -33,6 +33,11 @@ typedef struct FileSystem FileSystem;
 
 typedef int8_t (*InodeVisitor)(FileSystem*,uint32_t,Inode* inode, void*);
 
+struct FileSystemType {
+    char* type_name;
+    FileSystem* (*create)       (struct FileSystemType*, BlockDevice*);
+};
+
 struct FileSystem {
     FileSystemType* type;
     BlockDevice* device;
@@ -40,20 +45,18 @@ struct FileSystem {
     uint32_t    inode_size;
     uint32_t    block_size;
 
-    void        (*list_inodes)  (struct FileSystem*, InodeVisitor, void*);
-    void        (*close)        (struct FileSystem*);
-    uint32_t    (*find_inode)   (struct FileSystem*, const char*);
-    int32_t     (*load_inode)   (struct FileSystem*, uint32_t, Inode*);
-    int32_t     (*load)         (struct FileSystem*, Inode*, void*);
-    uint32_t    (*read_block)   (struct FileSystem*, Inode*, uint32_t, void*, uint32_t);
-    int32_t     (*get_direntry) (struct FileSystem*, Inode*, uint32_t*, DirEntry*);
-    Inode*      (*alloc_inode)  (struct FileSystem*);
-    Stream*     (*stream_open)  (struct FileSystem*, const char*, uint8_t);
+    void        (*list_inodes)          (struct FileSystem*, InodeVisitor, void*);
+    void        (*close)                (struct FileSystem*);
+    uint32_t    (*find_inode)           (struct FileSystem*, const char*);
+    int32_t     (*load_inode)           (struct FileSystem*, uint32_t, Inode*);
+    int32_t     (*load)                 (struct FileSystem*, Inode*, void*);
+    uint32_t    (*read_block)           (struct FileSystem*, Inode*, uint32_t, void*, uint32_t);
+    int32_t     (*get_direntry)         (struct FileSystem*, Inode*, uint32_t*, DirEntry*);
+    Inode*      (*alloc_inode)          (struct FileSystem*);
+    void        (*free_inode)           (struct FileSystem*, Inode*);
+    Stream*     (*stream_open)          (struct FileSystem*, const char*, uint8_t);
+    void        (*release_resources)    (struct FileSystem*);
 
-};
-
-struct FileSystemType {
-    FileSystem* (*create)       (struct FileSystemType*, BlockDevice*);
 };
 
 void            fs_init                     (void);
@@ -72,6 +75,8 @@ void            fs_release_filesystem       (FileSystem* fs);
 #define         fs_read_block(fs,i,n,b,s)   ((fs)->read_block(fs,i,n,b,s))
 #define         fs_get_direntry(fs,i,o,d)   ((fs)->get_direntry(fs,i,o,d))
 #define         fs_alloc_inode(fs)          ((fs)->alloc_inode(fs))
+#define         fs_free_inode(fs,i)         ((fs)->free_inode(fs,i))
 #define         fs_file_stream_open(fs,p,m) ((fs)->stream_open(fs,p,m))
+#define         fs_release_resources(fs)    ((fs)->release_resources(fs))
 
 #endif

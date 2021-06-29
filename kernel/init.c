@@ -127,7 +127,7 @@ static void start_init(void){
     }
     fs = fs_get_filesystem(device);
     stream = fs_file_stream_open(fs, "/init.elf",0);
-    task_id = tasks_new(stream);
+    task_id = tasks_new(stream,0,NULL,0,NULL);
     stream_close(stream);
     debug("New task id:");debug_i(task_id,10);debug("\n");
     tasks_loop();
