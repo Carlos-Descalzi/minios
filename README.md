@@ -6,6 +6,7 @@ So far these features are implemented (barely):
 * Basic raw console
 * base libraries: strings, heap, string/int conversion, etc.
 * IDE harddisk (read only, no IRQ, no DMA).
+* Virtual file system layer.
 * ext2 filesystem (readonly so far).
 * Elf binary support - no shared libraries.
 * Paging.
