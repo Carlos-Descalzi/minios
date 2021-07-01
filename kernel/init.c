@@ -176,6 +176,8 @@ static void load_drivers(void){
             modules_load(fs, "/drivers/screen.elf");
             modules_load(fs, "/drivers/keyboard.elf");
             modules_load(fs, "/drivers/console.elf");
+            modules_load(fs, "/drivers/sys.elf");
+            modules_load(fs, "/drivers/sysfs.elf");
             debug("Drivers loaded\n");
         } else {
             debug("No fs\n");

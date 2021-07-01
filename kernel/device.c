@@ -6,14 +6,15 @@
 #include "misc/debug.h"
 #include "kernel/paging.h"
 
-static const char* kinds[] = {
+const char* DEVICE_KIND_NAMES[] = {
     "video",
     "ser",
     "disk",
     "net",
     "kbd",
     "mouse",
-    "term"
+    "term",
+    "sys"
 };
 
 typedef struct DeviceInstance {
@@ -70,6 +71,11 @@ void device_init_devices(void){
     }
     initialized = 1;
 }
+int device_count_devices(void){
+    int i=0;
+    for (i=0;i<MAX_DEVICES && devices[i].device;i++);
+    return i;
+}
 
 void device_list (DeviceVisitor visitor, void *data){
     int i;
@@ -79,6 +85,16 @@ void device_list (DeviceVisitor visitor, void *data){
             break;
         }
     }
+}
+int device_info(int index, uint8_t* kind, uint8_t* instance){
+    Device* device = devices[index].device;
+
+    if (device){
+        *kind = device->kind;
+        *instance = device->instance_number;
+        return 0;
+    }
+    return -1;
 }
 
 Device* device_find(uint8_t kind, uint8_t instance){
@@ -107,9 +123,9 @@ int device_parse_name(const char* name, uint8_t* kind, uint8_t* instance){
     if (!name){
         return -1;
     }
-    for (uint8_t i=0;i<sizeof(kinds)/sizeof(char*);i++){
-        uint8_t l = strlen(kinds[i]);
-        if(!strncmp(name,kinds[i],l)){
+    for (uint8_t i=0;i<sizeof(DEVICE_KIND_NAMES)/sizeof(char*);i++){
+        uint8_t l = strlen(DEVICE_KIND_NAMES[i]);
+        if(!strncmp(name,DEVICE_KIND_NAMES[i],l)){
             *kind = i;
             *instance = atoi(name+l);
             return 0;

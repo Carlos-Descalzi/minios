@@ -93,12 +93,10 @@ static uint8_t count_devices(struct DeviceType* device_type){
 }
 
 static int16_t console_write(CharDevice* device, uint8_t data){
-    debug("CONSOLE WRITE:");debug_i(CONSOLE_DEVICE(device)->screen->write,16);debug("\n");
     return char_device_write(CONSOLE_DEVICE(device)->screen,data);
 }
 
 static int16_t  console_read_async  (CharDevice* device, IORequest* request){
-    debug("Console read async\n");
     CONSOLE_DEVICE(device)->user_request = request;
     return char_device_read_async(
         CONSOLE_DEVICE(device)->keyboard, 
@@ -107,23 +105,54 @@ static int16_t  console_read_async  (CharDevice* device, IORequest* request){
 }
 
 static uint8_t encode(ConsoleDevice* device, uint16_t code){
-    if (code >= KEY_CODE_A && code < KEY_CODE_Z){
+    if (code >= KEY_CODE_A && code <= KEY_CODE_Z){
         if (device->keyboard_status.shift
             || device->keyboard_status.caps){
             return code & 0xFF;
         } else {
             return (code - KEY_CODE_A) + 'a';
         }
+    } else if (code >= KEY_CODE_0 && code <= KEY_CODE_9){
+        if (device->keyboard_status.shift){
+            switch(code){
+                case KEY_CODE_0:
+                    return '=';
+                case KEY_CODE_1:
+                    return '!';
+                case KEY_CODE_2:
+                    return '"';
+                case KEY_CODE_3:
+                    return '#';
+                case KEY_CODE_4:
+                    return '$';
+                case KEY_CODE_5:
+                    return '%';
+                case KEY_CODE_6:
+                    return '&';
+                case KEY_CODE_7:
+                    return '/';
+                case KEY_CODE_8:
+                    return '(';
+                case KEY_CODE_9:
+                    return ')';
+            }
+        }
+    } else if (code == KEY_CODE_COMMA){
+        if (device->keyboard_status.shift){
+            return ';';
+        } 
+        return ',';
+    } else if (code == KEY_CODE_PERIOD){
+        if (device->keyboard_status.shift){
+            return ':';
+        }
+        return '.';
     }
     return code & 0xFF;
 }
 
 static void request_callback(IORequest* request, void* data){
     ConsoleDevice* device = data;
-    //debug("Request callback\n");
-    uint16_t code = *((uint16_t*)device->console_request.target_buffer);
-    debug_i(code,16);
-    debug("\n");
 
     uint16_t key_code = (*((uint16_t*)device->console_request.target_buffer));
 
@@ -156,13 +185,14 @@ static void request_callback(IORequest* request, void* data){
             device->keyboard_status.num = ~device->keyboard_status.num;
             set_keyboard_request(device);
         } else if (
-            (key_code >= KEY_CODE_1 && key_code <= KEY_CODE_Z)
+            (key_code >= KEY_CODE_0 && key_code <= KEY_CODE_Z)
             || (key_code >= KEY_CODE_KP_0 && key_code <= KEY_CODE_KP_PERIOD)
             || (key_code == KEY_CODE_ESCAPE)
             || (key_code == KEY_CODE_ENTER)
             || (key_code == KEY_CODE_BS)
             || (key_code == KEY_CODE_TAB)
-            || (key_code == KEY_CODE_SPACE)) {
+            || (key_code == KEY_CODE_SPACE)
+            || (key_code >= KEY_CODE_MINUS && key_code <= KEY_CODE_BACK_TICK)) {
             buffer[0] = encode(device, key_code);
             device->user_request->dsize = 1;
             device->user_request->result = 0;
@@ -179,6 +209,8 @@ static void request_callback(IORequest* request, void* data){
                 );
             }
             reset_console_request(device);
+        } else {
+            debug("Unknown keycode\n");
         }
     } else {
         //debug("Key release\n");

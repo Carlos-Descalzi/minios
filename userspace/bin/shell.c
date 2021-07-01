@@ -24,7 +24,6 @@ int main(int argc, char** argv){
         memset(buff,0,256);
         printf("$ ");
         fgets(buff,256,stdin);
-        printf("++ %s\n",buff);
 
         if (strlen(buff) > 0){
             if (!strncmp(buff,"clear",5)){

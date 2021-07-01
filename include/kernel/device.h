@@ -19,8 +19,11 @@ typedef enum {
     NET     = 3,
     KBD     = 4,
     MOUSE   = 5,
-    TERM    = 6
+    TERM    = 6,
+    SYS     = 7
 } DeviceKind;
+
+extern const char* DEVICE_KIND_NAMES[];
 
 typedef struct Device Device;
 
@@ -81,6 +84,8 @@ void    device_init                     (void);
 void    device_list_types               (DeviceTypeVisitor visitor, void* data);
 int16_t device_register_type            (DeviceType* device);
 void    device_init_devices             (void);
+int     device_count_devices            (void);
+int     device_info                     (int index, uint8_t* kind, uint8_t* instance);
 void    device_list                     (DeviceVisitor visitor, void *data);
 Device* device_find                     (uint8_t kind, uint8_t instance);
 Device* device_find_by_name             (const char* name);

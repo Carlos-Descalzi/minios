@@ -1,5 +1,5 @@
 include ../Make.defs
-BINS=serial.elf
+BINS=sys.elf sysfs.elf
 
 include ../Make.rules
 include ../../../Make.rules

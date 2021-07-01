@@ -71,6 +71,7 @@ e2fs.img: userspace modules
 	@sudo cp modules/drivers/console/*.elf tmp/drivers
 	@sudo cp modules/drivers/screen/*.elf tmp/drivers
 	@sudo cp modules/drivers/keyboard/*.elf tmp/drivers
+	@sudo cp modules/drivers/sys/*.elf tmp/drivers
 	@sudo umount tmp
 	@rm -rf tmp
 
