@@ -97,7 +97,7 @@ struct dirent* readdir(DIR* dirp){
     dir_entry.d_off = entry.offset_next;
     dir_entry.d_reclen = entry.rec_len;
     dir_entry.d_type = entry.file_type;
-    memcpy(dir_entry.d_name, entry.name, 256);
+    strcpy(dir_entry.d_name, entry.name);
 
     return &dir_entry;
 }

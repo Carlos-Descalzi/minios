@@ -20,9 +20,8 @@ typedef union PciAddress {
     uint32_t address;
 } PciAddress;
 
-static void check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data);
-static void check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data);
-//static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor, void* user_data);
+static int check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data);
+static int check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data);
 
 uint16_t pci_config_read_w  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset){
 
@@ -95,45 +94,41 @@ void pci_list_all_buses(PciVisitor visitor, void* user_data){
         check_bus(0, &header, visitor, user_data);
     }
 
-    //for (bus = 0;bus <= 255;bus ++){ // todo check all buses
-    //    check_bus(bus, &header, visitor);
-    //}
 }
 
 
-static void check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data){
+static int check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data){
     uint8_t device;
 
     for (device=0;device < 32;device++){
-        check_device(bus, device, header, visitor, user_data);
+        if (check_device(bus, device, header, visitor, user_data)){
+            return 1;
+        }
     }
+    return 0;
 }
-/*
-static void check_function(uint8_t bus, uint8_t device, uint8_t function, PCIHeader* header, PciVisitor visitor, void* user_data){
-    visitor(bus, device, function, header, user_data);
 
-    if (header->base.class == 0x06 && header->base.subclass == 0x04){
-        if (header->base.header_type.type == 1){
-            check_bus(header->type01.secondary_bus_number, header, visitor, user_data);
-        } 
-    }
-}
-*/
-static void check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data){
+static int check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data){
     uint8_t function = 0;
     if (get_header(bus,device,function, header)){
         if(header->base.vendor_id != 0xFFFF){
-            visitor(bus, device, function, header, user_data);
+            if (visitor(bus, device, function, header, user_data)){
+                return 1;
+            }
+
             if (header->base.header_type.mf){
                 for(function=0;function<8;function++){
                     if (get_header(bus,device,function, header)){
                         if (header->base.vendor_id != 0xFFFF){
-                            visitor(bus,device, function,header, user_data);
+                            if (visitor(bus,device, function,header, user_data)){
+                                return 1;
+                            }
                         }
                     }
                 }
             }
         }
     }
+    return 0;
 }
 

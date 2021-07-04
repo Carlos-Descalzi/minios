@@ -3,6 +3,7 @@
 
 #include "lib/stdint.h"
 #include "io/streams.h"
+#include "lib/params.h"
 
 #define PAGE_SIZE               4096
 
@@ -86,8 +87,8 @@ void*               paging_to_kernel_space      (uint32_t physical_address);
  * Writes arguments and enviroment in a page
  **/
 void                paging_write_env            (PageDirectoryEntry* dir,
-                                                int nargs, char** args,
-                                                int nenvs, char** envs);
+                                                TaskParams* args,
+                                                TaskParams* env);
 /**
  * Invalidates processor's TLB
  **/

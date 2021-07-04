@@ -15,7 +15,7 @@ typedef struct {
 } Format;
 
 static void parse_format(const char* format, int* pos, char* buffer, Format* tformat);
-static void print_num(int d, Format* tformat, int radix, int* written, char* buffer, FILE* fp);
+static void print_num(char* buffer, Format* tformat, int radix, int* written, FILE* fp);
 
 
 int printf(const char* format, ...){
@@ -23,7 +23,11 @@ int printf(const char* format, ...){
 
     va_start(parameters, format);
 
-    return vfprintf(stdout, format, parameters);
+    int ret = vfprintf(stdout, format, parameters);
+
+    va_end(parameters);
+
+    return ret;
 }
 
 int vprintf(const char* format, va_list parameters){
@@ -35,7 +39,11 @@ int fprintf(FILE* fp, const char* format, ...){
 
     va_start(parameters, format);
 
-    return vfprintf(fp, format, parameters);
+    int ret = vfprintf(fp, format, parameters);
+
+    va_end(parameters);
+
+    return ret;
 }
 
 int vfprintf(FILE* fp, const char* format, va_list parameters){ 
@@ -59,7 +67,9 @@ int vfprintf(FILE* fp, const char* format, va_list parameters){
 
                 case 'd':{
                         int d = va_arg(parameters, int);
-                        print_num(d,&tformat, 10, &written, buffer, fp);
+                        print_num(
+                            itoa(d, buffer, 10),
+                            &tformat, 10, &written, fp);
                         break;
                     }
 
@@ -84,8 +94,10 @@ int vfprintf(FILE* fp, const char* format, va_list parameters){
                     }
 
                 case 'x':{
-                        int d = va_arg(parameters, int);
-                        print_num(d,&tformat, 16, &written, buffer, fp);
+                        unsigned int d = va_arg(parameters, unsigned int);
+                        print_num(
+                            utoa(d,buffer,16),
+                            &tformat, 16, &written, fp);
                         break;
                     }
 
@@ -99,7 +111,7 @@ int vfprintf(FILE* fp, const char* format, va_list parameters){
         }
 
     }
-    
+
 
     return written;
 }
@@ -151,9 +163,8 @@ static void parse_format(const char* format, int* pos, char* buffer, Format* tfo
     tformat->ftype = format[(*pos)++];
 }
 
-static void print_num(int d, Format* tformat, int radix, int* written, char* buffer, FILE* fp){
+static void print_num(char* buffer, Format* tformat, int radix, int* written, FILE* fp){
     int n;
-    itoa(d, buffer, 10);
     if (tformat->padding){
         for (n=strlen(buffer);n<tformat->digits;n++){
             fputc('0',fp);

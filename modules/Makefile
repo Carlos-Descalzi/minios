@@ -1,7 +1,7 @@
 include ../Make.defs
 
 TOPTARGETS=all clean
-SUBDIRS=drivers
+SUBDIRS=drivers filesystems
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 

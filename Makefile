@@ -3,7 +3,7 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-MODULES=kernel lib devices fs board tests testfiles bin syscalls io 
+MODULES=kernel lib devices fs board testfiles bin syscalls io 
 SUBDIRS=$(MODULES) userspace modules
 
 KOBJS=$(shell find kernel -name '*.o') 
@@ -66,12 +66,15 @@ e2fs.img: userspace modules
 	@sudo mount e2fs.img tmp
 	@sudo mkdir tmp/bin
 	@sudo cp userspace/bin/*.elf tmp/bin
-	@sudo mkdir tmp/drivers
-	@sudo cp modules/drivers/serial/*.elf tmp/drivers
-	@sudo cp modules/drivers/console/*.elf tmp/drivers
-	@sudo cp modules/drivers/screen/*.elf tmp/drivers
-	@sudo cp modules/drivers/keyboard/*.elf tmp/drivers
-	@sudo cp modules/drivers/sys/*.elf tmp/drivers
+	@sudo mkdir tmp/modules
+	@echo "holaaaa !!!!"|sudo tee tmp/test.txt
+	@sudo cp modules/drivers/serial/*.elf tmp/modules
+	@sudo cp modules/drivers/console/*.elf tmp/modules
+	@sudo cp modules/drivers/screen/*.elf tmp/modules
+	@sudo cp modules/drivers/keyboard/*.elf tmp/modules
+	@sudo cp modules/drivers/net/*.elf tmp/modules
+	@sudo cp modules/drivers/sys/*.elf tmp/modules
+	@sudo cp modules/filesystems/sys/*.elf tmp/modules
 	@sudo umount tmp
 	@rm -rf tmp
 

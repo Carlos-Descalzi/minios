@@ -6,6 +6,7 @@
 #include "kernel/device.h"
 #include "io/streams.h"
 #include "kernel/isr.h"
+#include "lib/params.h"
 
 #define TASK_STATUS_NONE    0
 #define TASK_STATUS_READY   1
@@ -23,10 +24,8 @@ typedef struct Task {
     CPUState            cpu_state; 
     uint32_t            parent_tid;
     PageDirectoryEntry* page_directory;
-    uint32_t            nargs;
-    char**              args;
-    uint32_t            nenvs;
-    char**              envs;
+    TaskParams*         args;
+    TaskParams*         env;
     Stream*             streams[32];        // max open files
     CharDevice*         console;            // console associated to task.
     IORequest           io_requests[4];     // max active IO requests
@@ -50,8 +49,8 @@ Task*       tasks_current_task              (void);
  * Creates a new task by loading elf binary from a stream
  **/
 uint32_t    tasks_new                       (Stream* exec_stream,
-                                            int nargs, char** args,
-                                            int nenvs, char** envs);
+                                            TaskParams* args,
+                                            TaskParams* env);
 /**
  * Finishes a given task
  **/
@@ -82,4 +81,5 @@ void        tasks_add_io_request            (uint32_t type, uint32_t stream_num,
                                             uint8_t* buffer, uint32_t size);
 
 void        tasks_wait_tid                  (uint32_t tid);
+
 #endif

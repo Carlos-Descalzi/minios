@@ -716,7 +716,7 @@ int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     uint32_t bytes_read;
 
     if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.inode.size){
-        return -1;
+        return 0;
     }
     block_size = FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size;
     offset = FILE_STREAM(stream)->pos % block_size;

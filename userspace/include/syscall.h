@@ -11,6 +11,8 @@
 #define SYS_STAT    0x4D
 #define SYS_GETDENT 0x4E
 
+#define SYS_DEVS    0x70
+
 #define SYS_SPAWN   0x80
 #define SYS_WAITPID 0x81
 

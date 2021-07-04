@@ -91,7 +91,7 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
         //debug(">>>>");debug_i(frame->cr3 & 3,16);debug("\n");
         tasks_update_current(frame);
     } else {
-        debug("Interrupt in kernel space\n");
+        debug("Interrupt in kernel space:");debug_i(isr_num,16);debug("\n");
     }
     sti();
 

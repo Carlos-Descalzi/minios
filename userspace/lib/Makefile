@@ -10,7 +10,8 @@ OBJS=stdlib.o 	\
 	 errno.o	\
 	 modules.o	\
 	 spawn.o	\
-	 dirent.o
+	 dirent.o	\
+	 path.o
 
 all: $(OBJS)
 

@@ -120,7 +120,7 @@ typedef void (*ReadCallback)(IDEDevice*,uint8_t*, void*);
 static uint8_t  count_devices               (DeviceType* device_type);
 static Device*  instantiate                 (DeviceType* device_type, uint8_t device_number);
 static void     release                     (DeviceType* device_type, Device* device);
-static void     check_pci                   (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* user_data);
+static int      check_pci                   (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* user_data);
 static uint8_t  ide_read_reg                (IDEChannel* channel, uint8_t reg);
 static void     ide_write_reg               (IDEChannel* channel, uint8_t reg, uint8_t data);
 static void     get_controller_info         (PCIHeader* header);
@@ -295,12 +295,14 @@ static void inline irq_set_enabled(IDEChannel* channel, int enabled){
     ide_write_reg(channel, ATA_REG_CONTROL, enabled ? 0 : 2);
 }
 
-static void check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* user_data){
+static int check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* user_data){
     if (header->base.class == 0x01
         && header->base.subclass == 0x01){
         debug("Detected PCI IDE device\n");
         get_controller_info(header);
+        return 1;
     }
+    return 0;
 }
 
 static uint16_t get_reg(IDEChannel* channel, uint8_t reg){

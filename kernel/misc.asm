@@ -11,27 +11,4 @@ __stack_chk_fail_local:
 __stack_chk_fail:
     ret
 
-dummy:
-    push message
-    call serial_log
-    iret
 
-test_call:
-    push ebp
-    mov ebp, esp
-    mov eax, [ebp+8]
-    push eax
-    call serial_log
-    leave 
-    ret
-
-;handle_gpf:
-;    call bsod
-;    hlt
-
-message:
-    db "TESTING ASM CALLL",13,10,0
-
-
-crash:
-    jmp 15:0

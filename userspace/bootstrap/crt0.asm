@@ -1,11 +1,12 @@
 global _start, __stack_chk_fail
 extern main
 
-params_ptr: equ 0xFFFFD000
-
+params_ptr: equ 0xFFFFD004
 
 _start:
     ; TODO: initialization
+    
+    ; params
     mov     eax,    params_ptr+4
     push            eax
     mov     eax,    params_ptr

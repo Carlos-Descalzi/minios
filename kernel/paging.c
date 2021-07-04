@@ -14,6 +14,7 @@
 // Use the available RAM region of ~30kb which is behind boot sector,
 // for page directory.
 // The region starts at 0x500 but I need 4k aligned addresses.
+#define mkvaddr(d,p,o)          (((d) << 22)|((p) << 12)|(o))
 #define KERNEL_PAGE_DIR         ((PageDirectoryEntry*)KERNEL_PAGE_DIR_ADDRESS)
 #define KERNEL_PAGE_TABLE       ((PageTableEntry*)KERNEL_PAGE_TABLE_ADDRESS)
 #define PAGES_MAX               1024
@@ -392,6 +393,7 @@ static void handle_page_fault(InterruptFrame *frame, void* data){
     debug("PAGING - Page fault\n");
     debug("PAGING - \tCR2:");          debug_i(frame->cr2,16);debug("\n");
     debug("PAGING - \tCR3:");          debug_i(frame->cr3,16);debug("\n");
+    asm volatile("hlt");
 
     set_exchange_page(frame->cr3);
     VirtualAddress address = {.address = frame->cr2};
@@ -470,32 +472,11 @@ static uint32_t paging_kernel_alloc_pages   (uint32_t nblocks, uint8_t rw){
     return 0;
 }
 
-/**
- * FIXME, change parameter passing
- **/
-static int calc_params_size(int nparams, char** params){
-    char* ptr = params[nparams-1] + ((uint32_t)params);
-    int len = strlen(ptr);
-    return len + 1 + ((uint32_t)ptr) - ((uint32_t)params);
-}
-
-static void copy_params(void* ptr, int nparams, char** params){
-    *((uint32_t*)ptr)=nparams;
-    void* arr_ptr= ptr + sizeof(uint32_t);
-
-    int params_size = calc_params_size(nparams, params);
-    memcpy(arr_ptr, params, params_size);
-
-    for (int i=0;i<nparams;i++){
-        ((char**)arr_ptr)[i]+=(PAGE_LAST << 22) | ((PAGE_LAST-2) << 12) + 4;
-    }
-}
-
 void paging_write_env(PageDirectoryEntry* dir,
-    int nargs, char** args,
-    int nenvs, char** envs){
+    TaskParams* args,
+    TaskParams* env){
     
-    if (nargs || nenvs){
+    if (args || env){
         set_exchange_page(dir);
     
         uint32_t address = local_page_dir[PAGE_LAST].page_table_address << 12;
@@ -504,11 +485,15 @@ void paging_write_env(PageDirectoryEntry* dir,
         address = local_table[PAGE_LAST-2].physical_page_address << 12;
         set_exchange_page(address);
 
-        if (nargs){
-            copy_params(local_ptr, nargs, args);
+        if (args){
+            debug("Setting up arguments\n");
+            uint32_t offset = mkvaddr(PAGE_LAST, PAGE_LAST-2, 0);
+            task_params_copy_with_offset(args, local_ptr, offset);
         }
-        if (nenvs){
-            copy_params(local_ptr + PAGE_SIZE / 2, nenvs, envs);
+        if (env){
+            debug("Setting up environment\n");
+            uint32_t offset = mkvaddr(PAGE_LAST, PAGE_LAST-2, PAGE_SIZE / 2);
+            task_params_copy_with_offset(env, local_ptr + PAGE_SIZE / 2, offset);
         }
     }
 }

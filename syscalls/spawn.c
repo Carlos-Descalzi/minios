@@ -8,15 +8,15 @@
 #include "lib/string.h"
 #include "lib/heap.h"
 
-static char** copy_str_array(int len, char** str_array){
-    
+static TaskParams* copy_str_array(int len, char** str_array){
+
     if (len > 0){
-        char** array = tasks_to_kernel_address(str_array);
-        char* last_str = ((char*)array) + ((uint32_t)array[len-1]);
-        int total_size = strlen(last_str) + 1 + ((uint32_t)array[len-1]);
-        void* new_block = heap_alloc(total_size);
-        memcpy(new_block, array, total_size);
-        return (char**)new_block;
+        // these addresses are relative to the begining of the array, make them absolute
+        str_array = tasks_to_kernel_address(str_array);
+        for (int i=0;i<len;i++){
+            str_array[i] += ((uint32_t)str_array);
+        }
+        return task_params_from_char_array(len, str_array);
     } 
     return NULL;
 }
@@ -66,15 +66,18 @@ void syscall_spawn(InterruptFrame* f){
         f->ebx = ((uint32_t)-3);
         return;
     }
-    char** new_argv = copy_str_array(nargs, argv);
-    char** new_envs = copy_str_array(nenvs, envs);
+    TaskParams* new_args = copy_str_array(nargs, argv);
+    TaskParams* new_env = copy_str_array(nenvs, envs);
+
+    if (!new_env){
+        Task* current_task = tasks_current_task();
+        new_env = task_params_copy(current_task->env);
+    }
 
     Stream* stream = fs_file_stream_open(fs, filepath,0);
 
     if (stream){
-        uint32_t task_id = tasks_new(stream, nargs, new_argv, nenvs, new_envs);
-        debug("New task id:");debug_i(task_id,10);debug("\n");
-        f->ebx = task_id;
+        f->ebx = tasks_new(stream, new_args, new_env);
     } else {
         debug("Not found\n");
         f->ebx = ((uint32_t)-4);

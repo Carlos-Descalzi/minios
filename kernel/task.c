@@ -17,6 +17,7 @@ typedef struct {
     Task task;
 } TaskNode;
 
+
 #define TASK_NODE(n)    ((TaskNode*)n)
 
 #define TID_KERNEL          0
@@ -101,9 +102,9 @@ static Task* get_next_free_task(){
 }
 
 uint32_t tasks_new(Stream* exec_stream,
-    int nargs, char** args,
-    int nenvs, char** envs){
-    //pausei();
+    TaskParams* args,
+    TaskParams* env){
+    
     VirtualAddress v_address;
     Task* task = get_next_free_task();
 
@@ -126,10 +127,8 @@ uint32_t tasks_new(Stream* exec_stream,
     v_address.page_dir_index = 1023;
     v_address.page_index = 1022;
     v_address.offset = 0xFFF;
-    task->nargs = nargs;
-    task->nenvs = nenvs;
     task->args = args;
-    task->envs = envs;
+    task->env = env;
     task->cpu_state.esp = v_address.address;
     task->cpu_state.source_esp = v_address.address;
     task->cpu_state.flags.privilege_level = 3;
@@ -137,9 +136,8 @@ uint32_t tasks_new(Stream* exec_stream,
     task->cpu_state.flags.interrupt_enable = 1;
     setup_console(task);
 
-    paging_write_env(task->page_directory, nargs, args, nenvs, envs);
+    paging_write_env(task->page_directory, args, env);
 
-    //resumei();
     return task->tid;
 }
 
@@ -218,8 +216,8 @@ static void remove_current_task(){
         heap_free(TASK_NODE(current_task_list_node)->task.args);
     }
 
-    if (TASK_NODE(current_task_list_node)->task.envs){
-        heap_free(TASK_NODE(current_task_list_node)->task.envs);
+    if (TASK_NODE(current_task_list_node)->task.env){
+        heap_free(TASK_NODE(current_task_list_node)->task.env);
     }
 
     heap_free(current_task_list_node);

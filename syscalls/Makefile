@@ -12,6 +12,7 @@ OBJS=exit.o		\
 	modules.o	\
 	stat.o		\
 	spawn.o		\
-	waitpid.o
+	waitpid.o	\
+	devs.o
 
 all: $(OBJS)

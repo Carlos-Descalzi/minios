@@ -22,7 +22,7 @@ typedef struct {
         bist_capable: 1;
 } BistRegister;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint16_t vendor_id;
     uint16_t device_id;
     uint16_t command;
@@ -37,7 +37,7 @@ typedef struct {
     BistRegister bist;
 } HeaderBaseFields;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint32_t base_addresses[6];
     uint32_t cardbus_cis_pointer;
     uint16_t subsystem_vendor_id;
@@ -55,7 +55,7 @@ typedef struct {
     uint8_t max_latency;
 } Type00HeaderFields;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint32_t base_addresses[2];
     uint8_t primary_bus_number;
     uint8_t secondary_bus_number;
@@ -82,7 +82,7 @@ typedef struct {
     uint16_t bridge_control;
 } Type01HeaderFields;
 
-typedef struct {
+typedef struct __attribute__((__packed__)){
     uint32_t cardbus_exca_base_address;
     uint8_t offset_cap_list;
     uint8_t reserved1;
@@ -116,7 +116,7 @@ typedef struct {
     };
 } PCIHeader;
 
-typedef void (*PciVisitor)(uint8_t,uint8_t,uint8_t, PCIHeader* header, void* user_data);
+typedef int (*PciVisitor)(uint8_t,uint8_t,uint8_t, PCIHeader* header, void* user_data);
 
 uint16_t    pci_config_read_w   (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);
 uint32_t    pci_config_read_dw  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);

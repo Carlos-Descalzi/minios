@@ -1,7 +1,7 @@
 include ../Make.defs
 
 TOPTARGETS=all clean
-SUBDIRS=serial keyboard screen console net sys
+SUBDIRS=sys
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 

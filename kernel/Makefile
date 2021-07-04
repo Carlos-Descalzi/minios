@@ -3,8 +3,8 @@ include ../Make.rules
 OBJS=startup.o	\
 	 init.o		\
 	 debug.o	\
-	 misc.o		\
 	 isr.o		\
+	 misc.o		\
 	 isr_asm.o	\
 	 paging.o	\
 	 device.o	\

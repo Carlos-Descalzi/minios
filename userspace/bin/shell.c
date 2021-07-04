@@ -2,8 +2,7 @@
 #include "unistd.h"
 #include "string.h"
 #include "spawn.h"
-
-static const char ROOT[] = "disk0:/";
+#include "stdlib.h"
 
 static char     pwd[100];
 static char     parambuffer[256];
@@ -12,11 +11,12 @@ static char**   parse_params    (char* param_string, int* nargs);
 static void     execute         (const char* file);
 static void     changedir       (const char* cmd);
 static void     showpwd         (void);
+static void     showenv         (void);
 
 int main(int argc, char** argv){
     char buff[256];
 
-    strcpy(pwd,ROOT);
+    strcpy(pwd,getenv("PWD"));
 
     printf("Mini-shell v0.1\n\n");
 
@@ -32,6 +32,8 @@ int main(int argc, char** argv){
                 changedir(buff);
             } else if (!strncmp(buff,"pwd",3)){
                 showpwd();
+            } else if (!strncmp(buff,"env",3)){
+                showenv();
             } else {
                 execute(buff);
             }
@@ -58,7 +60,7 @@ static char** parse_params(char* param_string, int* nargs){
         ptr = strchr(ptr, ' ');
         if(ptr){
             *ptr = '\0';
-            ptr++; // move one char to the next parameter
+            ptr++; 
         }
     }
     *nargs = nparams;
@@ -80,8 +82,7 @@ static void execute(const char* file){
 
     memset(path,0,100);
 
-    strcat(path,ROOT);
-    strcat(path,"bin/");
+    strcat(path,getenv("PATH"));
     strcat(path,file);
     strcat(path,".elf");
 
@@ -95,7 +96,7 @@ static void execute(const char* file){
 
 static void changedir(const char* cmd){
     if(strlen(cmd) == 2){
-        strcpy(pwd,ROOT);
+        strcpy(pwd,getenv("HOME"));
     } else if (strlen(cmd) > 3){
         strcpy(pwd,cmd+3);
     }
@@ -103,4 +104,12 @@ static void changedir(const char* cmd){
 
 static void showpwd(void){
     printf("%s\n\n",pwd);
+}
+
+static void show(const char* e){
+    printf(" %s\n",e);
+}
+
+static void showenv(void){
+    listenv(show);
 }

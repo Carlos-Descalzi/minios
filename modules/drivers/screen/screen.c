@@ -9,6 +9,7 @@
 /**
  * This device is just a wrapper over raw console API.
  * adding basic ANSI terminal support.
+ * TODO: Move all this logic to console driver
  **/
 
 #define DEVICE_SUBTYPE_SCREEN    1
@@ -264,7 +265,12 @@ static void tab(ScreenDevice* screen){
     console_gotoxy(new_x, y);
 }
 static void newline(ScreenDevice* screen){
+    uint8_t x,y;
+    console_get_cursor_pos(&x,&y);  // FIXME bug on nl
     console_put('\n');
+    if (x == 0){
+        console_put('\n');
+    }
 }
 static void backspace(ScreenDevice* screen){
     uint8_t x,y;

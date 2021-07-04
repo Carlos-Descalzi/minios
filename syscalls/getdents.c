@@ -1,6 +1,7 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/syscalls.h"
 #include "lib/stdint.h"
+#include "lib/string.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
 #include "kernel/task.h"
@@ -33,6 +34,7 @@ void syscall_getdents(InterruptFrame* f){
         f->ebx = (uint32_t)-3;
         return;
     }
+    memset(&(getdent_data->direntry),0,sizeof(DirEntry));
 
     f->ebx = fs_get_direntry(fs, inode, &(getdent_data->offset_next), &(getdent_data->direntry));
 

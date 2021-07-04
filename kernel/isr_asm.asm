@@ -1,9 +1,6 @@
 global isr_handlers_start
 extern handle_isr_ref
 
-garbage:
-    dd 0x0
-
 %macro isr_handler 1
 global handle_isr_%1
 handle_isr_%1:
@@ -155,3 +152,7 @@ isr_handler 0x5c
 isr_handler 0x5d
 isr_handler 0x5e
 isr_handler 0x5f
+
+garbage:
+    dd 0x0
+

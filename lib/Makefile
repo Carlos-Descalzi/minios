@@ -7,6 +7,7 @@ OBJS=errno.o		\
 	 string.o		\
 	 string_asm.o	\
 	 list.o			\
-	 path.o
+	 path.o			\
+	 params.o
 
 all: $(OBJS)

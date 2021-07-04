@@ -15,5 +15,6 @@ void syscall_getdents   (InterruptFrame* f);
 void syscall_modload    (InterruptFrame* f);
 void syscall_spawn      (InterruptFrame* f);
 void syscall_waitpid    (InterruptFrame* f);
+void syscall_devs       (InterruptFrame* f);
 
 #endif

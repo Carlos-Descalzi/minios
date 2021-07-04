@@ -1,6 +1,6 @@
-include ../Make.defs
+include ../../Make.defs
 BINS=screen.elf
 
-include ../Make.rules
+include ../../Make.rules
 include ../../../Make.rules
 

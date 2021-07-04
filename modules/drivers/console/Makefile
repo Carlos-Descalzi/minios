@@ -1,5 +1,5 @@
-include ../Make.defs
+include ../../Make.defs
 BINS=console.elf
 
-include ../Make.rules
+include ../../Make.rules
 include ../../../Make.rules

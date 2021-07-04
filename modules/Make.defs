@@ -1,17 +1,17 @@
 # vim: syntax=make
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
-DRIVERSDIR=$(MAKEFILE_DIR)
+MODULESDIR=$(MAKEFILE_DIR)
 CC=gcc
 LD=i686-gnu-ld 
 AS=nasm
 ASFLAGS=-f elf32
-KLIB=$(DRIVERSDIR)/../../kernellib.o
+KLIB=$(MODULESDIR)/../kernellib.o
 
 CFLAGS=-march=i386 \
 	-m32 \
 	-mno-80387 \
-	-I$(DRIVERSDIR)/../../include \
+	-I$(MODULESDIR)/../include \
 	-nodefaultlibs \
 	-Wall \
     -Wno-address-of-packed-member \
@@ -24,5 +24,5 @@ CFLAGS=-march=i386 \
     -DDEBUGMODE
 
 LDFLAGS=-nostdlib\
-    -T$(DRIVERSDIR)/linker.ld \
+    -T$(MODULESDIR)/linker.ld \
     -pie 

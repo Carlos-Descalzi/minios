@@ -1,6 +1,14 @@
 #include "stdlib.h"
+#include "syscall.h"
 
 const char NUMBERS[] = "0123456789ABCDEF";
+
+typedef struct {
+    int nenv;
+    const char* vars[];
+} Env;
+
+const extern Env env_ptr;
 
 #define ATON(string,value) { \
     int l;\
@@ -84,13 +92,27 @@ char* utoa(unsigned int value, char* string,int radix){
         
     return string;
 }
-#include "syscall.h"
  
 void exit(int status){
     syscall(SYS_EXIT, (void*)status);
     while(1);
 }
 
-void printmessage(const char* message){
-    syscall(SYS_DEBUG, (void*)message);
+#include "string.h"
+static const Env* _env = (Env*)0xFFFFD804;
+
+char* getenv(const char* name){
+    int l = strlen(name);
+    for (int i=0;i<_env->nenv;i++){
+        if(!strncmp(name, _env->vars[i],l)
+            && _env->vars[i][l] == '='){
+            return strchr(_env->vars[i],'=')+1;
+        }
+    }
+    return NULL;
+}
+void listenv(ListEnvFunc func){
+    for (int i=0;i<_env->nenv;i++){
+        func(_env->vars[i]);
+    }
 }

@@ -1,6 +1,7 @@
 #include "unistd.h"
 #include "syscall.h"
 #include "stdint.h"
+#include "path.h"
 
 #define RES_TYPE_RAW    0x00
 #define REST_TYPE_FS    0x01
@@ -16,14 +17,16 @@ typedef struct {
     const char* path;
 } OpenData;
 
+#include "stdio.h"
 int open(const char* pathname, int flags){
+    char buff[256];
     OpenData open_data = {
         .resource_type = REST_TYPE_FS,
         .device_kind =  DEV_KIND_DISK,
         .device_resource = 1,
         .device_instance = 0,
         .mode = 0,
-        .path = pathname
+        .path = path_absolute(pathname, buff)
     };
     return syscall(SYS_OPEN, &open_data);
 }
@@ -59,11 +62,12 @@ int close(int fd){
 }
 
 int stat(const char* pathname, struct stat* statbuf){
+    char buff[256];
     struct {
         const char* pathname;
         struct stat* statbuf;
     } stat_data = {
-        .pathname = pathname,
+        .pathname = path_absolute(pathname,buff),
         .statbuf = statbuf
     };
 

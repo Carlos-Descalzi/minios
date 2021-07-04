@@ -30,35 +30,35 @@ static const char* typename(uint8_t type){
 }
 
 int main(int argc, char* argv[]){
-    char pathbuff[256];
+    char* path;
     struct dirent* entry;
 
     if (argc){
-        char* path = argv[0];
-        if (strlen(path)){
+        path = argv[0];
+        /*if (strlen(path)){
             if (path[0] == '/'){
-                strcpy(pathbuff,"disk0:");
+                strcpy(pathbuff,pwd);
                 strcat(pathbuff,path);
             } else if (strchr(path,':')){
                 strcpy(pathbuff,path);
             } else {
-                strcpy(pathbuff,"disk0:/");
+                strcpy(pathbuff,pwd);
                 strcat(pathbuff,path);
             }
         } else {
-            strcpy(pathbuff,"disk0:/");
-        }
+            strcpy(pathbuff,pwd);
+        }*/
     } else {
-        strcpy(pathbuff,"disk0:/");
+        path = getenv("PWD");
     }
 
-    DIR* dir = opendir(pathbuff);
+    DIR* dir = opendir(path);
 
     if (!dir){
         printf("Directory not found\n");
         return 1;
     }
-    printf("Listing directory %s:\n\n",pathbuff);
+    printf("Listing directory %s:\n",path);
     int i=0;
     while ((entry = readdir(dir))){
         printf("%s",entry->d_name);

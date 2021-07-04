@@ -18,12 +18,21 @@ void* memset  (void* s, int c, size_t size){
     return s;
 }
 
-
 char* strcpy(char* dest, const char* src){
     int i=0;
     do{
         dest[i] = src[i];
     } while(src[i++]);
+    return dest;
+}
+
+char* strncpy(char* dest, const char* src, size_t n){
+    if (dest && src && n){
+        int i=0;
+        do{
+            dest[i] = src[i];
+        } while(src[i++] && i < n);
+    }
     return dest;
 }
 
@@ -33,10 +42,12 @@ size_t strlen(const char* string){
     return len;
 }
 char*   strchr  (const char*s, int c){
-    int i;
-    for (i=0;s[i];i++){
-        if (s[i] == c){
-            return (char*)&(s[i]);
+    if (s){
+        int i;
+        for (i=0;s[i];i++){
+            if (s[i] == c){
+                return s+i;
+            }
         }
     }
     return NULL;
