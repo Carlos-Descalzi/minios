@@ -86,7 +86,7 @@ static void bsod(InterruptFrame* frame, void* data){
 
 
 const static char* ENV[] = {
-    "DEV=disk0:/",
+    "DEV=disk0:",
     "HOME=disk0:/",
     "PWD=disk0:/",
     "PATH=disk0:/bin/"

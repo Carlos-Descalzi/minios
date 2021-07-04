@@ -35,19 +35,6 @@ int main(int argc, char* argv[]){
 
     if (argc){
         path = argv[0];
-        /*if (strlen(path)){
-            if (path[0] == '/'){
-                strcpy(pathbuff,pwd);
-                strcat(pathbuff,path);
-            } else if (strchr(path,':')){
-                strcpy(pathbuff,path);
-            } else {
-                strcpy(pathbuff,pwd);
-                strcat(pathbuff,path);
-            }
-        } else {
-            strcpy(pathbuff,pwd);
-        }*/
     } else {
         path = getenv("PWD");
     }
@@ -59,7 +46,9 @@ int main(int argc, char* argv[]){
         return 1;
     }
     printf("Listing directory %s:\n",path);
+
     int i=0;
+
     while ((entry = readdir(dir))){
         printf("%s",entry->d_name);
         spc(20-strlen(entry->d_name));
@@ -67,6 +56,7 @@ int main(int argc, char* argv[]){
         printf("\n");
         i++;
     }
+
     printf("%d entries found.\n",i);
 
     return 0;
