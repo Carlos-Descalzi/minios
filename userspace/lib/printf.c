@@ -81,15 +81,12 @@ int vfprintf(FILE* fp, const char* format, va_list parameters){
                     }
 
                 case 's':{
-                        const char* str = (char*) va_arg(parameters, const char*);
+                        const char* str = va_arg(parameters, const char*);
                         int n=0;
                         if (!str){
                             str = "(null)";
                         }
-                        for (n=0;str[n];n++){
-                            fputc(str[n],fp);
-                            written++;
-                        }
+                        written+=fputs(str,fp);
                         break;
                     }
 
@@ -116,15 +113,13 @@ int vfprintf(FILE* fp, const char* format, va_list parameters){
     return written;
 }
 int puts(const char* str){
-    for (int i=0;str[i];i++){
-        fputc(str[i],stdout);
-    }
-    return 0;
+    int r = fputs(str,stdout);
+    fputc('\n',stdout);
+    return r;
 }
 
 int putchar(char c){
-    fputc(c,stdout);
-    return 0;
+    return fputc(c,stdout);
 }
 
 struct _FILE {
@@ -135,6 +130,15 @@ int fputc(int c, FILE* fp){
     if (fp && fp->fd){
         write(fp->fd,&c,1);
         return 0;
+    }
+    return -1;
+}
+
+int fputs(const char* c, FILE* fp){
+    if (fp && fp->fd){
+        int l = strlen(c);
+        write(fp->fd,c,l);
+        return l;
     }
     return -1;
 }
@@ -153,6 +157,7 @@ static void parse_format(const char* format, int* pos, char* buffer, Format* tfo
     tformat->digits = atoi(buffer);
 
     if (format[*pos] == '.'){
+        (*pos)++;
 
         while(isdigit(format[*pos])){
             buffer[i++] = format[(*pos)++];

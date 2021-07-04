@@ -14,10 +14,11 @@ int     fclose      (FILE* stream);
 size_t  fread       (void *buff, size_t size, size_t nmemb, FILE* stream);
 int     fprintf     (FILE* fp, const char* format, ...);
 int     vfprintf    (FILE* fp, const char* format, va_list ap);
-int     fputc       (int c, FILE* fp);
 int     printf      (const char* format, ...);
 int     vprintf     (const char* format, va_list ap);
-int     puts        (const char* str);
 char*   fgets       (char* buff, int size, FILE* stream);
+int     puts        (const char* str);
+int     fputs       (const char* str, FILE* stream);
+int     fputc       (int c, FILE* fp);
 
 #endif

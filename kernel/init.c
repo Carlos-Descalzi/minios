@@ -22,17 +22,19 @@
 #include "kernel/modules.h"
 #include "lib/params.h"
 
-typedef struct {
-    uint32_t total_ram;
-    uint8_t biggest_region;
-    uint64_t biggest_region_size;
-    uint64_t biggest_region_address;
-} MemData;
+const static char* ENV[] = {
+    "DEV=disk0",
+    "HOME=disk0:/",
+    "PWD=disk0:/",
+    "PATH=disk0:/bin/"
+};
+
+#define N_ENV   4
 
 static void     test_timer          (void);
 static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
-static void     load_drivers        (void);
+static void     load_modules        (void);
 static void     load_program        (FileSystem* fs, const char* path);
 
 extern void     ide_register        (void);     // FIXME
@@ -53,7 +55,7 @@ void init(){
     device_init();
     ide_register();
     device_init_devices();
-    load_drivers();
+    load_modules();
 
     pic_init();
     pit_init();
@@ -64,7 +66,6 @@ void init(){
     console_print("Kernel startup complete\n");
 
     start_init();
-
 
 }
 
@@ -83,16 +84,6 @@ static void bsod(InterruptFrame* frame, void* data){
     console_print("+------------------------+");
     asm volatile("hlt");
 }
-
-
-const static char* ENV[] = {
-    "DEV=disk0:",
-    "HOME=disk0:/",
-    "PWD=disk0:/",
-    "PATH=disk0:/bin/"
-};
-
-#define N_ENV   4
 
 static void load_program(FileSystem* fs, const char* path){
     console_print("Loading ");
@@ -133,8 +124,8 @@ static void start_init(void){
     console_print("System shutdown\n");
 }
 
-static void load_drivers(void){
-    debug("Loading drivers\n");
+static void load_modules(void){
+    debug("Loading modules\n");
     Device* device = device_find(DISK, 0);
     if (device){
         FileSystem* fs = fs_get_filesystem(device);
@@ -145,7 +136,7 @@ static void load_drivers(void){
             modules_load(fs, "/modules/sys.elf");
             modules_load(fs, "/modules/sysfs.elf");
             modules_load(fs, "/modules/rtl8139.elf");
-            debug("Drivers loaded\n");
+            debug("Modules loaded\n");
         } else {
             debug("No fs\n");
         }

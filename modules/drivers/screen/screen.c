@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/device.h"
 #include "board/console.h"
 #include "lib/string.h"
@@ -49,7 +49,6 @@ static void     release             (DeviceType* device_type, Device* device);
 static void     clear_buff          (ScreenDevice* screen);
 static void     backspace           (ScreenDevice* screen);
 static void     tab                 (ScreenDevice* screen);
-static void     newline             (ScreenDevice* screen);
 
 static DeviceType DEVICE_TYPE;
 
@@ -69,7 +68,6 @@ static uint8_t count_devices(DeviceType* device_type){
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     console_init();
     ScreenDevice* device = heap_alloc(sizeof(ScreenDevice));
-    debug("SCREEN WRITE:");debug_i(screen_write,16);debug("\n");
     
     device->mode = MODE_TEXT;
     device->saved_x = 0;
@@ -83,8 +81,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
 static void release(DeviceType* device_type, Device* device){
     heap_free(device);
 }
-
-
 
 static int16_t screen_setopt(Device* device, uint32_t option, void* data){
     switch(option){
@@ -124,8 +120,6 @@ static int16_t screen_write(CharDevice* device, uint8_t chr){
             backspace(SCREEN_DEVICE(device));
         } else if (chr == 9){
             tab(SCREEN_DEVICE(device));
-        } else if (chr == 10){
-            newline(SCREEN_DEVICE(device));
         } else {
             console_put(chr);
         }
@@ -264,19 +258,10 @@ static void tab(ScreenDevice* screen){
     if (new_x <= x){new_x+=8;}
     console_gotoxy(new_x, y);
 }
-static void newline(ScreenDevice* screen){
-    uint8_t x,y;
-    console_get_cursor_pos(&x,&y);  // FIXME bug on nl
-    console_put('\n');
-    if (x == 0){
-        console_put('\n');
-    }
-}
 static void backspace(ScreenDevice* screen){
     uint8_t x,y;
     console_get_cursor_pos(&x,&y);
     if (x > 0){
-        debug("backspace ");debug_i(x,10);debug("\n");
         console_gotoxy(x-1,y);
         console_put(' ');
         console_gotoxy(x-1,y);

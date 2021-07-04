@@ -103,11 +103,11 @@ static void changedir(const char* cmd){
 }
 
 static void showpwd(void){
-    printf("%s\n\n",pwd);
+    printf("%s\n",pwd);
 }
 
 static void show(const char* e){
-    printf(" %s\n",e);
+    printf("%s\n",e);
 }
 
 static void showenv(void){
