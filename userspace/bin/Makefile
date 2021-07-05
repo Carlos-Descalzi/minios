@@ -1,9 +1,6 @@
 include ../Make.defs
 
-BINS=hello.elf 		\
-	 init.elf 		\
-	 task1.elf 		\
-	 task2.elf 		\
+BINS=init.elf 		\
 	 shell.elf 		\
 	 ls.elf 		\
 	 lsdev.elf 		\
