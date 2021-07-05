@@ -1,5 +1,10 @@
 #include "stdio.h"
 #include "msg.h"
+/**
+ * Simple program to test message passing, sends
+ * a fixed message to a process identified by the
+ * task id passed as parameter
+ **/
 
 int main(int argc, char** argv){
     Message message;

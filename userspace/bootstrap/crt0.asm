@@ -1,3 +1,6 @@
+;
+; Bootstrap code for user space programs
+;
 global _start, __stack_chk_fail
 extern main
 

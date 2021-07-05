@@ -1,33 +1,12 @@
 #include "dirent.h"
 #include "stdio.h"
 #include "string.h"
+/**
+ * Simple directory listing
+ **/
 
-static void spc(int n){
-    for (int i=0;i<n;i++){
-        printf(" ");
-    }
-}
-
-static const char* typename(uint8_t type){
-    switch(type){
-        case DT_FIFO:
-            return "fifo";
-        case DT_CHR:
-            return "char";
-        case DT_DIR:
-            return "dir";
-        case DT_BLK:
-            return "block";
-        case DT_REG:
-            return "file";
-        case DT_LNK:
-            return "link";
-        case DT_SOCK:
-            return "sock";
-        default:
-            return "unknown";
-    }
-}
+static void         spc     (int n);
+static const char*  typename(uint8_t type);
 
 int main(int argc, char* argv[]){
     char* path;
@@ -61,3 +40,31 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
+
+static void spc(int n){
+    for (int i=0;i<n;i++){
+        printf(" ");
+    }
+}
+
+static const char* typename(uint8_t type){
+    switch(type){
+        case DT_FIFO:
+            return "fifo";
+        case DT_CHR:
+            return "char";
+        case DT_DIR:
+            return "dir";
+        case DT_BLK:
+            return "block";
+        case DT_REG:
+            return "file";
+        case DT_LNK:
+            return "link";
+        case DT_SOCK:
+            return "sock";
+        default:
+            return "unknown";
+    }
+}
+

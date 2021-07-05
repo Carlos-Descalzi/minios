@@ -2,7 +2,10 @@
 #include "msg.h"
 #include "sched.h"
 #include "string.h"
-
+/**
+ * This server is used for testing message passing.
+ * Receives a message from another task task and answers it
+ **/
 
 int main(int argc,char **argv){
     char buff[1200];

@@ -3,6 +3,9 @@
 #include "string.h"
 #include "spawn.h"
 #include "stdlib.h"
+/**
+ * Minimal shell interface, good enough for running other programs
+ **/
 
 static char     pwd[100];
 static char     parambuffer[256];

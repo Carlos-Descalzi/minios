@@ -1,5 +1,7 @@
 #include "stdio.h"
-
+/**
+ * Simple cat command, just dumps the contents of a file into stdout
+ **/
 int main(int argc, char**argv){
     char buff[1024];
 

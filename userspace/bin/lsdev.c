@@ -1,6 +1,10 @@
 #include "stdio.h"
 #include "syscall.h"
 #include "string.h"
+/**
+ * This proram lists all available devices instantiated
+ * in the system
+ **/
 
 int main(int argc, char** argv){
     
