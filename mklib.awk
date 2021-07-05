@@ -1,5 +1,8 @@
+# This script parses the symbol table exported from kernel
+# and generates an assembly file containing absolute jumps to kernel functions.
+# This is later compiled as a library for loadable modules.
 BEGIN {
-    print ";\n; Kernel link library for drivers\n;\n"
+    print ";\n; Kernel link library for loadable modules\n;\n"
 } 
 
 {

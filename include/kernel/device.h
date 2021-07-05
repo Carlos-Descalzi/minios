@@ -12,6 +12,9 @@
 #define DEVICE_READ_OK              0
 #define DEVICE_READ_WAIT            1
 
+/**
+ * Device kinds supported
+ **/
 typedef enum {
     VIDEO   = 0,
     SER     = 1,
@@ -27,6 +30,10 @@ extern const char* DEVICE_KIND_NAMES[];
 
 typedef struct Device Device;
 
+/**
+ * Definition of a device type, has the initializer functions necessary
+ * for instantiating device drivers
+ **/
 typedef struct DeviceType {
     uint8_t     kind;
     uint8_t     (*count_devices)    (struct DeviceType* device_type);
@@ -34,6 +41,9 @@ typedef struct DeviceType {
     void        (*release)          (struct DeviceType* device_type, Device* device);
 } DeviceType;
 
+/**
+ * Very basic definition of a device
+ **/
 struct Device{
     uint32_t    type;
     uint8_t     kind;
@@ -42,6 +52,9 @@ struct Device{
     int16_t     (*setopt)           (struct Device*, uint32_t, void*);
 };
 
+/**
+ * This structure represents a block device
+ **/
 typedef struct BlockDevice {
     Device base;
     int16_t     (*read)             (struct BlockDevice*, uint8_t*,uint16_t);
@@ -53,6 +66,9 @@ typedef struct BlockDevice {
     uint32_t    (*pos)              (struct BlockDevice*);
 } BlockDevice;
 
+/**
+ * This structure defines a char device
+ **/
 typedef struct CharDevice {
     Device base;
     int16_t     (*read)             (struct CharDevice*);

@@ -1,5 +1,8 @@
 #ifndef _EXT2_H_
 #define _EXT2_H_
+/**
+ * EXT2 implementation of VFS interface
+ **/
 
 #include "lib/stdint.h"
 #include "kernel/device.h"
@@ -110,28 +113,11 @@ typedef struct {
 #define EXT2_DIR_ENTRY_SOCKET   6
 #define EXT2_DIR_ENTRY_SYMLINK  7
 
-
+#define FS_MODE_R               0
+#define FS_MODE_W               1
+#define FS_MODE_RW              2
+#define FS_MODE_WA              3
+#define FS_MODE_RWA             4
 
 void            ext2_register_type      (void);
-
-//Ext2FileSystem* ext2_open               (BlockDevice* device);
-//void            ext2_list_inodes        (Ext2FileSystem* fs, InodeVisitor visitor, void*data);
-//void            ext2_close              (Ext2FileSystem* fs);
-//void            ext2_list_directory     (Ext2FileSystem* fs, Ext2Inode* inode, DirVisitor visitor, 
-//                                        void* data);
-//uint32_t        ext2_find_inode         (Ext2FileSystem* fs, const char* path);
-//int32_t         ext2_load_inode         (Ext2FileSystem* fs, uint32_t inodenum, Ext2Inode* inode);
-//int32_t         ext2_load               (Ext2FileSystem* fs, Ext2Inode* inode, void* dest);
-//uint32_t        ext2_read_block         (Ext2FileSystem* fs, Ext2Inode* inode, 
-//                                        uint32_t block, uint8_t* dest, uint32_t length);
-//int32_t         ext2_get_direntry       (Ext2FileSystem* fs, Ext2Inode* inode, uint32_t* offset,
-//                                        Ext2DirEntry* direntry);
-
-#define     FS_MODE_R               0
-#define     FS_MODE_W               1
-#define     FS_MODE_RW              2
-#define     FS_MODE_WA              3
-#define     FS_MODE_RWA             4
-
-//Stream*         ext2_file_stream_open   (Ext2FileSystem* fs, const char* path, uint8_t mode);
 #endif

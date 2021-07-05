@@ -1,5 +1,8 @@
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
+/**
+ * Definition of stream objects
+ **/
 
 #include "lib/stdlib.h"
 #include "kernel/iobase.h"

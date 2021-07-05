@@ -1,5 +1,8 @@
 #ifndef _ELF_H_
 #define _ELF_H_
+/**
+ * ELF binary format support
+ **/
 
 #include "lib/stdint.h"
 #include "io/streams.h"
