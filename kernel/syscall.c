@@ -25,9 +25,15 @@ void syscall_init(){
     syscalls[3] = syscall_close;
     syscalls[4] = syscall_exec;
     syscalls[5] = syscall_yield;
+    syscalls[6] = syscall_getpid;
     // ....
     syscalls[77] = syscall_stat;
     syscalls[78] = syscall_getdents;
+    // ....
+    syscalls[0x60] = syscall_msg_send_sync;
+    syscalls[0x61] = syscall_msg_recv_sync;
+    syscalls[0x62] = syscall_msg_recv_wait;
+    syscalls[0x63] = syscall_msg_answer;
     // ....
     syscalls[0x70] = syscall_devs;
     syscalls[0x80] = syscall_spawn;

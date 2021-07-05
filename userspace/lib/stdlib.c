@@ -116,3 +116,6 @@ void listenv(ListEnvFunc func){
         func(_env->vars[i]);
     }
 }
+int putenv(const char* env){
+    // FIXME todo
+}

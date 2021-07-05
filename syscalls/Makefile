@@ -13,6 +13,8 @@ OBJS=exit.o		\
 	stat.o		\
 	spawn.o		\
 	waitpid.o	\
-	devs.o
+	devs.o		\
+	getpid.o	\
+	msg.o
 
 all: $(OBJS)

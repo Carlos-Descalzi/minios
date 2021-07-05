@@ -14,8 +14,26 @@ typedef struct {
     uint8_t ftype;
 } Format;
 
-static void parse_format(const char* format, int* pos, char* buffer, Format* tformat);
-static void print_num(char* buffer, Format* tformat, int radix, int* written, FILE* fp);
+typedef struct Writer {
+    int (*putc) (struct Writer*, char);
+    int (*puts) (struct Writer*, const char*);
+    char* str;
+    FILE* fp;
+    int pos;
+} Writer;
+
+#define writer_putc(w,c)        (w)->putc(w,c)
+#define writer_puts(w,s)        (w)->puts(w,s)
+
+static void parse_format        (const char* format, int* pos, char* buffer, Format* tformat);
+static void print_num           (char* buffer, Format* tformat, int radix, int* written, Writer* w);
+static int  do_vfprintf         (Writer* writer, const char* format, va_list parameters);
+static void setup_str_writer    (Writer* writer, char* str);
+static void setup_fp_writer     (Writer* writer, FILE* fp);
+static int  str_putc            (Writer* writer, char c);
+static int  str_puts            (Writer* writer, const char* str);
+static int  fp_putc             (Writer* writer, char c);
+static int  fp_puts             (Writer* writer, const char* str);
 
 
 int printf(const char* format, ...){
@@ -45,80 +63,39 @@ int fprintf(FILE* fp, const char* format, ...){
 
     return ret;
 }
+int sprintf (char* str, const char* format, ...){
+    va_list parameters;
 
-int vfprintf(FILE* fp, const char* format, va_list parameters){ 
-    static char buffer[30];
-    int written = 0;
-    int i = 0;
+    va_start(parameters, format);
 
-    while(format[i]){
-        char fmtchar = format[i++];
-        if (fmtchar == '%'){
-            Format tformat;
-            memset(buffer,0, sizeof(buffer));
-            memset(&tformat,0,sizeof(Format));
-            parse_format(format, &i, buffer, &tformat);
+    int ret = vsprintf(str, format, parameters);
 
-            switch(tformat.ftype){
-                case '%':
-                    fputc('%',fp);
-                    written++;
-                    break;
+    va_end(parameters);
 
-                case 'd':{
-                        int d = va_arg(parameters, int);
-                        print_num(
-                            itoa(d, buffer, 10),
-                            &tformat, 10, &written, fp);
-                        break;
-                    }
-
-                case 'c': {
-                        char c = (char) va_arg(parameters, int);
-                        fputc(c,fp);
-                        written++;
-                        break;
-                    }
-
-                case 's':{
-                        const char* str = va_arg(parameters, const char*);
-                        int n=0;
-                        if (!str){
-                            str = "(null)";
-                        }
-                        written+=fputs(str,fp);
-                        break;
-                    }
-
-                case 'x':{
-                        unsigned int d = va_arg(parameters, unsigned int);
-                        print_num(
-                            utoa(d,buffer,16),
-                            &tformat, 16, &written, fp);
-                        break;
-                    }
-
-                default:
-                    break;
-            }
-
-        } else {
-            fputc(fmtchar, fp);
-            written++;
-        }
-
-    }
-
-
-    return written;
+    return ret;
 }
+int vsprintf (char* str, const char* format, va_list ap){
+    Writer writer;
+
+    setup_str_writer(&writer, str);
+
+    return do_vfprintf(&writer, format, ap);
+}
+int vfprintf(FILE* fp, const char* format, va_list parameters){ 
+    Writer writer;
+
+    setup_fp_writer(&writer, fp);
+
+    return do_vfprintf(&writer, format, parameters);
+}
+
 int puts(const char* str){
     int r = fputs(str,stdout);
     fputc('\n',stdout);
     return r;
 }
 
-int putchar(char c){
+int putchar(int c){
     return fputc(c,stdout);
 }
 
@@ -127,20 +104,13 @@ struct _FILE {
 };
 
 int fputc(int c, FILE* fp){
-    if (fp && fp->fd){
-        write(fp->fd,&c,1);
-        return 0;
-    }
-    return -1;
+    return write(fp->fd,&c,1);
 }
 
 int fputs(const char* c, FILE* fp){
-    if (fp && fp->fd){
-        int l = strlen(c);
-        write(fp->fd,c,l);
-        return l;
-    }
-    return -1;
+    int l = strlen(c);
+    write(fp->fd,c,l);
+    return l;
 }
 
 static void parse_format(const char* format, int* pos, char* buffer, Format* tformat){
@@ -168,17 +138,103 @@ static void parse_format(const char* format, int* pos, char* buffer, Format* tfo
     tformat->ftype = format[(*pos)++];
 }
 
-static void print_num(char* buffer, Format* tformat, int radix, int* written, FILE* fp){
+static void print_num(char* buffer, Format* tformat, int radix, int* written, Writer* writer){
     int n;
     if (tformat->padding){
         for (n=strlen(buffer);n<tformat->digits;n++){
-            fputc('0',fp);
+            writer_putc(writer, '0');
             (*written)++;
         }
     }
-    for (n=0;buffer[n];n++){
-        fputc(buffer[n],fp);
-        (*written)++;
-    }
+    written += writer_puts(writer, buffer);
 }
 
+static int do_vfprintf(Writer* writer, const char* format, va_list parameters){ 
+    static char buffer[30];
+    int written = 0;
+    int i = 0;
+
+    while(format[i]){
+        char fmtchar = format[i++];
+        if (fmtchar == '%'){
+            Format tformat;
+            memset(buffer,0, sizeof(buffer));
+            memset(&tformat,0,sizeof(Format));
+            parse_format(format, &i, buffer, &tformat);
+
+            switch(tformat.ftype){
+                case '%':
+                    writer_putc(writer,'%');
+                    written++;
+                    break;
+
+                case 'd':{
+                        int d = va_arg(parameters, int);
+                        print_num(
+                            itoa(d, buffer, 10),
+                            &tformat, 10, &written, writer);
+                        break;
+                    }
+
+                case 'c': {
+                        char c = (char) va_arg(parameters, int);
+                        writer_putc(writer,c);
+                        written++;
+                        break;
+                    }
+
+                case 's':{
+                        const char* str = va_arg(parameters, const char*);
+                        if (!str){
+                            str = "(null)";
+                        }
+                        written+=writer_puts(writer,str);
+                        break;
+                    }
+
+                case 'x':{
+                        unsigned int d = va_arg(parameters, unsigned int);
+                        print_num(
+                            utoa(d,buffer,16),
+                            &tformat, 16, &written, writer);
+                        break;
+                    }
+
+                default:
+                    break;
+            }
+
+        } else {
+            writer_putc(writer, fmtchar);
+            written++;
+        }
+    }
+
+    return written;
+}
+static void setup_str_writer (Writer* writer, char* str){
+    writer->putc = str_putc;
+    writer->puts = str_puts;
+    writer->str = str;
+    writer->pos = 0;
+}
+static void setup_fp_writer (Writer* writer, FILE* fp){
+    writer->putc = fp_putc;
+    writer->puts = fp_puts;
+    writer->fp = fp;
+}
+static int str_putc (Writer* writer, char c){
+    writer->str[writer->pos++] = c;
+    return 1;
+}
+static int str_puts (Writer* writer, const char* str){
+    int l = strlen(str);
+    strcat(writer->str,str);
+    return l;
+}
+static int fp_putc (Writer* writer, char c){
+    return fputc(c, writer->fp);
+}
+static int fp_puts (Writer* writer, const char* str){
+    return fputs(str, writer->fp);
+}

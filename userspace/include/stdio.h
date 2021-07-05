@@ -16,9 +16,12 @@ int     fprintf     (FILE* fp, const char* format, ...);
 int     vfprintf    (FILE* fp, const char* format, va_list ap);
 int     printf      (const char* format, ...);
 int     vprintf     (const char* format, va_list ap);
+int     sprintf     (char* str, const char* format, ...);
+int     vsprintf    (char* str, const char* format, va_list ap);
 char*   fgets       (char* buff, int size, FILE* stream);
 int     puts        (const char* str);
 int     fputs       (const char* str, FILE* stream);
 int     fputc       (int c, FILE* fp);
+int     putchar     (int c);
 
 #endif

@@ -71,6 +71,7 @@ static void execute(const char* file){
     char path[100];
     struct stat statb;
     int nargs = 0;
+    int background = 0;
     char**argv = NULL;
 
     char* param_start = strchr(file, ' ');
@@ -78,6 +79,11 @@ static void execute(const char* file){
     if (param_start){
         argv = parse_params(param_start+1, &nargs);
         *param_start = '\0';
+    }
+
+    if (nargs > 0 && !strcmp(argv[nargs-1],"&")){
+        nargs--;
+        background = 1;
     }
 
     memset(path,0,100);
@@ -88,17 +94,28 @@ static void execute(const char* file){
 
     if (!stat(path, &statb)){
         int pid = spawn(path, nargs, argv, 0, NULL);
-        waitpid(pid);
+        if (!background){
+            waitpid(pid);
+        } else {
+            printf("Running task %d in background\n", pid);
+        }
     } else {
         printf("No such file or directory\n\n");
     }
 }
 
 static void changedir(const char* cmd){
+    char buff[256];
     if(strlen(cmd) == 2){
-        strcpy(pwd,getenv("HOME"));
+        strcpy(buff,"PWD=");
+        strcat(buff,getenv("HOME"));
+        putenv(buff);
+        strcpy(pwd,getenv("PWD"));
     } else if (strlen(cmd) > 3){
         strcpy(pwd,cmd+3);
+        strcpy(buff,"PWD=");
+        strcat(buff,pwd);
+        putenv(buff);
     }
 }
 

@@ -11,7 +11,8 @@ OBJS=stdlib.o 	\
 	 modules.o	\
 	 spawn.o	\
 	 dirent.o	\
-	 path.o
+	 path.o		\
+	 msg.o
 
 all: $(OBJS)
 

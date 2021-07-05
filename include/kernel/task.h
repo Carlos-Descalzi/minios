@@ -7,6 +7,7 @@
 #include "io/streams.h"
 #include "kernel/isr.h"
 #include "lib/params.h"
+#include "lib/list.h"
 
 #define TASK_STATUS_NONE    0
 #define TASK_STATUS_READY   1
@@ -15,6 +16,15 @@
 #define TASK_STATUS_IOWAIT  4
 #define TASK_STATUS_WAITCND 5
 
+typedef struct {
+    uint32_t            source;
+    uint32_t            target;
+    uint32_t            number:1,
+                        has_more:1;
+    char                body[1024];
+} Message;
+
+#define MESSAGE_SIZE    (sizeof(Message)+1024)
 /**
  * Task structure definition
  **/
@@ -31,6 +41,7 @@ typedef struct Task {
     IORequest           io_requests[4];     // max active IO requests
     int                 (*waitcond)(struct Task*); // wait condition
     void*               cond_data;
+    ListNode*           incoming_messages;
 } Task;
 
 /**
@@ -45,6 +56,10 @@ uint32_t    tasks_current_tid               (void);
  * Returns the current task
  **/
 Task*       tasks_current_task              (void);
+/**
+ * Returns a task by id
+ **/
+Task*       tasks_get_task_by_tid           (uint32_t task_id);
 /**
  * Creates a new task by loading elf binary from a stream
  **/
@@ -75,11 +90,31 @@ void*       tasks_to_kernel_address         (void* address);
  **/
 void*       tasks_task_to_kernel_adddress   (uint32_t tid, void* address);
 /**
- * Adds a IO request to current task
+ * Adds a IO request to current task and puts task in wait state.
  **/
 void        tasks_add_io_request            (uint32_t type, uint32_t stream_num, 
                                             uint8_t* buffer, uint32_t size);
-
+/**
+ * Puts task in wait state until a given task identified by its id
+ * finishes.
+ **/
 void        tasks_wait_tid                  (uint32_t tid);
-
+/**
+ * Places a message on target's inbox and puts task in wait state
+ * until message is answered
+ **/
+void        tasks_send_message_sync         (Message* message);
+/**
+ * Sends a message without waiting response
+ **/
+void        tasks_send_message              (Message* message);
+/**
+ * If there is incoming message, copies it to message parameter, 
+ * returning 0, otherwise returns non zero.
+ **/
+int         tasks_check_for_message         (Message* message);
+/**
+ * Puts task in wait state until message arrives
+ **/
+int         tasks_wait_message              (Message* message);
 #endif

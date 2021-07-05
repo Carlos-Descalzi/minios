@@ -5,6 +5,7 @@
 #include "stdint.h"
 
 typedef uint16_t dev_t;
+typedef uint32_t pid_t;
 
 struct stat {
     dev_t       st_dev;
@@ -22,9 +23,10 @@ struct stat {
     uint32_t    st_ctim;
 };
 
-size_t  read    (int fd, void* buf, size_t count);
-size_t  write   (int fd, const void *buf, size_t count);
-int     close   (int fd);
-int     stat    (const char* pathname, struct stat* statbuf);
+size_t      read    (int fd, void* buf, size_t count);
+size_t      write   (int fd, const void *buf, size_t count);
+int         close   (int fd);
+int         stat    (const char* pathname, struct stat* statbuf);
+pid_t       getpid  (void);
 
 #endif

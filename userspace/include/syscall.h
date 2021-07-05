@@ -7,9 +7,15 @@
 #define SYS_CLOSE   0x03
 #define SYS_EXEC    0x04
 #define SYS_YIELD   0x05
+#define SYS_GETPID  0x06
 
 #define SYS_STAT    0x4D
 #define SYS_GETDENT 0x4E
+
+#define SYS_SENDMSG 0x60
+#define SYS_RECVMSG 0x61
+#define SYS_WAITMSG 0x62
+#define SYS_ANSMSG  0x63
 
 #define SYS_DEVS    0x70
 

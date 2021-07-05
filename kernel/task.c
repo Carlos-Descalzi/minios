@@ -17,8 +17,14 @@ typedef struct {
     Task task;
 } TaskNode;
 
+typedef struct {
+    ListNode head;
+    Message* message;
+} MessageNode;
+
 
 #define TASK_NODE(n)    ((TaskNode*)n)
+#define MSG_NODE(n)     ((MessageNode*)n)
 
 #define TID_KERNEL          0
 
@@ -38,6 +44,9 @@ static void     remove_current_task         (void);
 static void     check_io_wait_list          (void);
 static int      check_pending_io_requests   (Task* task);
 static int      wait_tid                    (Task* task);
+static int      wait_msg_answer             (Task* task);
+static void     answer_message              (Message* source_message, Message* target_message);
+static void     do_send_message             (Message* message);
 
 void tasks_init(){
     next_tid = 1;
@@ -74,8 +83,7 @@ uint32_t tasks_current_tid(){
 Task* tasks_current_task(void){
     return current_task;
 }
-
-Task* get_task_by_tid(uint32_t tid){
+Task* tasks_get_task_by_tid(uint32_t tid){
     for (ListNode* n = task_list; n; n = n->next){
         if (TASK_NODE(n)->task.tid == tid){
             return &(TASK_NODE(n)->task);
@@ -225,7 +233,7 @@ static void remove_current_task(){
 }
 
 static void move_to_wait_list(){
-    debug("Task ");debug_i(TASK_NODE(current_task_list_node)->task.tid,10);debug(" moved to io wait list\n");
+    //debug("Task ");debug_i(TASK_NODE(current_task_list_node)->task.tid,10);debug(" moved to io wait list\n");
     ListNode* next = current_task_list_node->next;
     task_list = list_remove(task_list, current_task_list_node);
     io_wait_list = list_add(io_wait_list, current_task_list_node);
@@ -240,15 +248,15 @@ void tasks_loop(){
     if (current_task && current_task->status != TASK_STATUS_NONE){
         if (current_task->status == TASK_STATUS_IDLE){
             current_task->status = TASK_STATUS_RUNNING;
-            debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run\n");
+            //debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set to run\n");
 
             task_run();
 
-            debug("TASK - Task ");debug_i(current_task->tid,10);debug(" left cpu\n");
+            //debug("TASK - Task ");debug_i(current_task->tid,10);debug(" left cpu\n");
 
             if (current_task->status != TASK_STATUS_NONE){
                 if (current_task->status == TASK_STATUS_RUNNING){
-                    debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set idle\n");
+                    //debug("TASK - Task ");debug_i(current_task->tid,10);debug(" set idle\n");
                     current_task->status = TASK_STATUS_IDLE;
                 } else if (current_task->status == TASK_STATUS_IOWAIT
                     || current_task->status == TASK_STATUS_WAITCND){
@@ -256,7 +264,7 @@ void tasks_loop(){
                     current_task = NULL;
                 }
             } else {
-                debug("TASK - Removing task ");debug_i(current_task->tid,10);debug("\n");
+                //debug("TASK - Removing task ");debug_i(current_task->tid,10);debug("\n");
                 remove_current_task();
                 current_task = NULL;
             }
@@ -296,7 +304,7 @@ void* tasks_to_kernel_address (void* address){
 }
 
 void* tasks_task_to_kernel_adddress(uint32_t tid, void* address){
-    Task* task = get_task_by_tid(tid);
+    Task* task = tasks_get_task_by_tid(tid);
 
     uint32_t physical_address = paging_physical_address(
         task->page_directory,
@@ -304,25 +312,11 @@ void* tasks_task_to_kernel_adddress(uint32_t tid, void* address){
     return paging_to_kernel_space(physical_address);
 }
 
-static void setup_console(Task* task){
-    // TODO Rework console stuff
-    task->console = CHAR_DEVICE(device_find(TERM,0));
-    if (task->console){
-        // stdin
-        task->streams[0] = char_device_stream(task->console,STREAM_READ);
-        // stdout
-        task->streams[1] = char_device_stream(task->console,STREAM_WRITE);
-        // stderr
-        task->streams[2] = char_device_stream(task->console,STREAM_WRITE);
-    } else {
-        debug("NO CONSOLE!\n");
-    }
-}
 void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, uint32_t size){
     Task* task = current_task;
     for (int i=0;i<4;i++){
         if (task->io_requests[i].status == TASK_IO_REQUEST_NONE){
-            debug("New IO request\n");
+            //debug("New IO request\n");
             memset(&(task->io_requests[i]),0,sizeof(IORequest));
             task->io_requests[i].status = TASK_IO_REQUEST_PENDING;
             task->io_requests[i].tid = current_task->tid;
@@ -339,6 +333,7 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
         }
     }
 }
+
 void tasks_wait_tid(uint32_t tid){
     Task* task = current_task;
 
@@ -347,10 +342,150 @@ void tasks_wait_tid(uint32_t tid){
     task->cond_data = (void*)tid;
 }
 
+void tasks_send_message_sync(Message* message){
+
+    Task* task = current_task;
+
+    do_send_message(message);
+
+    task->status = TASK_STATUS_WAITCND;
+    task->waitcond = wait_msg_answer;
+    task->cond_data = paging_physical_address(task->page_directory, message);
+}
+
+void tasks_send_message(Message* message){
+    do_send_message(message);
+}
+
+int tasks_check_for_message(Message* message){
+
+    Task* task = current_task;
+    //debug("Checking for messages for task ");debug_i(task->tid,10);debug("\n");
+
+    if (task->incoming_messages){
+        Message temp;
+
+        MessageNode* message_node = MSG_NODE(task->incoming_messages);
+        task->incoming_messages = list_remove(task->incoming_messages, LIST_NODE(message_node));
+
+        Message* incoming_message = message_node->message;
+        heap_free(message_node);
+
+        message = paging_physical_address(task->page_directory, message);
+        answer_message(incoming_message, message);
+
+        return 0;
+    }
+    return -1;
+}
+int tasks_wait_message(Message* message){
+    Task* task = current_task;
+
+    task->status = TASK_STATUS_WAITCND;
+    task->waitcond = wait_msg_answer;
+    task->cond_data = (void*)paging_physical_address(task->page_directory, message);
+}
+
 static int wait_tid(Task* task){
-    if (!get_task_by_tid((uint32_t) task->cond_data)){
-        debug("Condition finished\n");
+    if (!tasks_get_task_by_tid((uint32_t) task->cond_data)){
+        debug("Condition finished for ");debug_i(task->tid,10);debug("\n");
         return 1;
     }
     return 0;
+}
+
+static int wait_msg_answer(Task* task){
+    //debug("Checking conditions for task ");debug_i(task->tid,10);debug("\n");
+    for (ListNode* node = task->incoming_messages; node; node = node->next){
+        Message* waiting_msg = task->cond_data;
+        Message* local_waiting_msg = paging_to_kernel_space((uint32_t)waiting_msg);
+        uint32_t source = local_waiting_msg->source;
+        uint32_t target = local_waiting_msg->target;
+
+        if (source == 0 
+            && target == 0){
+            // receive any message
+            task->cpu_state.ebx = 0;
+            answer_message(MSG_NODE(node)->message, waiting_msg);
+            return 1;
+        } else {
+            // receive a message from a specific source to a specific target.
+            Message* message = paging_to_kernel_space((uint32_t)MSG_NODE(node)->message);
+            if (target == message->source 
+                && source == message->target){
+                task->cpu_state.ebx = 0;
+                answer_message(MSG_NODE(node)->message, waiting_msg);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static void do_send_message(Message* message){
+    /**
+     * get physical addresss of source message,
+     * and place it on target task
+     **/
+    Task* task = current_task;
+
+    MessageNode* message_node = heap_alloc(sizeof(MessageNode));
+    message_node->message = (void*)paging_physical_address(task->page_directory, message);
+
+    message = paging_to_kernel_space((uint32_t)message_node->message);
+
+    Task* target_task = tasks_get_task_by_tid(message->target);
+
+    if (target_task){
+        target_task->incoming_messages = list_add(
+            target_task->incoming_messages,
+            message_node
+        );
+    } else {
+        debug("Task not found\n");
+    }
+}
+
+static void copymsg(Message* dest, Message* src){
+    dest->source = src->source;
+    dest->target = src->target;
+    dest->number = src->number;
+    dest->has_more = src->has_more;
+    memcpy(
+        ((void*)dest)+sizeof(uint32_t)*3,
+        ((void*)src)+sizeof(uint32_t)*3,
+        1024
+    );
+}
+
+static void answer_message(Message* source_message, Message* target_message){
+    /**
+     * Map source message into kernel space
+     * Copy to local variable
+     * Map target message into kernel space
+     * Copy local variable into target message
+     * TODO: Would be great to hage 2 pages available for mapping in kernel
+     * so I would just use 1 copy.
+     **/
+    Message temp;
+
+    source_message = paging_to_kernel_space((uint32_t)source_message);
+    copymsg(&temp, source_message);
+    target_message = paging_to_kernel_space((uint32_t)target_message);
+    copymsg(target_message, &temp);
+}
+
+static void setup_console(Task* task){
+    // TODO Rework console stuff
+    task->console = CHAR_DEVICE(device_find(TERM,0));
+    if (task->console){
+        // stdin
+        task->streams[0] = char_device_stream(task->console,STREAM_READ);
+        // stdout
+        task->streams[1] = char_device_stream(task->console,STREAM_WRITE);
+        // stderr
+        task->streams[2] = char_device_stream(task->console,STREAM_WRITE);
+    } else {
+        debug("Error: No console!\n");
+    }
 }
