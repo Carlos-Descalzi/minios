@@ -8,11 +8,11 @@
  **/
 
 typedef struct {
-    uint32_t source;
-    uint32_t target;
-    uint32_t number:31,
-             has_more:1;
-    char body[1024];
+    uint32_t source;        // source tid, filled by api
+    uint32_t target;        // target tid
+    uint32_t number:31,     // message number, optional
+             has_more:1;    // if more messages are coming, optional
+    char body[1024];        // the message body, up to 1024 bytes
 } Message;
 
 /**

@@ -11,6 +11,7 @@ So far these features are implemented (barely):
 * Elf binary support - no shared libraries.
 * Paging.
 * Context switching.
+* Basic IPC by using message passing.
 * Process loading and execution.
 * Loadable kernel modules, used for device drivers.
 * Barebones userspace C library.
