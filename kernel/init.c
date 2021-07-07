@@ -55,10 +55,10 @@ void init(){
     device_init();
     ide_register();
     device_init_devices();
-    load_modules();
 
     pic_init();
     pit_init();
+    load_modules();
     
     tasks_init();
     syscall_init();
@@ -66,7 +66,6 @@ void init(){
     console_print("Kernel startup complete\n");
 
     start_init();
-
 }
 
 static void bsod(InterruptFrame* frame, void* data){

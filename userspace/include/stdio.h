@@ -23,5 +23,6 @@ int     puts        (const char* str);
 int     fputs       (const char* str, FILE* stream);
 int     fputc       (int c, FILE* fp);
 int     putchar     (int c);
+size_t  fwrite      (void* ptr, size_t size, size_t nmemb, FILE* stream);
 
 #endif

@@ -69,6 +69,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     console_init();
     ScreenDevice* device = heap_alloc(sizeof(ScreenDevice));
     
+    DEVICE(device)->type = DEVICE_TYPE_CHAR;
     device->mode = MODE_TEXT;
     device->saved_x = 0;
     device->saved_y = 0;

@@ -22,9 +22,11 @@ static int16_t seek (Stream* stream, uint32_t pos);
 static uint32_t size (Stream* stream);
 static void close(Stream* stream);
 
-Stream* char_device_stream  (CharDevice* device, int mode){
-    CharStream* stream = heap_alloc(sizeof(CharStream));
+Stream* char_device_stream_open  (CharDevice* device, int mode){
+
+    CharStream* stream = heap_new(CharStream);
     memset(stream,0,sizeof(CharStream));
+
     STREAM(stream)->async = DEVICE(device)->async;
     STREAM(stream)->read_byte = read_byte;
     STREAM(stream)->read_async = read_async;

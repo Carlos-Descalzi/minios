@@ -1,4 +1,4 @@
 include ../Make.defs
 include ../Make.rules
-OBJS=streams.o
+OBJS=stream.o charstream.o blockstream.o
 all: $(OBJS)

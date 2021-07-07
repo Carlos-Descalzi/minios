@@ -22,7 +22,8 @@ QEMU_ARGS=         \
 	-no-shutdown   \
 	-vga std 	   \
 	-m 128M		   \
-	-netdev user,id=n0 -device rtl8139,netdev=n0,mac=52:54:98:76:54:32 \
+	-device rtl8139,netdev=n0,mac=52:54:98:76:54:32 \
+	-netdev user,id=n0,hostfwd=tcp::5555-:22 \
 	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,pcall,guest_errors,nochain \
 	-D trace.log
 QEMU_TEST_ARGS=    \

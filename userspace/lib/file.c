@@ -64,3 +64,7 @@ char* fgets(char* buff, int size, FILE* stream){
     buff[i] = '\0';
     return buff;
 }
+
+size_t fwrite(void* ptr, size_t size, size_t nmemb, FILE* stream){
+    return write(stream->fd, ptr, size * nmemb);
+}

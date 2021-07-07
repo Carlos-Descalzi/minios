@@ -73,6 +73,7 @@ void syscall_spawn(InterruptFrame* f){
         Task* current_task = tasks_current_task();
         new_env = task_params_copy(current_task->env);
     }
+    debug("Fs:");debug_i(fs,16);debug("\n");
 
     Stream* stream = fs_file_stream_open(fs, filepath,0);
 
@@ -84,5 +85,5 @@ void syscall_spawn(InterruptFrame* f){
     }
 
     stream_close(stream);
-    fs_close(fs);
+    fs_release_filesystem(fs);
 }

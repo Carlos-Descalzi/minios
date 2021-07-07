@@ -480,11 +480,11 @@ static void setup_console(Task* task){
     task->console = CHAR_DEVICE(device_find(TERM,0));
     if (task->console){
         // stdin
-        task->streams[0] = char_device_stream(task->console,STREAM_READ);
+        task->streams[0] = device_stream_open(task->console,STREAM_READ);
         // stdout
-        task->streams[1] = char_device_stream(task->console,STREAM_WRITE);
+        task->streams[1] = device_stream_open(task->console,STREAM_WRITE);
         // stderr
-        task->streams[2] = char_device_stream(task->console,STREAM_WRITE);
+        task->streams[2] = device_stream_open(task->console,STREAM_WRITE);
     } else {
         debug("Error: No console!\n");
     }

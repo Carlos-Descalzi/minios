@@ -6,10 +6,11 @@ BINS=init.elf 		\
 	 lsdev.elf 		\
 	 cat.elf		\
 	 testserver.elf	\
-	 sendmsg.elf
+	 sendmsg.elf	\
+	 testnet.elf
 
 LIBS=../bootstrap/crt0.o
-LIBS+=$(shell find ../lib -name '*.o')
+LIBS+=../lib/minios.a
 
 all: $(BINS)
 

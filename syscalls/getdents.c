@@ -39,5 +39,5 @@ void syscall_getdents(InterruptFrame* f){
     f->ebx = fs_get_direntry(fs, inode, &(getdent_data->offset_next), &(getdent_data->direntry));
 
     fs_free_inode(fs, inode);
-    fs_close(fs);
+    fs_release_filesystem(fs);
 }

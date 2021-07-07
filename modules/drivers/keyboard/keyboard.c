@@ -109,6 +109,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     KeyboardDevice* device = heap_alloc(sizeof(KeyboardDevice));
 
     memset(device,0,sizeof(KeyboardDevice));
+    DEVICE(device)->type = DEVICE_TYPE_CHAR;
     DEVICE(device)->async = 1;
     DEVICE(device)->type = DEVICE_TYPE_CHAR;
     DEVICE(device)->setopt = setopt;

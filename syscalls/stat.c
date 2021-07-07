@@ -89,5 +89,5 @@ void syscall_stat(InterruptFrame* f){
         f->ebx = ((uint32_t)-4);
     }
 
-    fs_close(fs);
+    fs_release_filesystem(fs);
 }

@@ -9,10 +9,6 @@
 #define DEV_KIND_DISK   0x02
 
 typedef struct {
-    uint8_t resource_type;
-    uint8_t device_kind:7,
-            device_resource:1;
-    uint8_t device_instance;
     uint8_t mode;
     const char* path;
 } OpenData;
@@ -21,10 +17,6 @@ typedef struct {
 int open(const char* pathname, int flags){
     char buff[256];
     OpenData open_data = {
-        .resource_type = REST_TYPE_FS,
-        .device_kind =  DEV_KIND_DISK,
-        .device_resource = 1,
-        .device_instance = 0,
         .mode = 0,
         .path = path_absolute(pathname, buff)
     };

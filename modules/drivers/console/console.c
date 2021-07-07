@@ -75,6 +75,7 @@ static void reset_console_request(ConsoleDevice* device){
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     ConsoleDevice* device = heap_alloc(sizeof(ConsoleDevice));
     memset(device,0,sizeof(ConsoleDevice));
+    DEVICE(device)->type = DEVICE_TYPE_CHAR;
     device->screen = CHAR_DEVICE(device_find(VIDEO,0));
     device->keyboard = CHAR_DEVICE(device_find(KBD,0));
     device->console_request.callback = request_callback;

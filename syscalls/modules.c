@@ -33,7 +33,7 @@ void syscall_modload(InterruptFrame* f){
 
         f->ebx = ((uint32_t) 10 * result);
 
-        fs_close(fs);
+        fs_release_filesystem(fs);
     } else {
         // no fs
         f->ebx = ((uint32_t)-3);

@@ -7,6 +7,8 @@
 #include "io/streams.h"
 #include "kernel/device.h"
 
-Stream* char_device_stream          (CharDevice* device, int mode);
+Stream* device_stream_open               (Device* device, int mode);
+Stream* char_device_stream_open          (CharDevice* device, int mode);
+Stream* block_device_stream_open         (BlockDevice* device, int mode);
 
 #endif

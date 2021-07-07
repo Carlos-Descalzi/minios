@@ -14,6 +14,9 @@ OBJS=stdlib.o 	\
 	 path.o		\
 	 msg.o
 
-all: $(OBJS)
+all: minios.a
+
+minios.a: $(OBJS)
+	ar -crs $@ $(OBJS)
 
 include ../../Make.rules
