@@ -12,7 +12,8 @@ OBJS=startup.o	\
 	 task_asm.o	\
 	 syscall.o	\
 	 spinlock.o \
-	 modules.o
+	 modules.o	\
+	 iobase.o
 	 
 #	 task.o		\
 #	 task_asm.o \

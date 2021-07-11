@@ -62,3 +62,13 @@ char* strcat(char* dest, const char* src){
     strcpy(dest+i,src);
     return dest;
 }
+int memcmp(const void* m1, const void* m2, size_t s){
+    int r = 0;
+    for (int i=0;i< s;i++){
+        r = ((char*)m1) - ((char*)m2);
+        if (r){
+            return r;
+        }
+    }
+    return r;
+}

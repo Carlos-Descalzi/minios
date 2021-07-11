@@ -4,8 +4,13 @@
 #include "stddef.h"
 #include "stdint.h"
 
-typedef uint16_t dev_t;
-typedef uint32_t pid_t;
+#define EAGAIN  -10 
+#define EBADF   -11  // invalid descritor or not open for reading
+#define EFAULT  -12  // buffer not in accessible space
+#define EINTR   -13  // interrupted by a signal
+#define EINVAL  -14  // not valid for reading
+#define EISDIR  -15  // is directory
+#define EIO     -16  // io error
 
 struct stat {
     dev_t       st_dev;
@@ -23,8 +28,8 @@ struct stat {
     uint32_t    st_ctim;
 };
 
-size_t      read    (int fd, void* buf, size_t count);
-size_t      write   (int fd, const void *buf, size_t count);
+ssize_t     read    (int fd, void* buf, size_t count);
+ssize_t     write   (int fd, const void *buf, size_t count);
 int         close   (int fd);
 int         stat    (const char* pathname, struct stat* statbuf);
 pid_t       getpid  (void);

@@ -22,12 +22,16 @@ static int16_t seek (Stream* stream, uint32_t pos);
 static uint32_t size (Stream* stream);
 static void close(Stream* stream);
 
-Stream* char_device_stream_open  (CharDevice* device, int mode){
+Stream* char_device_stream_open  (CharDevice* device, int flags){
 
     CharStream* stream = heap_new(CharStream);
     memset(stream,0,sizeof(CharStream));
 
     STREAM(stream)->async = DEVICE(device)->async;
+    STREAM(stream)->readable = (flags & O_RDONLY) != 0;
+    STREAM(stream)->writeable = (flags & O_WRONLY) != 0;
+    STREAM(stream)->nonblocking = (flags & O_NONBLOCK) != 0;
+    STREAM(stream)->seekable = 0;
     STREAM(stream)->read_byte = read_byte;
     STREAM(stream)->read_async = read_async;
     STREAM(stream)->read_bytes = read_bytes;
@@ -39,7 +43,6 @@ Stream* char_device_stream_open  (CharDevice* device, int mode){
     STREAM(stream)->close = close;
 
     stream->device = device;
-    stream->mode = mode;
 
     return STREAM(stream);
 }

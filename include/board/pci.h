@@ -7,6 +7,9 @@
 #define PCI_IO_CONFIG_ADDR  0xCF8
 #define PCI_IO_CONFIG_DATA  0xCFC
 
+#define PCI_COMMAND         0x04
+#define PCI_INTERRUPT_LINE  0x3c
+
 #include "lib/stdint.h"
 
 typedef struct {
@@ -120,6 +123,7 @@ typedef int (*PciVisitor)(uint8_t,uint8_t,uint8_t, PCIHeader* header, void* user
 
 uint16_t    pci_config_read_w   (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);
 uint32_t    pci_config_read_dw  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset);
+void        pci_config_write_w  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset,uint16_t data);
 void        pci_list_all_buses  (PciVisitor visitor, void* user_data);
 
 #endif

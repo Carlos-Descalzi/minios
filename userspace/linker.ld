@@ -23,6 +23,7 @@ SECTIONS
 	{
 		*(COMMON)
 		*(.bss)
+		_HEAP_START = ABSOLUTE(.) ;
 	}
 
 }

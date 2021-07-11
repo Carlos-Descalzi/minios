@@ -2,26 +2,12 @@
 #include "syscall.h"
 #include "stdint.h"
 #include "path.h"
-
-#define RES_TYPE_RAW    0x00
-#define REST_TYPE_FS    0x01
-
-#define DEV_KIND_DISK   0x02
+#include "stdio.h"
 
 typedef struct {
-    uint8_t mode;
+    uint32_t flags;
     const char* path;
 } OpenData;
-
-#include "stdio.h"
-int open(const char* pathname, int flags){
-    char buff[256];
-    OpenData open_data = {
-        .mode = 0,
-        .path = path_absolute(pathname, buff)
-    };
-    return syscall(SYS_OPEN, &open_data);
-}
 
 typedef struct {
     unsigned char stream_num;
@@ -29,24 +15,33 @@ typedef struct {
     unsigned int size;
 } IOData;
 
-size_t read(int fd, void* buff, size_t count){
+int open(const char* pathname, int flags){
+    char buff[256];
+    OpenData open_data = {
+        .flags = flags,
+        .path = path_absolute(pathname, buff)
+    };
+    return syscall(SYS_OPEN, &open_data);
+}
+
+ssize_t read(int fd, void* buff, size_t count){
     IOData read_data = {
         .stream_num = fd,
         .buff = buff,
         .size = count
     };
 
-    return syscall(SYS_READ,&read_data);
+    return (ssize_t) syscall(SYS_READ, &read_data);
 }
 
-size_t write(int fd, const void *buff, size_t count){
+ssize_t write(int fd, const void *buff, size_t count){
     IOData write_data = {
         .stream_num = fd,
         .buff = buff,
         .size = count
     };
 
-    return syscall(SYS_WRITE,&write_data);
+    return (ssize_t) syscall(SYS_WRITE, &write_data);
 }
 
 int close(int fd){

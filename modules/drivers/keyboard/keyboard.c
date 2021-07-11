@@ -129,26 +129,14 @@ static int16_t setopt(Device* device, uint32_t option, void* data){
 }
 
 static void write_to_request(KeyboardDevice* kbd, IORequest* request){
-
-    uint8_t* buffer;
-    
-    if (request->kernel){
-        buffer = request->target_buffer;
-    } else {
-        buffer = tasks_task_to_kernel_adddress(request->tid, request->target_buffer);
-    }
-
-    memcpy(buffer, kbd->key_event.cdata, 2);
+    char buff[2];
+    memcpy(buff, kbd->key_event.cdata, 2);
 
     kbd->pos = 0;
     kbd->key_event.wdata = 0;
-    request->dsize+=2;
-    request->result = 0;
-    request->status = TASK_IO_REQUEST_DONE;
-    kbd->request = NULL; // FIXME clean this mess
-    if (request->callback){
-        request->callback(request, request->callback_data);
-    }
+    kbd->request = NULL;
+
+    handle_io_request(request, buff, 2, TASK_IO_REQUEST_DONE);
 }
 static int16_t read_async(CharDevice* device,IORequest* request){
     KeyboardDevice* kbd = KEYBOARD_DEVICE(device);

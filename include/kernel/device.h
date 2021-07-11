@@ -48,7 +48,8 @@ struct Device{
     uint32_t    type;
     uint8_t     kind;
     uint8_t     instance_number;
-    uint8_t     async;
+    uint8_t     async:1,
+                reserved:7;
     int16_t     (*setopt)           (struct Device*, uint32_t, void*);
 };
 
@@ -57,10 +58,11 @@ struct Device{
  **/
 typedef struct BlockDevice {
     Device base;
+    uint8_t     randomaccess:1,
+                reserved:7;
     int16_t     (*read)             (struct BlockDevice*, uint8_t*,uint16_t);
     int16_t     (*read_async)       (struct BlockDevice*, IORequest* request);
     int16_t     (*write)            (struct BlockDevice*, uint8_t*,uint16_t);
-    int16_t     (*close)            (struct BlockDevice*);
     void        (*seek)             (struct BlockDevice*, uint32_t);
     void        (*flush)            (struct BlockDevice*);
     uint32_t    (*pos)              (struct BlockDevice*);
@@ -85,7 +87,6 @@ typedef struct CharDevice {
 #define block_device_read(d,b,l)        (BLOCK_DEVICE(d)->read(BLOCK_DEVICE(d),b,l))
 #define block_device_write(d,b,l)       (BLOCK_DEVICE(d)->write(BLOCK_DEVICE(d),b,l))
 #define block_device_seek(d,p)          (BLOCK_DEVICE(d)->seek(BLOCK_DEVICE(d),p))
-#define block_device_close(d)           (BLOCK_DEVICE(d)->close(BLOCK_DEVICE(d)))
 #define block_device_flush(d)           (BLOCK_DEVICE(d)->flush(BLOCK_DEVICE(d)))
 #define block_device_pos(d)             (BLOCK_DEVICE(d)->pos(BLOCK_DEVICE(d)))
 #define block_device_read_async(d,r)    (BLOCK_DEVICE(d)->read_async(BLOCK_DEVICE(d),r))

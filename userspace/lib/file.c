@@ -2,6 +2,7 @@
 #include "fcntl.h"
 #include "unistd.h"
 #include "stdlib.h"
+#include "string.h"
 
 struct _FILE {
     int fd;
@@ -25,10 +26,12 @@ FILE* stdin = &_files[0];
 FILE* stdout = &_files[1];
 FILE* stderr = &_files[2];
 
-FILE*   fopen   (const char*pathname, const char* mode){
+static int mode_to_flags(const char* mode);
+
+FILE* fopen(const char*pathname, const char* mode){
     for (int i=0;i<10;i++){
         if (_files[i].fd == -1){
-            int result = open(pathname, 0);
+            int result = open(pathname, mode_to_flags(mode));
 
             if (result >= 0){
                 _files[i].fd = result;
@@ -67,4 +70,29 @@ char* fgets(char* buff, int size, FILE* stream){
 
 size_t fwrite(void* ptr, size_t size, size_t nmemb, FILE* stream){
     return write(stream->fd, ptr, size * nmemb);
+}
+
+static int mode_to_flags(const char* mode){
+    int flags = 0;
+
+    if (strchr(mode,'w')){
+        flags |= O_WRONLY;
+        if (strchr(mode,'+')){
+            flags |= O_RDONLY;
+        }
+    }
+    if (strchr(mode,'r')){
+        flags |= O_RDONLY;
+        if (strchr(mode, '+')){
+            flags |= O_WRONLY;
+        }
+    }
+    if (strchr(mode,'a')){
+        flags |= O_APPEND | O_WRONLY;
+        if (strchr(mode,'+')){
+            flags |= O_RDONLY;
+        }
+    }
+
+    return flags;
 }

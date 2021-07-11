@@ -322,7 +322,8 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
             task->io_requests[i].tid = current_task->tid;
             task->io_requests[i].type = type;
             task->io_requests[i].stream = stream_num;
-            task->io_requests[i].target_buffer = buffer;
+            task->io_requests[i].target_buffer = paging_physical_address(
+                current_task->page_directory, buffer);
             task->io_requests[i].size = size;
             task->status = TASK_STATUS_IOWAIT;
             stream_read_async(

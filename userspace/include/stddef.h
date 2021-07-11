@@ -5,6 +5,10 @@
 #define NULL ((void*)0)
 #endif
 
-typedef unsigned int size_t;
+typedef unsigned int    size_t;
+typedef int             ssize_t;
+
+typedef unsigned short  dev_t;
+typedef unsigned int    pid_t;
 
 #endif

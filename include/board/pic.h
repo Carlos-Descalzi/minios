@@ -24,4 +24,7 @@ uint16_t    pic_get_irq_reg (void);
  * Returns the ISR number
  **/
 uint16_t    pic_get_irq     (void);
+void        pic_enable      (int pin);
+void        pic_disable     (int pin);
+
 #endif

@@ -26,12 +26,16 @@ static int16_t seek(Stream* stream, uint32_t pos);
 static uint32_t size(Stream* stream);
 static void close(Stream* stream);
 
-Stream* block_device_stream_open(BlockDevice* device, int mode){
+Stream* block_device_stream_open(BlockDevice* device, int flags){
 
     BlockStream* stream = heap_new(BlockStream);
     memset(stream,0,sizeof(BlockStream));
 
     STREAM(stream)->async = DEVICE(device)->async;
+    STREAM(stream)->seekable = device->randomaccess;
+    STREAM(stream)->readable = (flags & O_RDONLY) != 0;
+    STREAM(stream)->writeable = (flags & O_WRONLY) != 0;
+    STREAM(stream)->nonblocking = (flags & O_NONBLOCK) != 0;
     STREAM(stream)->read_byte = read_byte;
     STREAM(stream)->read_bytes = read_bytes;
     STREAM(stream)->read_async = read_async;
@@ -43,7 +47,6 @@ Stream* block_device_stream_open(BlockDevice* device, int mode){
     STREAM(stream)->close = close;
 
     stream->device = device;
-    stream->mode = mode;
     stream->buffer_index = 0;
 
     return STREAM(stream);
@@ -51,52 +54,74 @@ Stream* block_device_stream_open(BlockDevice* device, int mode){
 
 static int16_t read_byte(Stream* stream){
     // FIXME
-    if (BLOCK_STREAM(stream)->buffer_index == 0
-        || BLOCK_STREAM(stream)->buffer_index == BUFFER_SIZE){
-        if (block_device_read(
-            BLOCK_STREAM(stream)->device, 
-            BLOCK_STREAM(stream)->buffer,
-            BUFFER_SIZE
-        ) < 0){
-            return -1;
+    if (stream_readable(stream)){
+        if (BLOCK_STREAM(stream)->buffer_index == 0
+            || BLOCK_STREAM(stream)->buffer_index == BUFFER_SIZE){
+            if (block_device_read(
+                BLOCK_STREAM(stream)->device, 
+                BLOCK_STREAM(stream)->buffer,
+                BUFFER_SIZE
+            ) < 0){
+                return -1;
+            }
         }
+        return BLOCK_STREAM(stream)->buffer[BLOCK_STREAM(stream)->buffer_index++];
     }
-    return BLOCK_STREAM(stream)->buffer[BLOCK_STREAM(stream)->buffer_index++];
+    return -1;
 }
 
 static int16_t write_byte(Stream* stream, uint8_t buffer){
-    return block_device_write(
-        BLOCK_STREAM(stream)->device,
-        &buffer,
-        1);
+    if (stream_writeable(stream)){
+        return block_device_write(
+            BLOCK_STREAM(stream)->device,
+            &buffer,
+            1);
+    }
+    return -1;
 }
 
 static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size){
     // FIXME
-    return block_device_read(
-        BLOCK_STREAM(stream)->device,
-        buffer,size);
+    if (stream_readable(stream)){
+        return block_device_read(
+            BLOCK_STREAM(stream)->device,
+            buffer,size);
+    }
+    return -1;
 }
 
 static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size){
-    return block_device_write(
-        BLOCK_STREAM(stream)->device,
-        buffer,
-        size
-    );
+    if (stream_writeable(stream)){
+        return block_device_write(
+            BLOCK_STREAM(stream)->device,
+            buffer,
+            size
+        );
+    }
+    return -1;
 }
 
 static uint32_t pos(Stream* stream){
-    return block_device_pos(BLOCK_STREAM(stream)->device);
+    if (stream_seekable(stream)){
+        return block_device_pos(BLOCK_STREAM(stream)->device);
+    }
+    return -1;
 }
 
 static int16_t seek(Stream* stream, uint32_t pos){
-    block_device_seek(BLOCK_STREAM(stream)->device, pos);
-    return 0;
+    if (stream_seekable(stream)){
+        block_device_seek(BLOCK_STREAM(stream)->device, pos);
+        return 0;
+    }
+    return -1;
 }
 
 static uint32_t size(Stream* stream){
-    return 0;
+    if (stream_seekable(stream)){
+        // TODO
+        return 0;
+    }
+    return -1;
 }
 
 static void close(Stream* stream){
@@ -104,5 +129,8 @@ static void close(Stream* stream){
 }
 
 static int16_t read_async(Stream* stream, IORequest* request){
-    return block_device_read_async(BLOCK_STREAM(stream)->device, request);
+    if (stream_async(stream)){
+        return block_device_read_async(BLOCK_STREAM(stream)->device, request);
+    }
+    return -1;
 }

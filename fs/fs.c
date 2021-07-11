@@ -70,8 +70,10 @@ void fs_release_filesystem(FileSystem* fs){
 }
 
 static FileSystem* create(BlockDevice* device){
+    debug("Instantiating fs for device\n");
     for (int i=0;i<FS_MAX;i++){
         if (types[i]){
+            debug("Trying ");debug(types[i]->type_name);debug("\n");
             FileSystem* fs = fs_type_create(types[i], device);
 
             if (fs){

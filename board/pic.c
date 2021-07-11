@@ -59,11 +59,40 @@ void pic_init(){
     outb(PIC2_DATA, ICW4_8086);
     io_wait();
 
+    //p2_mask =0;
     outb(PIC1_DATA, p1_mask);
     outb(PIC2_DATA, p2_mask);
     debug("PIC initialized\n");
 }
 
+void pic_enable(int pin){
+    uint8_t mask;
+    uint8_t port;
+    if (pin < 8){
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        pin -= 8;
+    }
+
+    mask = inb(port);
+    mask &= ~(1 << pin);
+    outb(port, mask);
+}
+void pic_disable(int pin){
+    uint8_t mask;
+    uint8_t port;
+    if (pin < 8){
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        pin -= 8;
+    }
+
+    mask = inb(port);
+    mask |= 1 << pin;
+    outb(port, mask);
+}
 
 inline void pic_eoi1(void){
     outb(0x20, 0x20);

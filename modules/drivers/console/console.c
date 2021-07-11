@@ -80,6 +80,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->keyboard = CHAR_DEVICE(device_find(KBD,0));
     device->console_request.callback = request_callback;
     device->console_request.target_buffer = device->buffer;
+    device->console_request.kernel = 1;
     device->keyboard_status.byte = 0;
     device->console_status.byte = 1;
     reset_console_request(device);
@@ -158,16 +159,7 @@ static void request_callback(IORequest* request, void* data){
     uint16_t key_code = (*((uint16_t*)device->console_request.target_buffer));
 
     if (key_code & 0x8000){
-        uint8_t* buffer;
         key_code &= 0x7FFF;
-        if (device->user_request->kernel){
-            buffer = device->user_request->target_buffer;
-        } else {
-            buffer = tasks_task_to_kernel_adddress(
-                device->user_request->tid, 
-                device->user_request->target_buffer
-            );
-        }
 
         if (key_code == KEY_CODE_LEFT_SHIFT
             || key_code == KEY_CODE_RIGHT_SHIFT){
@@ -194,27 +186,17 @@ static void request_callback(IORequest* request, void* data){
             || (key_code == KEY_CODE_TAB)
             || (key_code == KEY_CODE_SPACE)
             || (key_code >= KEY_CODE_MINUS && key_code <= KEY_CODE_BACK_TICK)) {
-            buffer[0] = encode(device, key_code);
-            device->user_request->dsize = 1;
-            device->user_request->result = 0;
-            device->user_request->status = TASK_IO_REQUEST_DONE;
+            char data = encode(device, key_code);
 
             if (device->console_status.echo){
-                char_device_write(CONSOLE_DEVICE(device)->screen,buffer[0]);
+                char_device_write(CONSOLE_DEVICE(device)->screen,data);//buffer[0]);
             }
-
-            if (device->user_request->callback){
-                device->user_request->callback(
-                    device->user_request,
-                    device->user_request->callback_data
-                );
-            }
+            handle_io_request(device->user_request, &data, 1, TASK_IO_REQUEST_DONE);
             reset_console_request(device);
         } else {
             debug("Unknown keycode\n");
         }
     } else {
-        //debug("Key release\n");
         if (key_code == KEY_CODE_LEFT_SHIFT
             || key_code == KEY_CODE_RIGHT_SHIFT){
             device->keyboard_status.shift = 0;

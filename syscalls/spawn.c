@@ -75,7 +75,7 @@ void syscall_spawn(InterruptFrame* f){
     }
     debug("Fs:");debug_i(fs,16);debug("\n");
 
-    Stream* stream = fs_file_stream_open(fs, filepath,0);
+    Stream* stream = fs_file_stream_open(fs, filepath, O_RDONLY);
 
     if (stream){
         f->ebx = tasks_new(stream, new_args, new_env);

@@ -63,7 +63,7 @@ static int32_t          get_direntry            (FileSystem* fs, Inode* inode,
 static Inode*           alloc_inode             (FileSystem* fs);
 static void             free_inode              (FileSystem* fs, Inode* inode);
 static void             release_resources       (FileSystem* fs);
-static Stream*          ext2_stream_open        (FileSystem* fs, const char* path, uint8_t mode);
+static Stream*          ext2_stream_open        (FileSystem* fs, const char* path, uint32_t flags);
 int16_t                 ext2_stream_read_byte   (Stream*);
 int16_t                 ext2_stream_write_byte  (Stream*,uint8_t);
 int16_t                 ext2_stream_read_bytes  (Stream*,uint8_t*,int16_t);
@@ -72,6 +72,7 @@ uint32_t                ext2_stream_pos         (Stream*);
 int16_t                 ext2_stream_seek        (Stream*,uint32_t);
 uint32_t                ext2_stream_size        (Stream*);
 void                    ext2_stream_close       (Stream*);
+void                    ext2_stream_flush       (Stream*);
 
 
 
@@ -108,6 +109,11 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
 
     if (!device){
         debug("No device\n");
+        return NULL;
+    }
+
+    if (DEVICE(device)->kind != DISK){
+        debug("Invalid device type for ext2 fs\n");
         return NULL;
     }
 
@@ -626,7 +632,7 @@ static int16_t ext2_iter_dir_block(Ext2FileSystem* fs, uint32_t block_num, DirVi
     return 0;
 }
 
-Stream* ext2_stream_open(FileSystem* fs, const char* path, uint8_t mode){
+Stream* ext2_stream_open(FileSystem* fs, const char* path, uint32_t flags){
     uint32_t inodenum;
     FileStream* stream;
 
@@ -645,17 +651,21 @@ Stream* ext2_stream_open(FileSystem* fs, const char* path, uint8_t mode){
         stream->block_buffer = heap_alloc(fs->block_size);
         load_inode(fs, inodenum, INODE(&(stream->inode)));
         strcpy(stream->path, path);
-        stream->mode = mode;
         debug("EXT2 - inode size:");debug_i(fs->block_size,10);debug("\n");
         stream->numblocks = stream->inode.inode.size / fs->block_size;
         if (stream->inode.inode.size % fs->block_size){
             stream->numblocks++;
         }
         STREAM(stream)->async = 0;
+        STREAM(stream)->seekable = 1;
+        STREAM(stream)->nonblocking = (flags & O_NONBLOCK) != 0;
+        STREAM(stream)->readable = (flags & O_RDONLY) != 0;
+        STREAM(stream)->writeable = (flags & O_WRONLY) != 0;
         STREAM(stream)->read_byte = ext2_stream_read_byte;
         STREAM(stream)->write_byte = ext2_stream_write_byte;
         STREAM(stream)->read_bytes = ext2_stream_read_bytes;
         STREAM(stream)->write_bytes = ext2_stream_write_bytes;
+        STREAM(stream)->flush = ext2_stream_flush;
         STREAM(stream)->pos = ext2_stream_pos;
         STREAM(stream)->seek = ext2_stream_seek;
         STREAM(stream)->size = ext2_stream_size;
@@ -704,48 +714,60 @@ int16_t ext2_stream_read_byte(Stream* stream){
     return val;
 }
 int16_t ext2_stream_write_byte(Stream* stream,uint8_t byte){
-    return 0;
-}
-int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
-    uint32_t block_size;
-    uint32_t offset;
-    uint32_t block;
-    uint16_t nblocks;
-    uint32_t to_read;
-    uint16_t i;
-    uint32_t bytes_read;
-
-    if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.inode.size){
+    if (stream_writeable(stream)){
+        // TODO finish
         return 0;
     }
-    block_size = FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size;
-    offset = FILE_STREAM(stream)->pos % block_size;
-    block = FILE_STREAM(stream)->pos / block_size;
-    nblocks = size / block_size + (size % block_size ? 1 : 0);
-    bytes_read = 0;
-
-    debug("EXT2 - Block:");debug_i(block,10);debug("\n");
-
-    for (i=0;i<nblocks;i++){
-        read_block(
-            FILE_SYSTEM(FILE_STREAM(stream)->fs),
-            INODE(&(FILE_STREAM(stream)->inode)),
-            block + i,
-            FILE_STREAM(stream)->block_buffer,
-            FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size
-        );
-        to_read = min(size, block_size - offset);
-        memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer + offset, to_read);
-        offset = 0;
-        size -= to_read;
-        bytes_read += to_read;
-    }
-    FILE_STREAM(stream)->pos += bytes_read;
-
-    return bytes_read;
+    return -1;
 }
 int16_t ext2_stream_write_bytes(Stream* stream,uint8_t* bytes,int16_t size){
-    return 0;
+    if (stream_writeable(stream)){
+        // TODO finish
+        return 0;
+    }
+    return -1;
+}
+int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
+
+    if (stream_readable(stream)){
+        uint32_t block_size;
+        uint32_t offset;
+        uint32_t block;
+        uint16_t nblocks;
+        uint32_t to_read;
+        uint16_t i;
+        uint32_t bytes_read;
+
+        if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.inode.size){
+            return 0;
+        }
+        block_size = FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size;
+        offset = FILE_STREAM(stream)->pos % block_size;
+        block = FILE_STREAM(stream)->pos / block_size;
+        nblocks = size / block_size + (size % block_size ? 1 : 0);
+        bytes_read = 0;
+
+        debug("EXT2 - Block:");debug_i(block,10);debug("\n");
+
+        for (i=0;i<nblocks;i++){
+            read_block(
+                FILE_SYSTEM(FILE_STREAM(stream)->fs),
+                INODE(&(FILE_STREAM(stream)->inode)),
+                block + i,
+                FILE_STREAM(stream)->block_buffer,
+                FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size
+            );
+            to_read = min(size, block_size - offset);
+            memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer + offset, to_read);
+            offset = 0;
+            size -= to_read;
+            bytes_read += to_read;
+        }
+        FILE_STREAM(stream)->pos += bytes_read;
+
+        return bytes_read;
+    }
+    return -1;
 }
 uint32_t ext2_stream_pos(Stream* stream){
     return FILE_STREAM(stream)->pos;
@@ -787,4 +809,6 @@ static void release_resources(FileSystem* fs){
             E2FS(fs)->work_inodes[i].in_use = 0;
         }
     }
+}
+void ext2_stream_flush(Stream* stream){
 }

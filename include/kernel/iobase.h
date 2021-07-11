@@ -35,4 +35,6 @@ typedef struct IORequest {
 } IORequest;
 
 
+void    handle_io_request(IORequest* request, uint8_t* data, uint32_t size, uint32_t status);
+
 #endif

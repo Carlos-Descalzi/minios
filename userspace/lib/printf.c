@@ -22,6 +22,8 @@ typedef struct Writer {
     int pos;
 } Writer;
 
+#define min(a,b)                ((a) < (b) ? (a) : (b))
+
 #define writer_putc(w,c)        (w)->putc(w,c)
 #define writer_puts(w,s)        (w)->puts(w,s)
 
@@ -139,12 +141,17 @@ static void parse_format(const char* format, int* pos, char* buffer, Format* tfo
 }
 
 static void print_num(char* buffer, Format* tformat, int radix, int* written, Writer* writer){
+    int l = strlen(buffer);
+    int printable = tformat->digits ? min(tformat->digits,l) : l;
     int n;
     if (tformat->padding){
-        for (n=strlen(buffer);n<tformat->digits;n++){
+        for (n=printable;n<tformat->digits;n++){
             writer_putc(writer, '0');
             (*written)++;
         }
+    }
+    if (l > printable){
+        buffer+=(l-printable);
     }
     written += writer_puts(writer, buffer);
 }

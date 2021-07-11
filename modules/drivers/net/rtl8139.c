@@ -8,6 +8,10 @@
 #include "lib/stdlib.h"
 #include "misc/debug.h"
 #include "kernel/isr.h"
+
+
+#define OPT_GET_HWADDR  0x01
+
 #define BUFFER_SIZE 8192+16+1500
 
 #define REG_RBSTART 0x30
@@ -31,6 +35,16 @@
 #define IMR_TIMOUT  0x4000
 #define IMR_SERR    0x8000
 
+#define IMR_ALL     (IMR_ROK    \
+                    |IMR_RER    \
+                    |IMR_TOK    \
+                    |IMR_TER    \
+                    |IMR_RXOVW  \
+                    |IMR_PLNKCH \
+                    |IMR_FOVW   \
+                    |IMR_TIMOUT \
+                    |IMR_SERR)
+
 #define REG_RCR     0x44
 
 #define RCR_AAP     0x01
@@ -44,10 +58,14 @@
 
 #define REG_ISR     0x3e
 
-#define ISR_ROK     0x01
-#define ISR_RER     0x02
-#define ISR_TOK     0x04
-#define ISR_TER     0x08
+#define ISR_ROK     0x0001
+#define ISR_RER     0x0002
+#define ISR_TOK     0x0004
+#define ISR_TER     0x0008
+#define ISR_RXOVW   0x0010
+#define ISR_FOVW    0x0040
+#define ISR_TIMOUT  0x4000
+#define ISR_SERR    0x8000
 
 #define REG_TX_STAT 0x10
 #define REG_TX_ADDR 0x20
@@ -59,27 +77,29 @@ typedef struct {
 
 typedef struct {
     BlockDevice device;
-    int8_t      device_number;
     uint16_t    iobase;
     uint8_t     irq;
     uint8_t     mac_address[6];
-    uint8_t*    rx_buffer;
+    void*       rx_buffer;
+    uint8_t*    tx_buffer;
+    uint8_t     rx_available;
     Descriptor  descritors[4];
     uint8_t     descritor_index;
+    IORequest*  request;
 } NetDevice;
 
+static int      check_pci       (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
+static int      count_pci       (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
 static uint8_t  count_devices   (DeviceType* device_type);
 static Device*  instantiate     (DeviceType* device_type, uint8_t device_number);
 static void     release         (DeviceType* device_type, Device* device);
-static int      check_pci       (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
-static int      count_pci       (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
+static int16_t  setopt          (Device* device, uint32_t option, void* data);
 static void     get_mac_address (NetDevice* device, uint8_t* address);
 static int16_t  read            (BlockDevice* device, uint8_t* buffer, uint16_t size);
 static int16_t  read_async      (BlockDevice* device, IORequest* request);
 static int16_t  write           (BlockDevice* device, uint8_t* buffer, uint16_t size);
 static void     isr_handler     (InterruptFrame* frame, void* data);
 static void     handle_receive  (NetDevice* device);
-static int16_t  close           (BlockDevice* device);
 static void     seek            (BlockDevice* device, uint32_t pos);
 static void     flush           (BlockDevice* device);
 static uint32_t pos             (BlockDevice* device);
@@ -110,7 +130,7 @@ typedef struct {
 } PCIData;
 
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
-    //PCIHeader pci_header;
+    
     PCIData pci_data;
 
     memset(&pci_data, 0, sizeof(PCIData));
@@ -128,42 +148,55 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
         console_print("Error: No memory for initializing device\n");
         return NULL;
     } 
-    device->device_number = device_number;
-    
-    if (pci_data.header.base.header_type.type == 0){
-        debug("header type 0\n");
-        device->iobase = pci_data.header.type00.base_addresses[0] & ~0x0001;
-    } else {
-        debug("header type 1\n");
-        device->iobase = pci_data.header.type01.base_addresses[0] & ~0x0001;
-    }
+    DEVICE(device)->type = DEVICE_TYPE_BLOCK;
+    DEVICE(device)->kind = NET;
+    DEVICE(device)->async = 1;
+    DEVICE(device)->setopt = setopt;
+    BLOCK_DEVICE(device)->randomaccess = 1;
+    BLOCK_DEVICE(device)->read = read;
+    BLOCK_DEVICE(device)->read_async = read_async;
+    BLOCK_DEVICE(device)->write = write;
+    BLOCK_DEVICE(device)->seek = seek;
+    BLOCK_DEVICE(device)->flush = flush;
+    BLOCK_DEVICE(device)->pos = pos;
+
+    device->descritor_index = 0;
+    device->iobase = pci_data.header.type00.base_addresses[0] & ~0x0003;
     device->rx_buffer = heap_alloc(BUFFER_SIZE);
-    
+    memset(device->rx_buffer,0, BUFFER_SIZE);
+    device->tx_buffer = heap_alloc(BUFFER_SIZE);
+    device->rx_available = 0;
+
     debug("RTL8139 ethernet controller initialized, IOBase: ");
     debug_i(device->iobase,16);
     debug(",");debug("IRQ:");debug_i(pci_data.header.type00.interrupt_line,10);
     debug(",");debug("IRQ Pin:");debug_i(pci_data.header.type00.interrupt_pin,10);
     debug("\n");
 
-    uint32_t irq = pci_config_read_dw(pci_data.bus, pci_data.device, pci_data.func, 0x3c);
+    uint32_t irq = pci_config_read_dw(pci_data.bus, pci_data.device, pci_data.func, PCI_INTERRUPT_LINE);
     if (irq != 0xFFFFFFFF){
         device->irq = irq & 0xFF;
-        debug("IRQ:");debug_i(device->irq,16);debug("\n");
+        debug("\tIRQ:");debug_i(device->irq,10);debug("\n");
     }
 
+    uint16_t cmd = pci_config_read_w(pci_data.bus, pci_data.device, pci_data.func, PCI_COMMAND);
+    cmd |= 0x04;
+    pci_config_write_w(pci_data.bus, pci_data.device, pci_data.func, PCI_COMMAND, cmd);
 
-    outb(device->iobase + REG_CONFIG1,0x0); // wake up device.
-    outb(device->iobase + REG_CR, CR_RST);    // reset
+    outb(device->iobase + REG_CONFIG1, 0x0);    // wake up device.
+    outb(device->iobase + REG_CR, CR_RST);      // reset
     while((inb(device->iobase + REG_CR) & CR_RST) != 0);
 
     outdw(device->iobase + REG_RBSTART, (uint32_t)device->rx_buffer); // send rx buffer address
-    outw(device->iobase + REG_IMR, IMR_ROK | IMR_TOK);//IMR_ROK | IMR_TOK); 
-    outdw(device->iobase + REG_RCR, RCR_AAP | RCR_APM | RCR_AM | RCR_AB |RCR_WRAP); 
+    outdw(device->iobase + REG_RCR, RCR_APM | RCR_AM | RCR_AB |RCR_WRAP | (1 <<10)); 
+    outw(device->iobase + REG_IMR, IMR_TIMOUT | IMR_ROK | IMR_TOK | IMR_TER | IMR_RER);//IMR_ROK | IMR_TOK); 
     outb(device->iobase + REG_CR, CR_TE | CR_RE); // enable transmitter and receiver
 
     get_mac_address(device, device->mac_address);
 
-    debug("Mac address:");
+    isr_install(device->irq + PIC_IRQ_BASE , isr_handler, device);
+
+    debug("\tMac address:");
     debug_i(device->mac_address[0],16);debug(":");
     debug_i(device->mac_address[1],16);debug(":");
     debug_i(device->mac_address[2],16);debug(":");
@@ -171,21 +204,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     debug_i(device->mac_address[4],16);debug(":");
     debug_i(device->mac_address[5],16);
     debug("\n");
-    DEVICE(device)->type = DEVICE_TYPE_BLOCK;
-
-    BLOCK_DEVICE(device)->read = read;
-    BLOCK_DEVICE(device)->read_async = read_async;
-    BLOCK_DEVICE(device)->write = write;
-    BLOCK_DEVICE(device)->close = close;
-    BLOCK_DEVICE(device)->seek = seek;
-    BLOCK_DEVICE(device)->flush = flush;
-    BLOCK_DEVICE(device)->pos = pos;
-
-    device->descritor_index = 0;
-
-    DEVICE(device)->async = 1;
-
-    isr_install(irq + PIC_IRQ_BASE , isr_handler, device);
+    pic_enable(device->irq);
     
     return DEVICE(device);
 }
@@ -200,7 +219,18 @@ static void get_mac_address (NetDevice* device, uint8_t* address){
     address[5] = (mac2 >> 8) & 0xFF;
 }
 
+
+static int16_t setopt (Device* device, uint32_t option, void* data){
+    if (option == OPT_GET_HWADDR){
+        memcpy(data, NET_DEVICE(device)->mac_address, 6);
+        return 0;
+    }
+    return -1;
+}
+
 static void release(DeviceType* device_type, Device* device){
+    isr_install(NET_DEVICE(device)->irq + PIC_IRQ_BASE, NULL, NULL);
+    heap_free(NET_DEVICE(device)->rx_buffer);
     heap_free(device);
 }
 
@@ -218,6 +248,7 @@ static int count_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header,
     }
     return 0;
 }
+
 static int check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data){
     if (valid_pci_dev(header)){
         PCIData* pci_data = data;
@@ -229,21 +260,25 @@ static int check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header,
     }
     return 0;
 }
+
 static int16_t read_async(BlockDevice* device, IORequest* request){
+    NET_DEVICE(device)->request = request;
     return 0;
 }
+
 static int16_t write (BlockDevice* device, uint8_t* buffer, uint16_t size){
 
-    debug("RTL8139 - Write\n");
     int index = NET_DEVICE(device)->descritor_index;
 
-    NET_DEVICE(device)->descritors[index].start = (uint32_t) buffer;
+    memcpy(NET_DEVICE(device)->tx_buffer, buffer, size);
+
+    NET_DEVICE(device)->descritors[index].start = (uint32_t) NET_DEVICE(device)->tx_buffer;
     NET_DEVICE(device)->descritors[index].status = size;
 
     outdw(NET_DEVICE(
         device)->iobase + 
         REG_TX_ADDR + index * 4,
-        (uint32_t) buffer
+        (uint32_t) NET_DEVICE(device)->tx_buffer
     );
 
     outdw(NET_DEVICE(
@@ -254,41 +289,106 @@ static int16_t write (BlockDevice* device, uint8_t* buffer, uint16_t size){
 
     NET_DEVICE(device)->descritor_index++;
 
+    if (NET_DEVICE(device)->descritor_index > 3){
+        NET_DEVICE(device)->descritor_index = 0;
+    }
+
     return 0;
 }
+
+static void clear_flagw(NetDevice* device, int reg, uint16_t flag){
+    outw(device->iobase + reg, flag);
+}
+
 static void isr_handler(InterruptFrame* frame, void* data){
     uint16_t status = inw(NET_DEVICE(data)->iobase + REG_ISR);
 
-    debug("RTL interrupt\n");
-
     if (status & ISR_TOK){
         debug("Packet sent\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_TOK);
     }
     if (status & ISR_ROK){
         debug("Packet received\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_ROK);
         handle_receive(NET_DEVICE(data));
     }
     if (status & ISR_TER){
         debug("Transmit error\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_TER);
     }
     if (status & ISR_RER){
         debug("Receive error\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_RER);
+    }
+    if (status & ISR_RXOVW){
+        debug("RX overflow\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_RXOVW);
+    }
+    if (status & ISR_TIMOUT){
+        debug("Timeout\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_TIMOUT);
+    }
+    if (status & ISR_SERR){
+        debug("Error\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_SERR);
+    }
+    if (status & ISR_FOVW){
+        debug("Fifo overflow\n");
+        clear_flagw(NET_DEVICE(data), REG_ISR, ISR_FOVW);
+    }
+    pic_eoi2();
+    pic_eoi1();
+}
+
+typedef struct {
+    uint16_t header;
+    uint16_t length;
+    uint8_t data[];
+} ReceivedPacket;
+
+#define htons(v)    ((v >> 8) | ((v & 0xFF)<<8))
+
+static void handle_receive(NetDevice* device){
+    IORequest* request = device->request;
+
+    ReceivedPacket* packet = device->rx_buffer;
+
+    if (request){
+        device->request = NULL;
+
+        handle_io_request(
+            request, 
+            packet->data,
+            packet->length, 
+            TASK_IO_REQUEST_DONE);
+
+    } else {
+        debug("Received unhandled packet\n");
+        device->rx_available = 1;
     }
 
 }
-static void handle_receive(NetDevice* device){
-}
-static int16_t close(BlockDevice* device){
-    isr_install(NET_DEVICE(device)->irq + PIC_IRQ_BASE, NULL, NULL);
-    heap_free(NET_DEVICE(device)->rx_buffer);
-    heap_free(device);
-    return 0;
-}
-static void seek(BlockDevice* device, uint32_t pos){}
-static void flush(BlockDevice* device){}
-static uint32_t pos (BlockDevice* device){
-    return 0;
-}
+
 static int16_t read (BlockDevice* device, uint8_t* buffer, uint16_t size){
-    return 0;
+
+    if (NET_DEVICE(device)->rx_available){
+
+        ReceivedPacket* packet = NET_DEVICE(device)->rx_buffer;
+
+        int to_read = min(packet->length, size);
+
+        memcpy(buffer, packet->data, to_read);
+
+        NET_DEVICE(device)->rx_available = 0;
+
+        return to_read;
+    }
+
+    return -1;
 }
+
+static void seek(BlockDevice* device, uint32_t pos){}
+
+static void flush(BlockDevice* device){}
+
+static uint32_t pos (BlockDevice* device){ return 0; }

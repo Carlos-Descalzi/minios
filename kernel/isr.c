@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/isr.h"
 #include "misc/debug.h"
 #include "lib/string.h"
@@ -90,9 +90,9 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
         );
         //debug(">>>>");debug_i(frame->cr3 & 3,16);debug("\n");
         tasks_update_current(frame);
-    } else {
-        debug("Interrupt in kernel space:");debug_i(isr_num,16);debug("\n");
-    }
+    } //else {
+       // debug("Interrupt in kernel space:");debug_i(isr_num,16);debug("\n");
+    //}
     sti();
 
     isr_handlers[isr_num].isr(frame, isr_handlers[isr_num].callback_data);
@@ -108,9 +108,9 @@ static void handle_isr(uint32_t isr_num, InterruptFrame* frame){
             "\tmov %%ax, %%gs\n"
             ::"Nd"(frame->cr3)
         );
-    } else {
-        debug("Exit from interrupt in kernel space\n");
-    }
+    }// else {
+      //  debug("Exit from interrupt in kernel space\n");
+    //}
     sti();
 }
 

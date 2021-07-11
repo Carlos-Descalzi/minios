@@ -73,7 +73,7 @@ struct FileSystem {
     int32_t     (*get_direntry)         (struct FileSystem*, Inode*, uint32_t*, DirEntry*);
     Inode*      (*alloc_inode)          (struct FileSystem*);
     void        (*free_inode)           (struct FileSystem*, Inode*);
-    Stream*     (*stream_open)          (struct FileSystem*, const char*, uint8_t);
+    Stream*     (*stream_open)          (struct FileSystem*, const char*, uint32_t);
     void        (*release_resources)    (struct FileSystem*);
 
 };

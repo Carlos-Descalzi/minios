@@ -89,7 +89,7 @@ static void load_program(FileSystem* fs, const char* path){
     console_print(path);
     console_print("\n");
     
-    Stream* stream = fs_file_stream_open(fs, path,0);
+    Stream* stream = fs_file_stream_open(fs, path, O_RDONLY);
     
     uint32_t task_id = tasks_new(
         stream,
@@ -107,7 +107,6 @@ static void start_init(void){
     Device* device;
     uint32_t task_id;
 
-    console_print("Loading program /init.elf ...\n");
     device = device_find(DISK, 0);
     if (!device){
         console_print("Device not found\n");
@@ -135,6 +134,7 @@ static void load_modules(void){
             modules_load(fs, "/modules/sys.elf");
             modules_load(fs, "/modules/sysfs.elf");
             modules_load(fs, "/modules/rtl8139.elf");
+            modules_load(fs, "/modules/ethfs.elf");
             debug("Modules loaded\n");
         } else {
             debug("No fs\n");

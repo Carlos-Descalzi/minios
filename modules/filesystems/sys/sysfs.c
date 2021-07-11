@@ -79,6 +79,12 @@ void module_init(){
 }
 
 static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
+    if (!device){
+        return NULL;
+    }
+    if (DEVICE(device)->kind != SYS){
+        return NULL;
+    }
 
     SysFileSystem* fs = heap_alloc(sizeof(SysFileSystem));
 
