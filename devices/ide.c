@@ -121,6 +121,8 @@ static uint8_t  count_devices               (DeviceType* device_type);
 static Device*  instantiate                 (DeviceType* device_type, uint8_t device_number);
 static void     release                     (DeviceType* device_type, Device* device);
 static int      check_pci                   (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* user_data);
+static int16_t  setopt                      (Device* device, uint32_t option, void* data);
+static int16_t  getopt                      (Device* device, uint32_t option, void* data);
 static uint8_t  ide_read_reg                (IDEChannel* channel, uint8_t reg);
 static void     ide_write_reg               (IDEChannel* channel, uint8_t reg, uint8_t data);
 static void     get_controller_info         (PCIHeader* header);
@@ -156,14 +158,21 @@ static uint8_t count_devices(DeviceType* device_type){
 }
 
 static Device* instantiate(DeviceType* device_type, uint8_t device_number){
-    IDEDevice* device = heap_alloc(sizeof(IDEDevice));
+    IDEDevice* device = heap_new(IDEDevice);
     memset(device,0,sizeof(IDEDevice));
+
     memcpy(&(device->drive),&(devices[device_number]),sizeof(IDEDrive));
-    device->device.base.type = DEVICE_TYPE_BLOCK;
-    device->device.read = ide_read;
-    device->device.write = ide_write;
-    device->device.seek = ide_seek;
-    device->device.pos = ide_pos;
+    DEVICE(device)->type = DEVICE_TYPE_BLOCK;
+    DEVICE(device)->kind = DISK;
+    DEVICE(device)->async = 0;
+    DEVICE(device)->mmapped = 0;
+    DEVICE(device)->getopt = getopt;
+    DEVICE(device)->setopt = setopt;
+    BLOCK_DEVICE(device)->read = ide_read;
+    BLOCK_DEVICE(device)->write = ide_write;
+    BLOCK_DEVICE(device)->seek = ide_seek;
+    BLOCK_DEVICE(device)->pos = ide_pos;
+
     return DEVICE(device);
 }
 
@@ -573,6 +582,15 @@ static void ide_seek(BlockDevice* device, uint32_t pos){
     debug("IDE - Ide device seek "); debug_i(pos,10); debug("\n");
     IDE_DEVICE(device)->current_pos = pos;
 }
+
 static uint32_t ide_pos (BlockDevice* device){
     return IDE_DEVICE(device)->current_pos;
+}
+
+static int16_t setopt (Device* device, uint32_t option, void* data){
+    return 0;
+}
+
+static int16_t getopt (Device* device, uint32_t option, void* data){
+    return 0;
 }

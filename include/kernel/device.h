@@ -49,8 +49,15 @@ struct Device{
     uint8_t     kind;
     uint8_t     instance_number;
     uint8_t     async:1,
-                reserved:7;
+                mmapped:1,
+                reserved:6;
     int16_t     (*setopt)           (struct Device*, uint32_t, void*);
+    int16_t     (*getopt)           (struct Device*, uint32_t, void*);
+    /**
+     * If mmapped = 1, this function returns the base physical address for 
+     * adressing this device
+     **/
+    uint32_t    (*base_address)     (struct Device*);
 };
 
 /**
@@ -83,6 +90,8 @@ typedef struct CharDevice {
 #define BLOCK_DEVICE(d)                 ((BlockDevice*)d)
 
 #define device_setopt(d,o,v)            (DEVICE(d)->setopt(DEVICE(d),o,v))
+#define device_getopt(d,o,v)            (DEVICE(d)->getopt(DEVICE(d),o,v))
+#define device_base_address(d)          (DEVICE(d)->base_address(DEVICE(d)))
 
 #define block_device_read(d,b,l)        (BLOCK_DEVICE(d)->read(BLOCK_DEVICE(d),b,l))
 #define block_device_write(d,b,l)       (BLOCK_DEVICE(d)->write(BLOCK_DEVICE(d),b,l))

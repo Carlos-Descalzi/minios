@@ -5,8 +5,7 @@ const char NUMBERS[] = "0123456789ABCDEF";
 
 #define ATON(string,value) { \
     int l;\
-    for (l=0;string[l];l++);\
-    for (;l>=0;l--){\
+    for (l=0;string[l];l++){\
         if (string[l] >='0' && string[l] <='9'){\
             value*=10;\
             value+=(int)string[l] - '0';\

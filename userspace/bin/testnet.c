@@ -5,100 +5,9 @@
 #include "fcntl.h"
 #include "stdint.h"
 #include "string.h"
+#include "net.h"
+#include "netutils.h"
 
-typedef struct __attribute__((__packed__)){
-    uint16_t    hw_type;
-    uint16_t    proto_type;
-    uint8_t     hw_addr_len;
-    uint8_t     proto_addr_len;
-    uint16_t    opcode;
-    uint8_t     sender_hw_address[6];
-    uint8_t     sender_proto_addr[4];
-    uint8_t     target_hw_address[6];
-    uint16_t    target_proto_addr[4];
-} Arp;
-
-typedef struct __attribute__((__packed__)){
-    uint8_t     version;
-    uint8_t     service_type;
-    uint16_t    total_len;
-    uint16_t    identifier;
-    uint16_t    flags:3,
-                fragment_offset:13;
-    uint8_t     ttl;
-    uint8_t     protocol;
-    uint16_t    checksum;
-    uint8_t     source_address[4];
-    uint8_t     target_address[4];
-} Ipv4;
-
-typedef struct __attribute__((__packed__)){
-    uint16_t    source_port;
-    uint16_t    target_port;
-    uint16_t    length;
-    uint16_t    checksum;
-} Udp;
-
-typedef struct __attribute__((__packed__)){
-    uint8_t     op_code;
-    uint8_t     hw_type;
-    uint8_t     hw_addr_len;
-    uint8_t     hops;
-    uint32_t    tx_id;
-    uint16_t    seconds;
-    uint16_t    flags;
-    uint8_t     ciaddr[4];
-    uint8_t     yiaddr[4];
-    uint8_t     siaddr[4];
-    uint8_t     giaddr[4];
-    uint8_t     chaddr[16];
-    uint8_t     bootp[192];
-    uint32_t    cookie;
-} Dhcp;
-
-typedef struct {
-    uint16_t ether_type;
-    Arp arp;
-} ArpPacket;
-
-typedef struct {
-    uint16_t ether_type;
-    Ipv4 ipv4;
-    Udp udp;
-    char payload[];
-} Ipv4Packet;
-
-typedef union {
-    uint16_t ether_type;
-    ArpPacket arp_packet;
-    Ipv4Packet ipv4_packet;
-} EthFrame;
-
-typedef struct {
-    uint16_t ether_type;
-    Ipv4 ipv4_header;
-    Udp udp_header;
-    Dhcp dhcp;
-} DhcpPacket;
-
-#define htons2(v)    (((v & 0xFF00) >> 8) | ((v & 0xFF)<<8))
-
-#define ETHER_TYPE_ARP  0x0806
-#define ETHER_TYPE_IP   0x0800
-
-#define IPV4_TYPE_UDP   0x11
-
-#define DHCP_PACKET_LEN (sizeof(Ipv4)+sizeof(Udp)+sizeof(Dhcp))
-
-static uint16_t calc_ipv4_checmsum(void* header, int len){
-    uint32_t checksum = 0;
-
-    for (int i=0;i<len/2;i++){
-        checksum += ((uint16_t*)header)[i];
-    }
-    checksum += checksum >> 16;
-    return ~checksum & 0xFFFF;
-}
 
 static void read_mac(char* mac){
     int fd = open("net0:/self",O_RDONLY);
@@ -111,11 +20,6 @@ static void read_mac(char* mac){
     }
     printf("\n");
 }
-
-#define ARP_REQUEST         0x0001
-#define ARP_REPLY           0x0002
-#define ARP_HW_ETH          0x0001
-#define ARP_PROTO_TYPE_IPV4 0x0800
 
 static void make_arp_announcement(char* source_mac, char* ip, int fd){
     ArpPacket arp;
@@ -210,20 +114,20 @@ static void send_udp_message(int fd){
 
     packet->ipv4.version = 0x45;
     packet->ipv4.service_type = 0x0;
-    packet->ipv4.total_len = htons2(sizeof(Ipv4) + sizeof(Udp) + strlen(message) +1);
+    packet->ipv4.total_len = htons2(sizeof(Ipv4Header) + sizeof(UdpHeader) + strlen(message) +1);
     packet->ipv4.ttl = 10;
     packet->ipv4.flags = 0;
     packet->ipv4.fragment_offset = 0;
     packet->ipv4.protocol = IPV4_TYPE_UDP;
     memcpy(packet->ipv4.source_address, ip_addr, 4);
     memcpy(packet->ipv4.target_address, dest_ip, 4);
-    packet->ipv4.checksum = calc_ipv4_checmsum(&(packet->ipv4), sizeof(Ipv4));
+    packet->ipv4.checksum = ipv4_checmsum(&(packet->ipv4), sizeof(Ipv4Header));
 
     packet->udp.source_port = htons2(1025);
     packet->udp.target_port = htons2(8888);
-    packet->udp.length = htons2(sizeof(Udp) + strlen(message) +1);
+    packet->udp.length = htons2(sizeof(UdpHeader) + strlen(message) +1);
     strcpy(packet->payload,message);
-    packet->udp.checksum = calc_ipv4_checmsum(&(packet->udp), sizeof(Udp) + strlen(message)+1);
+    packet->udp.checksum = ipv4_checmsum(&(packet->udp), sizeof(UdpHeader) + strlen(message)+1);
 
     write(fd, packet, sizeof(Ipv4Packet) + strlen(message) + 1);
 }

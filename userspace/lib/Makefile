@@ -12,7 +12,9 @@ OBJS=stdlib.o 	\
 	 spawn.o	\
 	 dirent.o	\
 	 path.o		\
-	 msg.o
+	 msg.o		\
+	 netutils.o	\
+	 malloc.o
 
 all: minios.a
 

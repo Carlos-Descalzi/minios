@@ -56,10 +56,14 @@ size_t fread (void *buff, size_t size, size_t nmemb, FILE* stream){
 char* fgets(char* buff, int size, FILE* stream){
     int i;
     char c;
-    for (i=0;i<size-1;i++){
+    for (i=0;i<size-1;){
         read(stream->fd,&c,1);
-        if (c != '\n'){
-            buff[i] = c;
+        if (c == '\b'){
+            if (i > 0){
+                i--;
+            }
+        } else if (c != '\n'){
+            buff[i++] = c;
         } else {
             break;
         }

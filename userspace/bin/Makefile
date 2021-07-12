@@ -7,7 +7,8 @@ BINS=init.elf 		\
 	 cat.elf		\
 	 testserver.elf	\
 	 sendmsg.elf	\
-	 testnet.elf
+	 testnet.elf	\
+	 test.elf
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/minios.a

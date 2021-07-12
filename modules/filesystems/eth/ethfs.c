@@ -240,8 +240,6 @@ static int32_t load_inode (FileSystem* fs, uint32_t inodenum, Inode* inode){
     return 0;
 }
 
-
-
 static Stream* open_stream(FileSystem* fs, const char* path, uint32_t flags){
 
     uint32_t inodenum = find_inode(fs, path);
@@ -358,14 +356,12 @@ static void request_callback(IORequest* request, void* data){
         if (valid_dst_mac(ETHSTREAM(data), frame)){
             ETHSTREAM(data)->user_io_request = NULL;
 
-            debug("\t**1");
             handle_io_request(
                 user_io_request,
                 frame->payload,
                 request->dsize - 12,
                 TASK_IO_REQUEST_DONE
             );
-            debug("\trequest handled\n");
 
         } else {
             debug("Not a valid packet\n");

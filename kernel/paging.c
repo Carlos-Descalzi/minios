@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -8,7 +8,11 @@
 #include "bin/elf.h"
 /**
  * Paging
- * https://www.scs.stanford.edu/05au-cs240c/lab/i386/s05_02.htm
+ * reference: https://www.scs.stanford.edu/05au-cs240c/lab/i386/s05_02.htm
+ *
+ *
+ * Yeah this implementation of paging and memory management I made sucks, I know.
+ *
  **/
 
 // Use the available RAM region of ~30kb which is behind boot sector,
@@ -393,15 +397,19 @@ static void handle_page_fault(InterruptFrame *frame, void* data){
     debug("PAGING - Page fault\n");
     debug("PAGING - \tCR2:");          debug_i(frame->cr2,16);debug("\n");
     debug("PAGING - \tCR3:");          debug_i(frame->cr3,16);debug("\n");
-    asm volatile("hlt");
 
     set_exchange_page(frame->cr3);
     VirtualAddress address = {.address = frame->cr2};
 
     if (!local_page_dir[address.page_dir_index].present){
-        debug("PAGING - \tPage table not present ");
-        debug_i(address.page_dir_index,16);
-        debug("\n");
+        debug("PAGING - \tPage table not present "); debug_i(address.page_dir_index,16); debug("\n");
+
+        local_page_dir[address.page_dir_index].page_table_address = memory_alloc_block() >> 12;
+        local_page_dir[address.page_dir_index].user_supervisor = 1;
+        local_page_dir[address.page_dir_index].read_write = 1;
+        local_page_dir[address.page_dir_index].present = 1;
+        paging_invalidate_cache();
+        debug("PAGING - \tAllocated page directory\n");
     } else {
         set_exchange_page(local_page_dir[address.page_dir_index].page_table_address << 12);
 
@@ -411,11 +419,13 @@ static void handle_page_fault(InterruptFrame *frame, void* data){
             debug(":");
             debug_i(address.page_index,16);
             debug("\n");
+
             local_table[address.page_index].physical_page_address = memory_alloc_block() >> 12;
             local_table[address.page_index].user_supervisor = 1;
             local_table[address.page_index].read_write = 1;
             local_table[address.page_index].present = 1;
             paging_invalidate_cache();
+            debug("PAGING - \tAllocated page\n");
         } else {
             debug("PAGING - \tPage present ");
             debug_i(address.page_dir_index,16);
