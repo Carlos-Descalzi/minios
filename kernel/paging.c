@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -431,8 +431,8 @@ static void handle_page_fault(InterruptFrame *frame, void* data){
             debug_i(address.page_dir_index,16);
             debug(":");
             debug_i(address.page_index,16);
-            debug(",");
-            debug_i(local_table[address.page_index].physical_page_address,16);
+            debug("\nPAGING - \tPhysical address:");
+            debug_i(local_table[address.page_index].physical_page_address << 12,16);
             debug(",");
             debug_i(local_table[address.page_index].user_supervisor,10);
             debug(",");
@@ -506,4 +506,85 @@ void paging_write_env(PageDirectoryEntry* dir,
             task_params_copy_with_offset(env, local_ptr + PAGE_SIZE / 2, offset);
         }
     }
+}
+
+uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, uint32_t length){
+
+    uint32_t pages = length / PAGE_SIZE + (length % PAGE_SIZE ? 1 : 0);
+
+    int pd_start = -1;
+    int p_start = 0;
+    int allocated = 0;
+
+    for (int i=0;i < PAGES_MAX && allocated < pages; i++){
+
+        set_exchange_page(page_dir);
+
+        if (!local_page_dir[i].present){
+            local_page_dir[i].page_table_address = memory_alloc_block() >> 12;
+            local_page_dir[i].page_size = 0;
+            local_page_dir[i].read_write = 1;
+            local_page_dir[i].user_supervisor = 1;
+            local_page_dir[i].present = 1;
+        } else if (local_page_dir[i].user_supervisor){
+
+            uint32_t page_table_address = local_page_dir[i].page_table_address << 12;
+
+            for (int j=0;j < PAGES_MAX && allocated < pages; j++){
+                set_exchange_page(page_table_address);
+
+                if (!local_table[j].present){
+                    if (pd_start == -1){
+                        pd_start = i;
+                    }
+                    if (p_start == -1){
+                        p_start = j;
+                    } 
+                    allocated++;
+                    
+                } else {
+                    // already in use, discard all
+                    pd_start = -1;
+                    p_start = -1;
+                    allocated = 0;
+                }
+            }
+        }
+    }
+
+    if (pd_start != -1 && p_start != -1){
+
+        uint32_t virtual_address = mkvaddr(pd_start, p_start, 0);
+        uint32_t page_address = address >> 12;
+
+        for (int i=0;i<pages;i++){
+            set_exchange_page(page_dir);
+
+            local_page_dir[pd_start].read_write = 1;
+            local_page_dir[pd_start].accessed = 1;
+
+            uint32_t pt_address = local_page_dir[pd_start].page_table_address << 12;
+
+            set_exchange_page(pt_address);
+
+            local_table[p_start].physical_page_address = page_address;
+            local_table[p_start].present = 1;
+            local_table[p_start].read_write = 1;
+            local_table[p_start].user_supervisor = 1;
+            local_table[p_start].cache_disabled = 1;
+            local_table[p_start].accessed = 1;
+
+            p_start++;
+            page_address+=1;
+
+            if (p_start >= PAGES_MAX){
+                pd_start++;
+                p_start = 0;
+            }
+        }
+        paging_invalidate_cache();
+
+        return virtual_address;
+    }
+    return 0;
 }

@@ -19,16 +19,19 @@ static void syscall_debug(InterruptFrame* f);
 void syscall_init(){
     memset(syscalls,0,sizeof(syscalls));
     
-    syscalls[0] = syscall_read;
-    syscalls[1] = syscall_write;
-    syscalls[2] = syscall_open;
-    syscalls[3] = syscall_close;
-    syscalls[4] = syscall_exec;
-    syscalls[5] = syscall_yield;
-    syscalls[6] = syscall_getpid;
+    syscalls[0x00] = syscall_read;
+    syscalls[0x01] = syscall_write;
+    syscalls[0x02] = syscall_open;
+    syscalls[0x03] = syscall_close;
+    syscalls[0x04] = syscall_exec;
+    syscalls[0x05] = syscall_yield;
+    syscalls[0x06] = syscall_getpid;
+
+    syscalls[0x09] = syscall_mmap;
+    syscalls[0x10] = syscall_ioctl;
     // ....
-    syscalls[77] = syscall_stat;
-    syscalls[78] = syscall_getdents;
+    syscalls[0x4d] = syscall_stat;
+    syscalls[0x4e] = syscall_getdents;
     // ....
     syscalls[0x60] = syscall_msg_send_sync;
     syscalls[0x61] = syscall_msg_recv_sync;

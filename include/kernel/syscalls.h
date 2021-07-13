@@ -22,5 +22,7 @@ void syscall_msg_recv_sync  (InterruptFrame* f);
 void syscall_msg_answer     (InterruptFrame* f);
 void syscall_msg_recv_wait  (InterruptFrame* f);
 void syscall_msg_answer     (InterruptFrame* f);
+void syscall_ioctl          (InterruptFrame* f);
+void syscall_mmap           (InterruptFrame* f);
 
 #endif

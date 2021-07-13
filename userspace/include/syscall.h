@@ -9,6 +9,10 @@
 #define SYS_YIELD   0x05
 #define SYS_GETPID  0x06
 
+#define SYS_MMAP    0x09
+
+#define SYS_IOCTL   0x10
+
 #define SYS_STAT    0x4D
 #define SYS_GETDENT 0x4E
 

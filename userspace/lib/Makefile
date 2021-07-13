@@ -14,7 +14,9 @@ OBJS=stdlib.o 	\
 	 path.o		\
 	 msg.o		\
 	 netutils.o	\
-	 malloc.o
+	 malloc.o	\
+	 mmap.o		\
+	 ioctl.o
 
 all: minios.a
 

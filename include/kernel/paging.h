@@ -96,4 +96,12 @@ void                paging_invalidate_cache     (void);
             
 uint32_t            current_page_dir            (void);
 
+/**
+ * Maps a physical address + length into pages of a page directory
+ * Returns the virtual address
+ **/
+uint32_t            paging_map_to_task          (PageDirectoryEntry* page_dir, 
+                                                uint32_t address, 
+                                                uint32_t length);
+
 #endif

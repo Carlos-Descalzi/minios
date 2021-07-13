@@ -7,6 +7,18 @@
 #include "lib/stdlib.h"
 #include "kernel/iobase.h"
 
+
+/**
+ * These correspond with fs file types
+ **/
+#define STREAM_TYPE_FIFO        0x1
+#define STREAM_TYPE_CHARDEV     0x2
+#define STREAM_TYPE_DIRECTORY   0x4
+#define STREAM_TYPE_BLOCKDEV    0x6
+#define STREAM_TYPE_FILE        0x8
+#define STREAM_TYPE_SYMLINK     0xa
+#define STREAM_TYPE_SOCKET      0xc
+
 #define O_RDONLY        0x01
 #define O_WRONLY        0x02
 #define O_RDWR          0x03
@@ -24,6 +36,8 @@
 #define EIO             -16  // io error
 
 typedef struct Stream {
+
+    uint8_t     type;
 
     uint8_t     async:1,
                 nonblocking:1,
