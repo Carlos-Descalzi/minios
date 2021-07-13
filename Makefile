@@ -23,17 +23,18 @@ QEMU_ARGS=         \
 	-vga std 	   \
 	-m 128M		   \
 	-no-acpi	   \
-	-netdev tap,id=n0 \
-	-device rtl8139,netdev=n0,mac=32:2f:67:52:ab:bd \
+	-vga std	   \
+	-display gtk   \
 	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,pcall,guest_errors,nochain \
 	-D trace.log
-	#-netdev bridge,br=br0,id=n0 \
-	#-netdev socket,id=n0,listen=:1235 
-	#-netdev user,id=n0,net=192.168.101.0/8,dhcpstart=192.168.101.5 \
-	#-netdev tap,id=n0,helper=/usr/lib/qemu/qemu-bridge-helper \
-	#-netdev user,id=n0,net=192.168.76.0/8,dhcpstart=192.168.76.3 
+
 QEMU_TEST_ARGS=    \
 	-serial mon:stdio
+
+QEMU_NET_ARGS=	   \
+	-netdev tap,id=n0 \
+	-device rtl8139,netdev=n0,mac=32:2f:67:52:ab:bd 
+
 QEMU_DEBUG_ARGS=   \
 	-monitor stdio \
 	-serial file:minios.log \
@@ -45,6 +46,9 @@ all: $(IMAGE)
 
 test:
 	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) -hda ./$(IMAGE)
+
+testnet:
+	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) $(QEMU_NET_ARGS) -hda ./$(IMAGE)
 
 debug:
 	$(QEMU) $(QEMU_ARGS) $(QEMU_DEBUG_ARGS) -hda ./$(IMAGE)

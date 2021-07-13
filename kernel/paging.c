@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -508,7 +508,7 @@ void paging_write_env(PageDirectoryEntry* dir,
     }
 }
 
-uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, uint32_t length){
+uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, uint32_t length, uint8_t user){
 
     uint32_t pages = length / PAGE_SIZE + (length % PAGE_SIZE ? 1 : 0);
 
@@ -524,9 +524,9 @@ uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, ui
             local_page_dir[i].page_table_address = memory_alloc_block() >> 12;
             local_page_dir[i].page_size = 0;
             local_page_dir[i].read_write = 1;
-            local_page_dir[i].user_supervisor = 1;
+            local_page_dir[i].user_supervisor = user;
             local_page_dir[i].present = 1;
-        } else if (local_page_dir[i].user_supervisor){
+        } else if (!user || local_page_dir[i].user_supervisor){
 
             uint32_t page_table_address = local_page_dir[i].page_table_address << 12;
 
@@ -568,9 +568,11 @@ uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, ui
             set_exchange_page(pt_address);
 
             local_table[p_start].physical_page_address = page_address;
+            debug("page ");debug_i(pd_start,16);debug_i(p_start,16);debug(":");
+            debug_i(page_address<<12,16);debug("\n");
             local_table[p_start].present = 1;
             local_table[p_start].read_write = 1;
-            local_table[p_start].user_supervisor = 1;
+            local_table[p_start].user_supervisor = user;
             local_table[p_start].cache_disabled = 1;
             local_table[p_start].accessed = 1;
 
@@ -586,5 +588,6 @@ uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, ui
 
         return virtual_address;
     }
+    debug("UNABLE TO MAP\n");
     return 0;
 }

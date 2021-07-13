@@ -38,7 +38,7 @@ typedef struct {
     uint16_t* screen_address; 
     KeyboardStatus keyboard_status;
     ConsoleStatus console_status;
-    Cursor pos;
+    //Cursor pos;
     Cursor saved_pos;
     uint8_t color;
     uint8_t mode;
@@ -58,6 +58,9 @@ typedef struct {
 #define OPT_CURSOR_ON                   1
 #define OP_TCURSOR_OFF                  2
 #define OPT_CURSOR_POS                  3
+#define SCREEN_OPT_POS                  5
+#define SCREEN_OPT_CLEAR                6
+#define SCREEN_OPT_SCROLL               7
 
 #define CONSOLE_DEVICE(d)               ((ConsoleDevice*)d)
 
@@ -84,10 +87,11 @@ static void     backspace               (ConsoleDevice* screen);
 static void     tab                     (ConsoleDevice* screen);
 static void     newline                 (ConsoleDevice* screen);
 static void     clear_buff              (ConsoleDevice* screen);
-static void     update_cursor           (ConsoleDevice* console);
 static void     clear_screen            (ConsoleDevice* console);
 static void     fb_write                (ConsoleDevice* screen, uint8_t chr);
 static void     adjust_view_to_pos      (ConsoleDevice* console);
+static void     get_pos                 (ConsoleDevice* device, int *x, int *y);
+static void     set_pos                 (ConsoleDevice* device, int x, int y);
 
 static DeviceType DEVICE_TYPE;
 
@@ -138,7 +142,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
 
     device->screen = screen;
     device->keyboard = keyboard;
-    device->screen_address = (uint16_t*) device_base_address(screen);
 
     device_setopt(device->screen, OPT_CURSOR_ON, NULL);
 
@@ -148,8 +151,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->keyboard_status.byte = 0;
     device->console_status.byte = 1;
     device->mode = MODE_TEXT;
-    device->pos.x = 0;
-    device->pos.y = 0;
     device->saved_pos.x = 0;
     device->saved_pos.y = 0;
     device->color = 15;
@@ -362,6 +363,8 @@ uint8_t handle_escape_char(ConsoleDevice* device, uint8_t chr){
 }
 static void move_cursor_up(ConsoleDevice* console){
     uint8_t dy;
+    int x, y;
+    get_pos(console, &x, &y);
 
     if (strlen(console->escape_buff)){
         dy = atoi(console->escape_buff);
@@ -369,17 +372,19 @@ static void move_cursor_up(ConsoleDevice* console){
         dy = 1;
     }
 
-    if (dy > console->pos.y){
-        console->pos.y = 0;
+    if (dy > y){
+        y = 0;
     } else {
-        console->pos.y-=dy;
+        y-=dy;
     }
+    set_pos(console, x, y);
 
-    update_cursor(console);
 }
 
 static void move_cursor_dn(ConsoleDevice* console){
     uint8_t dy;
+    int x, y;
+    get_pos(console, &x, &y);
 
     if (strlen(console->escape_buff)){
         dy = atoi(console->escape_buff);
@@ -387,89 +392,124 @@ static void move_cursor_dn(ConsoleDevice* console){
         dy = 1;
     }
 
-    console->pos.y+=dy;
+    y+=dy;
 
-    if (console->pos.y > 24){
-        console->pos.y = 24;
+    if (y > 24){
+        y = 24;
     }
+    set_pos(console, x, y);
 
-    update_cursor(console);
 }
 
 static void move_cursor_right(ConsoleDevice* console){
     uint8_t dx;
+    int x, y;
+    get_pos(console, &x, &y);
 
     dx = atoi(console->escape_buff+1);
 
-    console->pos.x+=dx;
-    if (console->pos.x > 79){
-        console->pos.x = 79;
+    x+=dx;
+    if (x > 79){
+        x = 79;
     }
-    update_cursor(console);
+    set_pos(console, x, y);
 }
 
 static void move_cursor_left(ConsoleDevice* console){
     uint8_t dx;
+    int x, y;
+    get_pos(console, &x, &y);
 
     dx = atoi(console->escape_buff+1);
 
-    if (dx < console->pos.x){
-        console->pos.x = 0;
+    if (dx < x){
+        x = 0;
     } else {
-        console->pos.x-= dx;
+        x-= dx;
     }
-    update_cursor(console);
+    set_pos(console, x, y);
 }
 
 static void move_cursor(ConsoleDevice* console){
     char* c;
+    int x, y;
+    get_pos(console, &x, &y);
 
     c = strrchr(console->escape_buff,';');
     if (c){
-        console->pos.x = atoi(c+1);
+        x = atoi(c+1);
         *c = '\0';
-        console->pos.y = atoi(console->escape_buff+1);
-        update_cursor(console);
+        y = atoi(console->escape_buff+1);
     }
+    set_pos(console, x, y);
 }
 
 static void tab(ConsoleDevice* console){
 
-    uint8_t new_x = console->pos.x / 8 + 8;
-    if (new_x <= console->pos.x){new_x+=8;}
+    int x, y;
+    get_pos(console, &x, &y);
 
-    console->pos.x = new_x;
-    update_cursor(console);
+    uint8_t new_x = x / 8 + 8;
+    if (new_x <= x){new_x+=8;}
+
+    set_pos(console, x, y);
+}
+
+static void get_pos(ConsoleDevice* device, int *x, int *y){
+    uint32_t pos;
+    device_getopt(device->screen, SCREEN_OPT_POS, &pos);
+    *x = pos % 80;
+    *y = pos / 80;
+}
+
+static void set_pos(ConsoleDevice* device, int x, int y){
+    uint32_t pos = x + y * 80;
+    device_setopt(device->screen, SCREEN_OPT_POS, (void*)pos);
 }
 
 static void backspace(ConsoleDevice* console){
 
-    if (console->pos.x > 0){
-        console->pos.x--;
+    int x, y;
+    get_pos(console, &x, &y);
+
+    if (x > 0){
+        x--;
+        set_pos(console, x ,y);
         fb_write(console, ' ');
-        console->pos.x--;
-        update_cursor(console);
+        x--;
+        set_pos(console, x ,y);
     }
+
 }
 static void newline(ConsoleDevice* console){
-    console->pos.x = 0;
-    console->pos.y++;
-    adjust_view_to_pos(console);
-    update_cursor(console);
-}
 
-static void update_cursor(ConsoleDevice* console){
-    device_setopt(console->screen, OPT_CURSOR_POS, &(console->pos));
+    int x, y;
+    get_pos(console, &x, &y);
+
+    x = 0;
+    y += 1;
+
+    if (y > 24){
+        y = 24;
+        adjust_view_to_pos(console);
+    }
+
+    set_pos(console, x ,y);
 }
 
 static void save_cursor(ConsoleDevice* console){
-    console->saved_pos = console->pos;
-    update_cursor(console);
+    uint32_t pos;
+
+    device_getopt(console->screen, SCREEN_OPT_POS, &pos);
+
+    console->saved_pos.x = pos / 80;
+    console->saved_pos.y = pos % 80;
 }
 
 static void restore_cursor(ConsoleDevice* console){
-    console->pos = console->saved_pos;
-    update_cursor(console);
+    //console->pos = console->saved_pos;
+    uint32_t pos = console->saved_pos.x + console->saved_pos.y * 80;
+    device_setopt(console->screen, SCREEN_OPT_POS, (void*)pos);
 }
 
 static void set_color(ConsoleDevice* screen){
@@ -501,42 +541,36 @@ static inline void clear_buff(ConsoleDevice* screen){
 }
 static void clear_screen (ConsoleDevice* console){
     int screen_size = console->width * console->height;
-    for (int i=0;i<screen_size;i++){
-        console->screen_address[i] = console->color << 8;
-    }
-    console->pos.x = 0;
-    console->pos.y = 0;
-    update_cursor(console);
+
+    device_setopt(console->screen,SCREEN_OPT_CLEAR,NULL);
+    //console->pos.x = 0;
+    //console->pos.y = 0;
 }
 void fb_write (ConsoleDevice* console, uint8_t chr){
 
-    uint16_t pos = console->pos.y * console->width + console->pos.x;
+    //uint16_t pos = console->pos.y * console->width + console->pos.x;
 
-    console->screen_address[pos] = (console->color << 8) | chr;
+    //device_setopt(console->screen, SCREEN_OPT_POS, (void*)pos);
 
-    console->pos.x++;
-    adjust_view_to_pos(console);
-    update_cursor(console);
+    char_device_write(console->screen, console->color);
+    char_device_write(console->screen, chr);
+
+    //console->pos.x++;
+    //device_setopt(console->screen, SCREEN_OPT_POS, (void*)pos);
+    //adjust_view_to_pos(console);
 }
 
 static void adjust_view_to_pos(ConsoleDevice* console){
 
     int screen_size = console->width * console->height;
 
-    if (console->pos.x >= 80){
-        console->pos.x = 0;
-        console->pos.y++;
-    }
+    //if (console->pos.x >= 80){
+    //    console->pos.x = 0;
+    //    console->pos.y++;
+   // }
 
-    if (console->pos.y >= 25){
-        console->pos.y--;
-
-        for (int i=0;i<(screen_size - console->width);i++){
-            console->screen_address[i] = console->screen_address[i+console->width];
-        }
-        for (int i=0;i<console->width;i++){
-            console->screen_address[(screen_size - console->width)+i] = console->color << 8;
-        }
-
-    }
+    //if (console->pos.y >= 25){
+    //    console->pos.y--;
+    device_setopt(console->screen, SCREEN_OPT_SCROLL,NULL);
+   // }
 }

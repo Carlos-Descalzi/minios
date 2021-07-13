@@ -49,7 +49,7 @@ void syscall_mmap(InterruptFrame* f){
 
     debug("device address:");debug_i(address,16);debug("\n");
 
-    uint32_t virtual_address = paging_map_to_task(task->page_directory, address, length);
+    uint32_t virtual_address = paging_map_to_task(task->page_directory, address, length, 1);
 
     if (!virtual_address){
         debug("Unable to map device\n");

@@ -11,10 +11,23 @@ void*   memcpy  (void* dest, const void* src, size_t n){
 
     return dest;
 }
-void* memset  (void* s, int c, size_t size){
-    for (int i=0;i<size;i++){
-        ((char*)s)[i] = c;
-    }
+void* memset (void* s, int c, size_t size){
+    asm volatile(
+            "\tmov %0, %%edi\n"
+            "\tmov %1, %%eax\n"
+            "\tmov %2, %%ecx\n"
+            "\trep stosb\n"::"r"(s),"r"(c),"r"(size)
+    );
+    return s;
+}
+
+void* memsetdw (void* s, uint32_t c, size_t dwords){
+    asm volatile(
+            "\tmov %0, %%edi\n"
+            "\tmov %1, %%eax\n"
+            "\tmov %2, %%ecx\n"
+            "\trep stos\n"::"r"(s),"r"(c),"r"(dwords)
+    );
     return s;
 }
 

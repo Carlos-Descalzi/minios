@@ -102,6 +102,7 @@ uint32_t            current_page_dir            (void);
  **/
 uint32_t            paging_map_to_task          (PageDirectoryEntry* page_dir, 
                                                 uint32_t address, 
-                                                uint32_t length);
+                                                uint32_t length,
+                                                uint8_t user);
 
 #endif
