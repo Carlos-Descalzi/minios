@@ -85,6 +85,7 @@ e2fs.img: userspace modules
 	@sudo cp modules/drivers/keyboard/*.elf tmp/modules
 	@sudo cp modules/drivers/net/*.elf tmp/modules
 	@sudo cp modules/drivers/sys/*.elf tmp/modules
+	@sudo cp modules/drivers/mouse/*.elf tmp/modules
 	@sudo cp modules/filesystems/sys/*.elf tmp/modules
 	@sudo cp modules/filesystems/eth/*.elf tmp/modules
 	@sudo umount tmp

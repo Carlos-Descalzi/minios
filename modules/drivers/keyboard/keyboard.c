@@ -111,7 +111,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     memset(device,0,sizeof(KeyboardDevice));
     DEVICE(device)->type = DEVICE_TYPE_CHAR;
     DEVICE(device)->async = 1;
-    DEVICE(device)->type = DEVICE_TYPE_CHAR;
     DEVICE(device)->setopt = setopt;
     CHAR_DEVICE(device)->read_async = read_async;
     debug("Initiating keyboard driver\n");
@@ -173,10 +172,10 @@ static void read_keyboard(KeyboardDevice* device){
     uint8_t val;
     uint16_t key_code;
 
-    val = ps2_read(0);
+    val = ps2_read(PORT_DATA);
     if (val == SCAN_ALTCODE){
         state |= FLAG_ALTCODE;
-        val = ps2_read(0);
+        val = ps2_read(PORT_DATA);
     }
     if (val & 0x80){
         state |= FLAG_BREAK;

@@ -1,5 +1,5 @@
 include ../Make.defs
-OBJS=stdlib.o 	\
+COREOBJS=stdlib.o 	\
 	 syscall.o 	\
 	 sched.o	\
 	 file.o		\
@@ -18,9 +18,12 @@ OBJS=stdlib.o 	\
 	 mmap.o		\
 	 ioctl.o
 
-all: minios.a
+all: minios.a gfx.a
 
-minios.a: $(OBJS)
-	ar -crs $@ $(OBJS)
+minios.a: $(COREOBJS)
+	ar -crs $@ $(COREOBJS)
+
+gfx.a: gfx.o
+	ar -crs $@ $<
 
 include ../../Make.rules

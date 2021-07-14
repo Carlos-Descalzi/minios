@@ -12,9 +12,12 @@
 #include "board/memory.h"
 
 /**
- * This device is just a wrapper over raw console API.
- * adding basic ANSI terminal support.
- * TODO: Move all this logic to console driver
+ * QEMU - VGA driver.
+ * Disclaimer: I had problems to get text mode coexist with
+ * graphics mode. So is all graphics mode even for text.
+ * To make things worse I had some issues with linear frame buffer,
+ * so for text mode I'm using banked framebuffer.
+ * TODO: fix that crap.
  **/
 
 #define DEVICE_SUBTYPE_SCREEN   1
@@ -38,6 +41,7 @@
 #define VBE_DISPI_INDEX_BPP         0x03
 #define VBE_DISPI_INDEX_ENABLE      0x04
 
+#define VBE_DISPI_INDEX_BANK        0x05
 #define VBE_DISPI_INDEX_VIRT_WIDTH  0x06
 #define VBE_DISPI_INDEX_VIRT_HEIGHT 0x07
 #define VBE_DISPI_INDEX_X_OFFSET    0x08
@@ -48,17 +52,21 @@
 #define VBE_DISPI_LFB_ENABLE        0x40
 #define VBE_DISPI_NOCLEARMEM        0x80
 
-#define MODE_TEXT       0
-#define MODE_GRAPHIC    1
+#define MODE_TEXT                   0
+#define MODE_GRAPHIC                1
 
-#define TEXT_MODE_XRES          640
-#define TEXT_MODE_YRES          400
-#define TEXT_MODE_BPP           4
-#define TEXT_MODE_ROW_WIDTHDW   (TEXT_MODE_XRES / 8)
-#define TEXT_MODE_ROW_WIDTH     (TEXT_MODE_ROW_WIDTHDW * sizeof(uint32_t))
-#define TEXT_MODE_MEM_SIZE      (TEXT_MODE_ROW_WIDTH * TEXT_MODE_YRES)
-#define TEXT_MODE_CHAR_HEIGHT   16
-#define LINESIZE                ( 80 * 16 )
+#define TEXT_MODE_XRES              640
+#define TEXT_MODE_YRES              400
+#define TEXT_MODE_BPP               8
+#define TEXT_MODE_CHAR_WIDTH        8
+#define TEXT_MODE_CHAR_HEIGHT       16
+#define TEXT_MODE_COLS              (TEXT_MODE_XRES / TEXT_MODE_CHAR_WIDTH)
+#define TEXT_MODE_ROWS              (TEXT_MODE_YRES / TEXT_MODE_CHAR_HEIGHT)
+#define TEXT_MODE_SCREEN_SIZE       (TEXT_MODE_XRES * TEXT_MODE_YRES)
+#define TEXT_ROWSIZE                (TEXT_MODE_XRES * TEXT_MODE_CHAR_HEIGHT)
+#define TEXT_MODE_FRAMEBUFFER       ( (uint8_t*) 0xA0000)
+#define TEXT_MODE_BANK_SIZE         65536
+
 
 typedef struct {
     CharDevice device;
@@ -94,13 +102,14 @@ static Device*  instantiate         (DeviceType* device_type, uint8_t device_num
 static void     release             (DeviceType* device_type, Device* device);
 static void     bga_write           (uint16_t index, uint16_t value);
 static uint16_t bga_read            (uint16_t index);
-static void     bga_set_mode        (uint16_t width, uint16_t height, uint8_t bpp);
+static void     bga_set_mode        (uint16_t width, uint16_t height, uint8_t bpp, int linear);
 static void     bga_set_text        (void);
 static void     write_char          (ScreenDevice* device, uint8_t chr);
 static void     flip_cursor         (ScreenDevice* device);
 static void     clear_screen        (ScreenDevice* device);
 static void     do_scroll           (ScreenDevice* device);
 static void     set_mode            (ScreenDevice* device, ModeSetting* mode_setting);
+static void     set_bank            (int bank);
 
 static DeviceType DEVICE_TYPE;
 
@@ -152,13 +161,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
 
     device->buff_index = 0;
     device->pos = 0;
-
-    device->frame_buffer = (void*) paging_map_to_task(
-        (PageDirectoryEntry*)KERNEL_PAGE_DIR_ADDRESS, 
-        device->frame_buffer_phys_address,
-        TEXT_MODE_MEM_SIZE,
-        0
-    );
 
     bga_set_text();
     clear_screen(device);
@@ -223,58 +225,12 @@ static uint32_t screen_base_address (Device* device){
     return SCREEN_DEVICE(device)->frame_buffer_phys_address;
 }
 
-static void bga_write(uint16_t index, uint16_t value){
-    outw(VBE_DISPI_IOPORT_INDEX, index);
-    outw(VBE_DISPI_IOPORT_DATA, value);
-}
 
-static uint16_t bga_read(uint16_t index){
-    outw(VBE_DISPI_IOPORT_INDEX, index);
-    return inw(VBE_DISPI_IOPORT_DATA);
-}
+static uint32_t get_pos(ScreenDevice* device){
+    uint16_t x_pos = (device->pos % TEXT_MODE_COLS) ;
+    uint16_t y_pos = (device->pos / TEXT_MODE_COLS) ;
 
-static void bga_set_text(){
-    bga_set_mode(
-        TEXT_MODE_XRES,
-        TEXT_MODE_YRES,
-        TEXT_MODE_BPP
-    );
-}
-
-static void bga_set_mode(uint16_t width, uint16_t height, uint8_t bpp){
-    bga_write(VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
-    bga_write(VBE_DISPI_INDEX_XRES, width);
-    bga_write(VBE_DISPI_INDEX_VIRT_WIDTH, width);
-    bga_write(VBE_DISPI_INDEX_YRES, height);
-    bga_write(VBE_DISPI_INDEX_VIRT_HEIGHT, height);
-    bga_write(VBE_DISPI_INDEX_X_OFFSET, 0);
-    bga_write(VBE_DISPI_INDEX_Y_OFFSET, 0);
-    bga_write(VBE_DISPI_INDEX_BPP, bpp);
-    bga_write(VBE_DISPI_INDEX_ENABLE, 
-            VBE_DISPI_ENABLED 
-            | VBE_DISPI_LFB_ENABLE 
-    );
-}
-
-static uint32_t calc_value(uint8_t color, uint8_t row){
-    uint32_t val = 0;
-
-    color &= 0x7;
-
-    if (color & 1){
-        val |= row;
-    } 
-    if (color & 2){
-        val |= row << 8;
-    }
-    if (color & 4){
-        val |= row << 16;
-    }
-    if (color & 8){
-        val |= row << 24;
-    }
-
-    return val;
+    return y_pos * (TEXT_MODE_XRES * TEXT_MODE_CHAR_HEIGHT) + x_pos * TEXT_MODE_CHAR_WIDTH;
 }
 
 static void write_char(ScreenDevice* device, uint8_t val){
@@ -287,18 +243,20 @@ static void write_char(ScreenDevice* device, uint8_t val){
         uint8_t color = device->input_buffer[0];
         uint8_t chr = device->input_buffer[1];
 
-        uint32_t* frame_buffer = device->frame_buffer;
-
         const uint8_t* chr_font = VGA_FONT_16 + chr * TEXT_MODE_CHAR_HEIGHT;
 
-        uint16_t x_pos = (device->pos % 80) ;
-        uint16_t y_pos = (device->pos / 80) ;
-        uint32_t pos = y_pos * (80 * 16) + x_pos;
+        uint32_t pos = get_pos(device);
+
+        color >>= 1;
 
         for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
-            uint32_t p = pos + i * TEXT_MODE_ROW_WIDTHDW;
+            uint32_t p = pos + i * TEXT_MODE_XRES;
+            set_bank(p >> 16);
+            p &= 0xFFFF;
             uint8_t row = chr_font[i];
-            frame_buffer[p] = calc_value(color, row);
+            for (int j=0;j<TEXT_MODE_CHAR_WIDTH;j++){
+                TEXT_MODE_FRAMEBUFFER[p+j] = (row & (1 << (7-j))) ? color : 0x00; 
+            }
         }
 
         device->buff_index = 0;
@@ -314,39 +272,58 @@ static void write_char(ScreenDevice* device, uint8_t val){
 
 static void flip_cursor(ScreenDevice* device){
 
-    uint32_t* frame_buffer = device->frame_buffer;
-
-    uint16_t x_pos = (device->pos % 80 ) ;
-    uint16_t y_pos = (device->pos / 80 ) ;
-    uint16_t pos = y_pos * LINESIZE + x_pos;
+    uint32_t pos = get_pos(device);
 
     for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
-        uint32_t p = pos + i * TEXT_MODE_ROW_WIDTHDW;
-        frame_buffer[p] = ~frame_buffer[p];
+        uint32_t p = pos + i * TEXT_MODE_XRES;
+        set_bank(p >> 16);
+        p &= 0xFFFF;
+        for (int j=0;j<TEXT_MODE_CHAR_WIDTH;j++){
+            TEXT_MODE_FRAMEBUFFER[p+j] ^= 7;
+        }
     }
 
 }
 
 static void clear_screen(ScreenDevice* device){
 
+    int banks = (TEXT_MODE_SCREEN_SIZE >> 16) 
+        + (TEXT_MODE_SCREEN_SIZE & 0xFFFF ? 1 : 0);
+
+    for (int i=0;i<banks;i++){
+        set_bank(i);
+        memsetdw(TEXT_MODE_FRAMEBUFFER, 0x00, TEXT_MODE_BANK_SIZE / sizeof(uint32_t));
+    }
+
     device->pos = 0;
-
-    void* frame_buffer = device->frame_buffer;
-
-    debug_i(frame_buffer,16);debug("\n");
-    memset(frame_buffer, 0x0, TEXT_MODE_MEM_SIZE);
 
     flip_cursor(device);
 }
 
 static void do_scroll(ScreenDevice* device){
+
     flip_cursor(device);
 
-    void* frame_buffer = device->frame_buffer;
+    uint8_t row[TEXT_MODE_XRES];
 
-    memcpy(frame_buffer, frame_buffer + LINESIZE * 4, TEXT_MODE_MEM_SIZE - LINESIZE * 4);
-    
-    memset(frame_buffer + TEXT_MODE_MEM_SIZE - LINESIZE * 4, 0 , LINESIZE * 4);
+    for (int i=0;i<24*TEXT_MODE_CHAR_HEIGHT;i++){
+
+        uint32_t rowindext = i * TEXT_MODE_XRES;
+        uint32_t rowindexs = rowindext + TEXT_ROWSIZE;
+
+        set_bank(rowindexs >> 16);
+        memcpydw(row, TEXT_MODE_FRAMEBUFFER + (rowindexs & 0xFFFF), TEXT_MODE_XRES / sizeof(uint32_t));
+
+        set_bank(rowindext >> 16);
+        memcpydw(TEXT_MODE_FRAMEBUFFER + (rowindext & 0xFFFF), row, TEXT_MODE_XRES / sizeof(uint32_t));
+
+    }
+    for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
+        uint32_t rowindex = (TEXT_MODE_YRES - TEXT_MODE_CHAR_HEIGHT + i ) * TEXT_MODE_XRES;
+
+        set_bank(rowindex >> 16);
+        memsetdw(TEXT_MODE_FRAMEBUFFER + (rowindex & 0xFFFF), 0, TEXT_MODE_XRES / sizeof(uint32_t));
+    }
 
     flip_cursor(device);
 }
@@ -361,8 +338,44 @@ static void set_mode(ScreenDevice* device, ModeSetting* mode_setting){
         bga_set_mode(
             mode_setting->width, 
             mode_setting->height, 
-            mode_setting->bpp
+            mode_setting->bpp,
+            1
         );
     }
 }
+static void bga_write(uint16_t index, uint16_t value){
+    outw(VBE_DISPI_IOPORT_INDEX, index);
+    outw(VBE_DISPI_IOPORT_DATA, value);
+}
 
+static uint16_t bga_read(uint16_t index){
+    outw(VBE_DISPI_IOPORT_INDEX, index);
+    return inw(VBE_DISPI_IOPORT_DATA);
+}
+
+static void bga_set_text(){
+    bga_set_mode(TEXT_MODE_XRES, TEXT_MODE_YRES, TEXT_MODE_BPP, 0);
+}
+
+static void bga_set_mode(uint16_t width, uint16_t height, uint8_t bpp, int linear){
+    bga_write(VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
+    bga_write(VBE_DISPI_INDEX_XRES, width);
+    bga_write(VBE_DISPI_INDEX_VIRT_WIDTH, width);
+    bga_write(VBE_DISPI_INDEX_YRES, height);
+    bga_write(VBE_DISPI_INDEX_VIRT_HEIGHT, height);
+    bga_write(VBE_DISPI_INDEX_X_OFFSET, 0);
+    bga_write(VBE_DISPI_INDEX_Y_OFFSET, 0);
+    bga_write(VBE_DISPI_INDEX_BPP, bpp);
+    bga_write(VBE_DISPI_INDEX_ENABLE, 
+            VBE_DISPI_ENABLED 
+            | (linear ? VBE_DISPI_LFB_ENABLE : 0)
+    );
+}
+
+static void set_bank(int bank){
+    static int _bank = 0;
+    if (_bank != bank){
+        bga_write(VBE_DISPI_INDEX_BANK, bank);
+        _bank = bank;
+    }
+}

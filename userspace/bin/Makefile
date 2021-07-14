@@ -8,13 +8,19 @@ BINS=init.elf 		\
 	 testserver.elf	\
 	 sendmsg.elf	\
 	 testnet.elf	\
-	 test.elf		\
-	 testgfx.elf
+	 test.elf		
+
+XBINS=testgfx.elf
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/minios.a
 
-all: $(BINS)
+all: $(BINS) $(XBINS)
+
+testgfx.elf: testgfx.o
+	$(LD) $(LDFLAGS) $< ../lib/gfx.o $(LIBS) -o $@
+	objdump -d $@ > $@.lst
+
 
 %.elf: %.o
 	$(LD) $(LDFLAGS) $< $(LIBS) -o $@

@@ -128,6 +128,7 @@ static void load_modules(void){
     if (device){
         FileSystem* fs = fs_get_filesystem(device);
         if (fs){
+            // TODO: have module configuration outside init
             modules_load(fs, "/modules/screen.elf");
             modules_load(fs, "/modules/keyboard.elf");
             modules_load(fs, "/modules/console.elf");
@@ -135,6 +136,7 @@ static void load_modules(void){
             modules_load(fs, "/modules/sysfs.elf");
             modules_load(fs, "/modules/rtl8139.elf");
             modules_load(fs, "/modules/ethfs.elf");
+            modules_load(fs, "/modules/mouse.elf");
             debug("Modules loaded\n");
         } else {
             debug("No fs\n");

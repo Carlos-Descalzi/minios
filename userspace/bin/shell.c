@@ -22,6 +22,7 @@ int main(int argc, char** argv){
     strcpy(pwd,getenv("PWD"));
 
     printf("\e[2J\e[4;0mMini-shell v0.1\n\n");
+    //printf("\e[2JShell v0.1\n\n");
 
     while(1){
         memset(buff,0,256);
