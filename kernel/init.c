@@ -115,6 +115,8 @@ static void start_init(void){
     fs = fs_get_filesystem(device);
     load_program(fs, "/bin/shell.elf");
     sti();
+    //pic_eoi1();
+    //pic_eoi2();
     while (1){
         tasks_loop();
         asm volatile("pause");

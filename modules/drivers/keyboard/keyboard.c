@@ -193,12 +193,18 @@ static void read_keyboard(KeyboardDevice* device){
 }
 
 static void handle_keyboard_irq (InterruptFrame* frame, void* data){
-   debug("Keyboard interrupt:");debug_i(pic_get_irq_reg(),16);debug("\n");
-   KeyboardDevice* keyboard = data;
+    int i = pic_get_irq_reg();
+    if (i & 2){
+        debug("Keyboard interrupt:");debug_i(i,16);debug("\n");
+        KeyboardDevice* keyboard = data;
 
-   read_keyboard(keyboard);
+        read_keyboard(keyboard);
 
-   pic_eoi1();
+        pic_eoi1();
+    } else {
+        pic_eoi2();
+        debug("unwanted interrupt\n");debug_i(i,16);debug("\n");
+    }
 }
 
 

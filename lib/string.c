@@ -9,13 +9,15 @@ char* strcpy(char* dest, const char* src){
 }
 
 char* strncpy(char* dest, const char* src, size_t count){
+    int i;
 
-    for (int i=0;i<count;i++){
+    for (i=0;i<count;i++){
         dest[i] = src[i];
         if(!src[i]){
             break;
         }
     }
+    dest[i] = '\0';
 
     return dest;
 }

@@ -49,6 +49,7 @@ void syscall_stat(InterruptFrame* f){
     Device* device = device_find_by_id(device_id);
 
     if (!device){
+        debug("2 ");debug_i(device_id,16);debug("\n");
         f->ebx = ((uint32_t)-2);
         return;
     }
@@ -56,6 +57,7 @@ void syscall_stat(InterruptFrame* f){
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if(!fs){
+        debug("3\n");
         f->ebx = ((uint32_t)-3);
         return;
     }

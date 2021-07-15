@@ -1,6 +1,7 @@
 #include "kernel/device.h"
 #include "board/ps2.h"
 #include "board/pic.h"
+#include "board/io.h"
 #include "lib/heap.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
@@ -48,18 +49,37 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     CHAR_DEVICE(device)->read_async = read_async;
     CHAR_DEVICE(device)->write = write;
 
+    //ps2_write(PORT_CMD, CMD_READ_BYTE);
+    
+    uint8_t v = ps2_read_data();
+
+    //ps2_write(PORT_CMD, CMD_WRITE_BYTE);
+    //ps2_write(PORT_CMD, v | 2);
+
+    ps2_write_data(v | 2);
+
+    v = ps2_read_data();
+
     ps2_write(PORT_CMD, CMD_ENABLE_2PORT);
-    pic_enable(PS2_IRQ);
 
-    ps2_write(PORT_CMD, CMD_WRITE_PS2);
-    ps2_write(PORT_DATA, 0xF4);
-
+    pic_enable(PS2_IRQ2);
     isr_install(PIC_IRQ_BASE + PS2_IRQ2, handle_mouse_irq, device);
 
+    /*ps2_write(PORT_CMD, CMD_WRITE_PS2);
+    ps2_write(PORT_DATA, 0xA9);
+    debug_i(ps2_read(PORT_DATA),16);debug("\n");*/
+
+    /*
+    ps2_write_data_ack(0xa9);
+    ps2_write_data_ack(0xf4);
+    ps2_write_data_ack(0xea);
+    ps2_write_data_ack(0xf6);
+    */
     return DEVICE(device);
 }
 
 static int16_t setopt (Device* device, uint32_t option, void* data){
+    return 0;
 }
 
 static int16_t read (CharDevice* device){
@@ -81,4 +101,7 @@ static int16_t read_async (CharDevice* device,IORequest* request){
 
 static void handle_mouse_irq (InterruptFrame* f, void* data){
     debug("IRQ!!\n");
+    debug_i(pic_get_irq(),16);
+    debug("\n");
+    pic_eoi2();
 }

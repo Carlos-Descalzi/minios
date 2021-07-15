@@ -22,8 +22,8 @@ typedef union PciAddress {
     uint32_t address;
 } PciAddress;
 
-static int check_bus(uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data);
-static int check_device(uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data);
+static int check_bus    (uint8_t bus, PCIHeader* header, PciVisitor visitor, void* user_data);
+static int check_device (uint8_t bus, uint8_t device, PCIHeader* header, PciVisitor visitor, void* user_data);
 
 void pci_config_write_w (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset,uint16_t data){
 
@@ -35,12 +35,10 @@ void pci_config_write_w (uint8_t bus, uint8_t device, uint8_t func, uint8_t offs
         .reserved = 0,
         .enable = 1
     };
-    debug("PCI - Write ");debug_i(address.address,16);debug("\n");
 
     outdw(PCI_IO_CONFIG_ADDR, address.address);
 
     outdw(PCI_IO_CONFIG_DATA, data);
-    //return (uint16_t) ((indw(PCI_IO_CONFIG_DATA) >> ((offset & 2) * 8)) & 0xFFFF);
 }
 
 uint16_t pci_config_read_w  (uint8_t bus, uint8_t device, uint8_t func, uint8_t offset){

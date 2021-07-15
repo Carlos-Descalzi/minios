@@ -22,14 +22,14 @@ QEMU_ARGS=         \
 	-no-shutdown   \
 	-vga std 	   \
 	-m 128M		   \
-	-no-acpi	   \
-	-vga std	   \
-	-display gtk   \
-	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,pcall,guest_errors,nochain \
-	-D trace.log
+	-no-acpi	   
+
+QEMU_RUN_ARGS=		
 
 QEMU_TEST_ARGS=    \
-	-serial mon:stdio
+	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,pcall,guest_errors,nochain \
+	-serial mon:stdio	\
+	-D trace.log
 
 QEMU_NET_ARGS=	   \
 	-netdev tap,id=n0 \
@@ -43,6 +43,9 @@ QEMU_DEBUG_ARGS=   \
 .PHONY: $(TOPTARGETS) $(SUBDIRS) boot
 
 all: $(IMAGE)
+
+run:
+	$(QEMU) $(QEMU_ARGS) $(QEMU_RUN_ARGS) -hda ./$(IMAGE)
 
 test:
 	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) -hda ./$(IMAGE)
@@ -78,7 +81,7 @@ e2fs.img: userspace modules
 	@sudo mkdir tmp/bin
 	@sudo cp userspace/bin/*.elf tmp/bin
 	@sudo mkdir tmp/modules
-	@echo "holaaaa !!!!"|sudo tee tmp/test.txt
+	@echo "holaaaa !!!!"|sudo tee tmp/test.txt > /dev/null
 	@sudo cp modules/drivers/serial/*.elf tmp/modules
 	@sudo cp modules/drivers/console/*.elf tmp/modules
 	@sudo cp modules/drivers/screen/*.elf tmp/modules

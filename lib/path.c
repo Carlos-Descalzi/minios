@@ -15,7 +15,10 @@ int path_parse(const char* fullpath, uint16_t* device_id, char* filepath){
     if (!pos){
         return -2;
     }
-    strncpy(devname, fullpath, ((uint32_t)pos)-((uint32_t)fullpath));
+
+    uint32_t len = ((uint32_t) pos) - ((uint32_t) fullpath);
+
+    strncpy(devname, fullpath, len);
 
     uint8_t kind;
     uint8_t instance;

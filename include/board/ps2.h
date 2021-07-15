@@ -33,9 +33,11 @@ typedef struct {
             reserved:5;
 } PS2Port;
 
-void    ps2_get_status  (PS2Port* port);
-uint8_t ps2_read        (uint8_t port);
-void    ps2_write       (uint8_t port, uint8_t value);
+void    ps2_get_status      (PS2Port* port);
+uint8_t ps2_read            (uint8_t port);
+void    ps2_write           (uint8_t port, uint8_t value);
 
-
+void    ps2_write_data      (uint8_t value);
+void    ps2_write_data_ack  (uint8_t value);
+uint8_t ps2_read_data       (void);
 #endif
