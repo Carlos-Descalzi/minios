@@ -6,6 +6,13 @@
 #include "kernel/isr.h"
 #include "misc/debug.h"
 
+typedef struct {
+    CharDevice device;
+    IORequest* request;
+} MouseDevice;
+
+#define MOUSE_DEVICE(d)             ((MouseDevice*)d)
+
 static uint8_t  count_devices       (DeviceType* device_type);
 static Device*  instantiate         (DeviceType* device_type, uint8_t device_number);
 static int16_t  setopt              (Device* device, uint32_t option, void* data);
@@ -14,13 +21,6 @@ static int16_t  write               (CharDevice* device, uint8_t chr);
 static void     release             (DeviceType* device_type, Device* device);
 static int16_t  read_async          (CharDevice* device,IORequest* request);
 static void     handle_mouse_irq    (InterruptFrame* f, void* data);
-
-typedef struct {
-    CharDevice device;
-    IORequest* request;
-} MouseDevice;
-
-#define MOUSE_DEVICE(d)         ((MouseDevice*)d)
 
 static DeviceType DEVICE_TYPE = {
     .kind = MOUSE
@@ -48,33 +48,23 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     CHAR_DEVICE(device)->read = read;
     CHAR_DEVICE(device)->read_async = read_async;
     CHAR_DEVICE(device)->write = write;
-
-    //ps2_write(PORT_CMD, CMD_READ_BYTE);
     
     uint8_t v = ps2_read_data();
-
-    //ps2_write(PORT_CMD, CMD_WRITE_BYTE);
-    //ps2_write(PORT_CMD, v | 2);
-
     ps2_write_data(v | 2);
 
     v = ps2_read_data();
+    debug("ps2:");debug_i(v,16);debug("\n");
 
     ps2_write(PORT_CMD, CMD_ENABLE_2PORT);
+
+    ps2_write_2(0xa9);
+    ps2_write_2_ack(0xf4);
+    ps2_write_2_ack(0xea);
+    ps2_write_2_ack(0xf6);
 
     pic_enable(PS2_IRQ2);
     isr_install(PIC_IRQ_BASE + PS2_IRQ2, handle_mouse_irq, device);
 
-    /*ps2_write(PORT_CMD, CMD_WRITE_PS2);
-    ps2_write(PORT_DATA, 0xA9);
-    debug_i(ps2_read(PORT_DATA),16);debug("\n");*/
-
-    /*
-    ps2_write_data_ack(0xa9);
-    ps2_write_data_ack(0xf4);
-    ps2_write_data_ack(0xea);
-    ps2_write_data_ack(0xf6);
-    */
     return DEVICE(device);
 }
 

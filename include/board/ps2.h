@@ -40,4 +40,7 @@ void    ps2_write           (uint8_t port, uint8_t value);
 void    ps2_write_data      (uint8_t value);
 void    ps2_write_data_ack  (uint8_t value);
 uint8_t ps2_read_data       (void);
+
+void    ps2_write_2         (uint8_t value);
+void    ps2_write_2_ack     (uint8_t value);
 #endif

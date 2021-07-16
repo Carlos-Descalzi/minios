@@ -77,8 +77,9 @@ void        tasks_finish                    (uint32_t task_id, uint32_t exit_cod
 void        tasks_update_current            (InterruptFrame* frame);
 /**
  * Scheduler main loop function, it runs one cycle of task looping.
+ * Returns 1 when it ran any task, otherwise 0.
  **/
-void        tasks_loop                      (void);
+int         tasks_loop                      (void);
 /**
  * Converts an address from current tasks's address space
  * to kernel space by mapping it to a well known kernel page

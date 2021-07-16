@@ -240,7 +240,7 @@ static void move_to_wait_list(){
     current_task_list_node = next ? next : task_list;
 }
 
-void tasks_loop(){
+int tasks_loop(){
     check_io_wait_list();
     
     current_task = next_task();
@@ -268,7 +268,9 @@ void tasks_loop(){
                 remove_current_task();
                 current_task = NULL;
             }
+            return 1;
         }
+        return 0;
 
     } else {
         //debug("TASK - No tasks to run\n");

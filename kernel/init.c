@@ -118,8 +118,9 @@ static void start_init(void){
     //pic_eoi1();
     //pic_eoi2();
     while (1){
-        tasks_loop();
-        asm volatile("pause");
+        if (!tasks_loop()){
+            asm volatile("hlt");
+        }
     }
     console_print("System shutdown\n");
 }

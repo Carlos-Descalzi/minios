@@ -36,13 +36,13 @@ void ps2_write (uint8_t port, uint8_t value){
     outb(port, value);
 }
 
-void ps2_write_data_ack (uint8_t value){
+void ps2_write_2_ack (uint8_t value){
     ps2_write(PORT_CMD, CMD_WRITE_PS2);
     ps2_write(PORT_DATA, value);
     while (ps2_read(PORT_DATA) != 0xFA);
 }
 
-void ps2_write_data (uint8_t value){
+void ps2_write_2 (uint8_t value){
     ps2_write(PORT_CMD, CMD_WRITE_PS2);
     ps2_write(PORT_DATA, value);
 }
@@ -50,4 +50,9 @@ void ps2_write_data (uint8_t value){
 uint8_t ps2_read_data (void){
     ps2_write(PORT_CMD, CMD_READ_BYTE);
     return ps2_read(PORT_DATA);
+}
+
+void ps2_write_data(uint8_t value){
+    ps2_write(PORT_CMD, CMD_WRITE_BYTE);
+    ps2_write(PORT_DATA, value);
 }
