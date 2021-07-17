@@ -25,14 +25,20 @@ void    ps2_get_status  (PS2Port* port){
     }
 }
 
-uint8_t ps2_read (uint8_t port){
-    //while(!(inb(0x64) & 1))  { asm ("pause"); }
+uint8_t ps2_read_wait (uint8_t port){
     //wait_in();
+    uint8_t v = inb(port);
+    while(!(inb(0x64) & 1))  { asm ("pause"); }
+
+    return v;
+}
+
+uint8_t ps2_read (uint8_t port){
     return inb(port);
 }
 
 void ps2_write (uint8_t port, uint8_t value){
-//    while(inb(0x64) & 2) { asm ("pause"); }
+    while(inb(0x64) & 2) { asm ("pause"); }
     outb(port, value);
 }
 

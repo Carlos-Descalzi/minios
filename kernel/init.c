@@ -135,6 +135,7 @@ static void load_modules(void){
             modules_load(fs, "/modules/screen.elf");
             modules_load(fs, "/modules/keyboard.elf");
             modules_load(fs, "/modules/console.elf");
+            //modules_load(fs, "/modules/serial.elf");
             modules_load(fs, "/modules/sys.elf");
             modules_load(fs, "/modules/sysfs.elf");
             modules_load(fs, "/modules/rtl8139.elf");

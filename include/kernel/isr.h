@@ -29,11 +29,13 @@ void    trap_install(uint16_t interrupt_number, Isr isr, void* callback_data);
 /**
  * Enables interrupts
  **/
-void    sti         (void);
+//void    sti         (void);
+#define sti() {   asm volatile("sti"); }
 /**
  * Disables interrupts
  **/
-void    cli         (void);
+//void    cli         (void);
+#define cli() {   asm volatile("cli"); }
 void    cld         (void);
 /**
  * Just the start address of the ISR handler table

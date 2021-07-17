@@ -5,7 +5,6 @@
 #include "board/ps2.h"
 #include "board/pic.h"
 #include "lib/heap.h"
-#include "kernel/spinlock.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
 #include "misc/keycodes.h"
@@ -83,9 +82,10 @@ typedef struct {
     KeyEvent key_event;
     uint8_t pos;
     uint32_t ticks;
-    Lock lock;
     uint32_t wait_tid;
     IORequest* request;
+    uint8_t buffer[2];
+    uint32_t bufindex;
 } KeyboardDevice;
 
 #define KEYBOARD_DEVICE(d)  ((KeyboardDevice*)d)
@@ -113,6 +113,8 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     DEVICE(device)->async = 1;
     DEVICE(device)->setopt = setopt;
     CHAR_DEVICE(device)->read_async = read_async;
+
+    device->bufindex = 0;
     debug("Initiating keyboard driver\n");
     isr_install(PIC_IRQ_BASE + PS2_IRQ, handle_keyboard_irq, device);
 
@@ -120,7 +122,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
 }
 static void release(DeviceType* device_type, Device* device){
     isr_install(PIC_IRQ_BASE + PS2_IRQ, NULL, NULL);
-    release_lock(&(KEYBOARD_DEVICE(device)->lock));
     heap_free(device);
 }
 static int16_t setopt(Device* device, uint32_t option, void* data){
@@ -167,44 +168,67 @@ static uint16_t scan_code_to_key_code(uint8_t altcode, uint8_t scan_code){
     return 0;
 }
 
+static void do_handle(KeyboardDevice* device, int val, int state){
+    if (val & 0x80){
+        state |= FLAG_BREAK;
+        val &= 0x7F;
+    }
+    uint16_t key_code = scan_code_to_key_code(state & FLAG_ALTCODE, val);
+    if (key_code){
+        device->key_event.press_release = (state & FLAG_BREAK) == 0;
+        device->key_event.keycode = key_code;
+
+        if (device->request){
+            write_to_request(device, device->request);
+        } 
+    }
+}
+
 static void read_keyboard(KeyboardDevice* device){
     uint8_t state = 0;
     uint8_t val;
     uint16_t key_code;
 
     val = ps2_read(PORT_DATA);
-    if (val == SCAN_ALTCODE){
-        state |= FLAG_ALTCODE;
-        val = ps2_read(PORT_DATA);
-    }
-    if (val & 0x80){
-        state |= FLAG_BREAK;
-        val &= 0x7F;
-    }
-    key_code = scan_code_to_key_code(state & FLAG_ALTCODE, val);
-    if (key_code){
-        device->key_event.press_release = (state & FLAG_BREAK) == 0;
-        device->key_event.keycode = key_code;
-    }
+    device->buffer[device->bufindex++] = val;
 
-    if (device->request){
-        write_to_request(device, device->request);
-    } 
+    if (val != SCAN_ALTCODE){
+        debug("direct key");
+
+        do_handle(device, val, 0);
+        device->bufindex = 0;
+
+    } else {
+
+        if (device->bufindex == 2){
+            int state = 0;
+
+            if (device->buffer[0] == SCAN_ALTCODE){
+                state |= FLAG_ALTCODE;
+            }
+
+            do_handle(device, val, state);
+
+            device->bufindex = 0;
+        }
+    }
 }
 
 static void handle_keyboard_irq (InterruptFrame* frame, void* data){
+    cli();
     int i = pic_get_irq_reg();
     if (i & 2){
         debug("Keyboard interrupt:");debug_i(i,16);debug("\n");
-        KeyboardDevice* keyboard = data;
 
-        read_keyboard(keyboard);
+        read_keyboard(KEYBOARD_DEVICE(data));
 
-        pic_eoi1();
+        debug("Keyboard interrupt handled\n");
     } else {
-        pic_eoi2();
         debug("unwanted interrupt\n");debug_i(i,16);debug("\n");
     }
+    pic_eoi1();
+    //pic_eoi2();
+    sti();
 }
 
 

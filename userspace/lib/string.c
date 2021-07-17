@@ -11,6 +11,17 @@ void*   memcpy  (void* dest, const void* src, size_t n){
 
     return dest;
 }
+void* memcpydw(void* dest, const void* src, size_t n){
+    asm volatile(
+            "\tmov %0, %%edi\n"
+            "\tmov %1, %%esi\n"
+            "\tmov %2, %%ecx\n"
+            "\trep movsd\n"::"r"(dest),"r"(src),"r"(n)
+    );
+
+
+    return dest;
+}
 void* memset (void* s, int c, size_t size){
     asm volatile(
             "\tmov %0, %%edi\n"

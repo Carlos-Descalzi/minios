@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/device.h"
 #include "lib/heap.h"
 #include "misc/debug.h"
@@ -269,7 +269,9 @@ static void request_callback(IORequest* request, void* data){
             handle_io_request(device->user_request, &data, 1, TASK_IO_REQUEST_DONE);
             reset_console_request(device);
         } else {
-            debug("Unknown keycode\n");
+            debug("Unknown keycode ");debug_i(key_code,16);debug("\n");
+            char data = 0;
+            set_keyboard_request(device);
         }
     } else {
         if (key_code == KEY_CODE_LEFT_SHIFT

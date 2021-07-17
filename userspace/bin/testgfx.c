@@ -1,6 +1,8 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "gfx.h"
+#include "mouse.h"
+#include "fcntl.h"
 
 #define OPT_SET_VIDEO_MODE  4
 
@@ -57,12 +59,55 @@ static void window_draw(GfxContext* ctx, Window* w){
     gfx_vline(ctx, w->x + w->w, w->y, w->y + w->h, 0x00FFFFFF);
 }
 
+
+static char cursor[8][8] = {
+    {   0,7,0,0,0,0,0,0 },
+    {   0,7,7,0,0,0,0,0 },
+    {   0,7,7,7,0,0,0,0 },
+    {   0,7,7,7,7,0,0,0 },
+    {   0,7,7,7,7,7,0,0 },
+    {   0,7,7,7,0,0,0,0 },
+    {   0,0,0,7,0,0,0,0 },
+    {   0,0,0,0,7,0,0,0 }
+};
+static uint32_t buff[8][8];
+static uint32_t px, py;
+
+static void update_cursor(GfxContext* ctx, int x, int y, int update){
+    
+    uint32_t* frame_buffer = ctx->frame_buffer;
+
+    if (update){
+        for (int i=0;i<7;i++){
+            for (int j=0;j<7;j++){
+                frame_buffer[(px+j)+(py+i)*1024] = buff[i][j];
+            }
+        }
+    }
+    for (int i=0;i<7;i++){
+        for (int j=0;j<7;j++){
+            buff[i][j] = frame_buffer[ (x+j) + (y+i) * 1024];
+            if (cursor[i][j]){
+                frame_buffer[(x+j)+(y+i)*1024] = 0x00FFFFFF;
+            }
+        }
+    }
+    px = x;
+    py = y;
+}
+
+#define DRAG    0x10
+#define LPRESS  0x01
+
 int main(){
 
 
     GfxContext ctx;
+    MouseEvent event;
+    MouseEvent event2;
+    int status = 0;
 
-    gfx_init(&ctx, WIDTH, HEIGHT);
+    gfx_init(&ctx, WIDTH, HEIGHT,0);
 
     gfx_fillscreen(&ctx, 0x00555555);
 
@@ -74,6 +119,43 @@ int main(){
     };
 
     window_draw(&ctx, &window);
+
+    int fd = open("mouse0:",O_RDONLY);
+
+    uint32_t x = 512;
+    uint32_t y = 300;
+    px = 512;
+    py = 300;
+    update_cursor(&ctx,x,y,0);
+
+    while(1){
+
+        read(fd,&event,sizeof(MouseEvent));
+
+        int xm = event.xm;
+        int ym = -event.ym;
+
+        x += xm;
+        y += ym;
+
+        update_cursor(&ctx,x,y,1);
+
+        if (event.bl){
+            status |= LPRESS;
+            if (!event2.bl){
+                status |= DRAG;
+            }
+        } else {
+            status &= ~LPRESS;
+            if (event2.bl){
+                status &= ~DRAG;
+            }
+        }
+
+
+        memcpy(&event2, &event, sizeof(MouseEvent));
+
+    }
 
     return 0;
 }

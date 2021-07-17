@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "misc/debug.h"
 #include "io/streamimpl.h"
 #include "lib/heap.h"
@@ -54,7 +54,6 @@ static int16_t read_byte(Stream* stream){
 }
 
 static int16_t write_byte(Stream* stream, uint8_t data){
-    debug("write byte :");debug_c(data);debug("\n");
     return char_device_write(char_stream_device(stream), data);
 }
 static int16_t read_async(Stream* stream, IORequest* request){
@@ -73,7 +72,6 @@ static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size){
 
 static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size){
     for (int i=0;i<size;i++){
-        debug("write byte :");debug_c(buffer[i]);debug("\n");
         char_device_write(char_stream_device(stream),buffer[i]);
     }
     return size;
