@@ -67,6 +67,24 @@
 #define TEXT_MODE_FRAMEBUFFER       ( (uint8_t*) 0xA0000)
 #define TEXT_MODE_BANK_SIZE         65536
 
+static const uint32_t palette[] = {
+    0x00000000,
+    0x00770000,
+    0x00007700,
+    0x00777700,
+    0x00000077,
+    0x00770077,
+    0x00007777,
+    0x00777777,
+    0x00000000,	
+    0x00FF0000,
+    0x0000FF00,
+    0x00FFFF00,
+    0x000000FF,
+    0x00FF00FF,
+    0x0000FFFF,
+    0x00FFFFFF
+};
 
 typedef struct {
     CharDevice device;
@@ -162,6 +180,13 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->buff_index = 0;
     device->pos = 0;
 
+    for (int i=0;i<16;i++){
+        outb(0x3C8, i);
+        for (int j=0;j<3;j++){
+            outb(0x3c9, (palette[i] >> (8 * j)) & 0xFF);
+        }
+    }
+
     bga_set_text();
     clear_screen(device);
 
@@ -247,7 +272,8 @@ static void write_char(ScreenDevice* device, uint8_t val){
 
         uint32_t pos = get_pos(device);
 
-        color >>= 1;
+        uint32_t fg = color & 0xF;
+        uint32_t bg = color >> 4;
 
         for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
             uint32_t p = pos + i * TEXT_MODE_XRES;
@@ -255,7 +281,7 @@ static void write_char(ScreenDevice* device, uint8_t val){
             p &= 0xFFFF;
             uint8_t row = chr_font[i];
             for (int j=0;j<TEXT_MODE_CHAR_WIDTH;j++){
-                TEXT_MODE_FRAMEBUFFER[p+j] = (row & (1 << (7-j))) ? color : 0x00; 
+                TEXT_MODE_FRAMEBUFFER[p+j] = (row & (1 << (7-j))) ? fg : bg; 
             }
         }
 

@@ -38,7 +38,6 @@ typedef struct {
     uint16_t* screen_address; 
     KeyboardStatus keyboard_status;
     ConsoleStatus console_status;
-    //Cursor pos;
     Cursor saved_pos;
     uint8_t color;
     uint8_t mode;
@@ -478,7 +477,6 @@ static void backspace(ConsoleDevice* console){
         x--;
         set_pos(console, x ,y);
         fb_write(console, ' ');
-        x--;
         set_pos(console, x ,y);
     }
 
@@ -509,7 +507,6 @@ static void save_cursor(ConsoleDevice* console){
 }
 
 static void restore_cursor(ConsoleDevice* console){
-    //console->pos = console->saved_pos;
     uint32_t pos = console->saved_pos.x + console->saved_pos.y * 80;
     device_setopt(console->screen, SCREEN_OPT_POS, (void*)pos);
 }
@@ -545,34 +542,17 @@ static void clear_screen (ConsoleDevice* console){
     int screen_size = console->width * console->height;
 
     device_setopt(console->screen,SCREEN_OPT_CLEAR,NULL);
-    //console->pos.x = 0;
-    //console->pos.y = 0;
 }
 void fb_write (ConsoleDevice* console, uint8_t chr){
 
-    //uint16_t pos = console->pos.y * console->width + console->pos.x;
-
-    //device_setopt(console->screen, SCREEN_OPT_POS, (void*)pos);
 
     char_device_write(console->screen, console->color);
     char_device_write(console->screen, chr);
-
-    //console->pos.x++;
-    //device_setopt(console->screen, SCREEN_OPT_POS, (void*)pos);
-    //adjust_view_to_pos(console);
 }
 
 static void adjust_view_to_pos(ConsoleDevice* console){
 
     int screen_size = console->width * console->height;
 
-    //if (console->pos.x >= 80){
-    //    console->pos.x = 0;
-    //    console->pos.y++;
-   // }
-
-    //if (console->pos.y >= 25){
-    //    console->pos.y--;
     device_setopt(console->screen, SCREEN_OPT_SCROLL,NULL);
-   // }
 }
