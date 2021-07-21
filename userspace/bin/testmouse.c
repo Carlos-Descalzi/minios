@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "unistd.h"
+#include "sched.h"
 
 typedef struct __attribute__((__packed__)) {
     union {
@@ -24,19 +25,21 @@ int main(){
     int x = 0;
     int y = 0;
 
-    int fd = open("mouse0:",O_RDONLY);
+    int fd = open("mouse0:",O_RDONLY | O_NONBLOCK);
 
     while(1){
-        read(fd,&event, sizeof(MouseEvent));
+        int result = read(fd,&event, sizeof(MouseEvent));
+        if (result){
 
-        x += event.xm ;//* (event.xs ? 1 : -1);
-        y += event.ym ;//* (event.ys ? 1 : -1);
+            x += event.xm ;
+            y += event.ym ;
 
-        printf("%d %d - %d %d : (%d %d) --- (%02x) \n", 
-            event.xm, event.xs, 
-            event.ym, event.ys, 
-            x,
-            y,
-            event.b1);
+            printf("%d %d %d\n",
+                x,
+                y,
+                event.bl);
+        } else {
+            sched_yield();
+        }
     }
 }

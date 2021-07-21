@@ -28,16 +28,17 @@ typedef struct {
 #define SYSFS_INODE_DEVICES     4
 #define SYSFS_INODE_FILESYSTEMS 5
 
-static const char       FS_TYPE_NAME[] = "sys";
 static FileSystemType   FS_TYPE;
+static FsDirentry       ROOT_DIR_ENTRIES[5];
 
-static const char NAME_CWD[] = ".";
-static const char NAME_PARENT[] = "..";
-static const char NAME_PROCESSES[] = "processes";
-static const char NAME_DEVICES[] = "devices";
-static const char NAME_FILESYSTEMS[] = "filesystems";
+static const char       FS_TYPE_NAME[]        = "sys";
 
-static FsDirentry ROOT_DIR_ENTRIES[5];
+static const char       NAME_CWD[]            = ".";
+static const char       NAME_PARENT[]         = "..";
+static const char       NAME_PROCESSES[]      = "processes";
+static const char       NAME_DEVICES[]        = "devices";
+static const char       NAME_FILESYSTEMS[]    = "filesystems";
+
 
 static FileSystem*      create_fs                   (FileSystemType* fs_type, BlockDevice* device);
 static void             list_inodes                 (FileSystem* fs, InodeVisitor visitor, void*data);
@@ -99,7 +100,6 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     FILE_SYSTEM(fs)->get_direntry = get_direntry;
     FILE_SYSTEM(fs)->alloc_inode = alloc_inode;
     FILE_SYSTEM(fs)->free_inode = free_inode;
-    //FILE_SYSTEM(fs)->stream_open = stream_open;
     FILE_SYSTEM(fs)->release_resources = release_resources;
     FILE_SYSTEM(fs)->inode_size = sizeof(Inode);
     FILE_SYSTEM(fs)->block_size = 1024;
@@ -110,13 +110,16 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
 
 static void list_inodes(FileSystem* fs, InodeVisitor visitor, void*data){
 }
+
 static void close(FileSystem* fs){
     heap_free(fs);
 }
+
 static int32_t load_inode(FileSystem* fs, uint32_t inodenum, Inode* inode){
     inode->uid = inodenum;
     return 0;
 }
+
 static uint32_t find_inode(FileSystem* fs, const char* path){
     if (!strcmp(path,"/")){
         return FS_INODE_ROOT_DIR;
@@ -125,13 +128,16 @@ static uint32_t find_inode(FileSystem* fs, const char* path){
     }
     return 0;
 }
+
 static int32_t load(FileSystem* fs, Inode* inode, void* dest){
     return 0;
 }
+
 static uint32_t read_block(FileSystem* fs, Inode* inode,
     uint32_t b_index, void* dest, uint32_t length){
     return 0;
 }
+
 static int32_t get_direntry(FileSystem* fs, Inode* inode, 
     uint32_t* offset, DirEntry* direntry){
     switch(inode->uid){
@@ -146,6 +152,7 @@ static int32_t get_direntry(FileSystem* fs, Inode* inode,
     }
     return -1;
 }
+
 static Inode* alloc_inode(FileSystem* fs){
     for (int i=0;i<WORK_INODES_COUNT;i++){
         if (!SYSFS(fs)->work_inodes[i].in_use){
@@ -155,6 +162,7 @@ static Inode* alloc_inode(FileSystem* fs){
     }
     return NULL;
 }
+
 static void free_inode(FileSystem* fs, Inode* inode){
     for (int i=0;i<WORK_INODES_COUNT;i++){
         if (&(SYSFS(fs)->work_inodes[i].inode) == inode){
@@ -163,30 +171,37 @@ static void free_inode(FileSystem* fs, Inode* inode){
         }
     }
 }
+
 static void release_resources(FileSystem* fs){
     memset(&(SYSFS(fs)->work_inodes),0,sizeof(SYSFS(fs)->work_inodes));
 }
+
 static int32_t get_root_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
+
     if (*offset <= SYSFS_INODE_FILESYSTEMS){
         debug(ROOT_DIR_ENTRIES[*offset].name);debug("\n");
+
         strcpy(direntry->name,ROOT_DIR_ENTRIES[*offset].name);
         direntry->name_len = strlen(ROOT_DIR_ENTRIES[*offset].name);
         direntry->rec_len = direntry->name_len + sizeof(DirEntry);
         direntry->inode = ROOT_DIR_ENTRIES[*offset].inode;
         direntry->file_type = 2;
+        
         (*offset)++;
     }
+
     return *offset > SYSFS_INODE_FILESYSTEMS;
 }
+
 static int32_t get_processes_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
     return 0;
 }
+
 static int32_t get_devices_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
     uint8_t kind;
     uint8_t instance;
     char buff[4];
     int dev_count = device_count_devices();
-    debug("devices:");debug_i(device_count_devices(),10);debug("\n");
 
     if (*offset < dev_count +2){
 

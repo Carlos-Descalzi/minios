@@ -61,10 +61,10 @@ int putenv(const char* var){
         target->vars[i] = ptr;
         if (found && !strncmp(_env->vars[i], var, var_name_len)){
             strcpy(ptr, var);
-            ptr += strlen(var)+2;
+            ptr += strlen(var)+1;
         } else {
             strcpy(ptr, _env->vars[i]);
-            ptr += strlen(_env->vars[i])+2;
+            ptr += strlen(_env->vars[i])+1;
         }
     }
     if (!found){
@@ -91,7 +91,7 @@ static void copy_env_from(void* buffer, size_t buffer_size, Env* source, int* en
     for (int i=0;i<source->nenv;i++){
         target[i] = ptr;
         strcpy(ptr, source->vars[i]);
-        ptr += strlen(source->vars[i])+2;
+        ptr += strlen(source->vars[i])+1;
     }
 
     *env_count = source->nenv;

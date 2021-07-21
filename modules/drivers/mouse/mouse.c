@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/device.h"
 #include "board/ps2.h"
 #include "board/pic.h"
@@ -7,7 +7,6 @@
 #include "kernel/isr.h"
 #include "misc/debug.h"
 
-unsigned int vv;
 typedef struct {
     CharDevice device;
     IORequest* request;
@@ -36,7 +35,6 @@ static DeviceType DEVICE_TYPE = {
 
 void module_init(){
 
-    vv = 0;
     DEVICE_TYPE.count_devices = count_devices;
     DEVICE_TYPE.instantiate = instantiate;
     DEVICE_TYPE.release = release;
@@ -109,17 +107,18 @@ static void handle_request (MouseDevice* device, IORequest* request){
     handle_io_request(request, buff, 3, TASK_IO_REQUEST_DONE);
 
 }
+static void handle_empty_request (MouseDevice* device, IORequest* request){
+    char buff;
+    handle_io_request(request, &buff,0, TASK_IO_REQUEST_DONE);
+}
 
 static int16_t read_async (CharDevice* device,IORequest* request){
 
     if (MOUSE_DEVICE(device)->bufindex == 3){
-        debug("read async - has data\n");
-
         handle_request(MOUSE_DEVICE(device), request);
-
+    } else if (request->type & TASK_IO_NOBLOCK){
+        handle_empty_request(device, request);
     } else {
-        debug("read async - hold\n");
-
         MOUSE_DEVICE(device)->request = request;
     }
 
@@ -128,47 +127,27 @@ static int16_t read_async (CharDevice* device,IORequest* request){
 
 static void handle_mouse_irq (InterruptFrame* f, void* data){
     cli();
-    debug(">>>>>>>>>>> irq: ");debug_i(vv,10);debug("\n");
-    vv++;
 
     MouseDevice* device = data;
 
+    uint8_t val = ps2_read(PORT_DATA);
+
     if (device->reset) {
-
         device->reset = 0;
-        ps2_read(PORT_DATA);
-
     } else if(device->bufindex < 3) {
-        debug("1\n");
-
-        uint8_t val = ps2_read(PORT_DATA);
-        debug("byte:");debug_i(val,8);debug("\n");
         device->buffer[device->bufindex++] = val;
-        debug("2\n");
-
-    }
-    debug("3\n");
+    } // else: overflow - discard
 
     if (device->bufindex == 3) {
-
-        debug("packet received\n");
-
         if (device->request){
 
-            debug("4\n");
             IORequest* request = device->request;
             device->request = NULL;
             handle_request(device, request);
-            debug("5\n");
 
-        } else {
-            MOUSE_DEVICE(device)->bufindex  = 0;
-        }
-
+        } 
     }
 
-    vv--;
-    debug("<<<<<<<<<<<<<< irq handled: ");debug_i(vv,10);debug("\n");
 
     pic_eoi1();
     pic_eoi2();

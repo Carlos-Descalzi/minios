@@ -28,7 +28,7 @@ void syscall_read(InterruptFrame* f){
     } else if (stream->async){
         debug("SYSCALL - read async\n");
         tasks_add_io_request(
-            TASK_IO_REQUEST_READ, 
+            TASK_IO_REQUEST_READ | (stream->nonblocking ? TASK_IO_NOBLOCK : 0), 
             stream_num, 
             read_data->buff,
             read_data->size

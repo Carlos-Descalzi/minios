@@ -3,6 +3,7 @@
 #include "fcntl.h"
 #include "unistd.h"
 #include "string.h"
+#include "sched.h"
 
 #define WIDTH           1024
 #define HEIGHT          768
@@ -67,16 +68,17 @@ int main(int argc, char** argv){
     gfx_init(&ctx, WIDTH, HEIGHT, 0);
     mouse_init(&mouse);
     window_init(&window, 100,100,500,300, "Hello world");
-    //mouse_check(&mouse);
 
 
     gfx_fillscreen(&ctx, BGCOLOR);
     window_draw(&ctx, &window);
     cursor_update(&ctx, &mouse, 1);
     while(1){
-        mouse_check(&mouse);
-        cursor_update(&ctx, &mouse, 0);
-        gfx_flush(&ctx);
+        if (mouse_check(&mouse)){
+            cursor_update(&ctx, &mouse, 0);
+            gfx_flush(&ctx);
+        }
+        sched_yield();
     }
 }
 static void window_init(Window* window, int x, int y, int w, int h, char* title){
@@ -136,7 +138,7 @@ static void mouse_init(Mouse* mouse){
     mouse->x = 512;
     mouse->y = 384;
 
-    mouse->fd = open("mouse0:",O_RDONLY);
+    mouse->fd = open("mouse0:",O_RDONLY | O_NONBLOCK);
 
 }
 static void cursor_update (GfxContext* ctx, Mouse* mouse, int init){
@@ -180,7 +182,11 @@ static int mouse_check (Mouse* mouse){
     int has_event = 0;
     MouseEvent mouse_event;
 
-    read(mouse->fd, &mouse_event, sizeof(MouseEvent));
+    int result = read(mouse->fd, &mouse_event, sizeof(MouseEvent));
+
+    if (result == 0){
+        return 0;
+    }
 
     if (mouse_event.bl){
         mouse->state |= MOUSE_LPRESS;
@@ -222,5 +228,5 @@ static int mouse_check (Mouse* mouse){
 
     memcpy(&(mouse->prev_event), &mouse_event, sizeof(MouseEvent));
 
-    return has_event;
+    return 1;
 }

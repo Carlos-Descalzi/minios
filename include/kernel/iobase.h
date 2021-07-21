@@ -8,6 +8,7 @@
  **/
 #define TASK_IO_REQUEST_READ        0x01
 #define TASK_IO_REQUEST_WRITE       0x02
+#define TASK_IO_NOBLOCK             0x10
 
 /**
  * IO Request status
