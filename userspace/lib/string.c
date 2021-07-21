@@ -70,7 +70,7 @@ char*   strchr  (const char*s, int c){
         int i;
         for (i=0;s[i];i++){
             if (s[i] == c){
-                return s+i;
+                return (char*) s+i;
             }
         }
     }
@@ -103,4 +103,37 @@ char* strcat(char* dest, const char* src){
     for (i=0;dest[i];i++);
     strcpy(dest+i,src);
     return dest;
+}
+
+char* strstr(const char*str, const char* search){
+    int l1 = strlen(str);
+    int l2 = strlen(search);
+    for (int i=0;i<l1;i++){
+        if (!strncmp(str+i,search,l2)){
+            return (char*) str+i;
+        }
+    }
+    return NULL;
+
+}
+
+char* strtok_r (char* str, const char* delim, char** saveptr){
+    char* token;
+    if ((!str || !str[0]) && !*saveptr){
+        return NULL;
+    }
+    if (*saveptr){
+        token = *saveptr;
+        *saveptr = strstr(*saveptr, delim); 
+    } else {
+        token = str;
+        *saveptr = strstr(str, delim);
+    }
+
+    if (*saveptr){
+        **saveptr = '\0';
+        *saveptr += strlen(delim);
+    }
+
+    return token;
 }

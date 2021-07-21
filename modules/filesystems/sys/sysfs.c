@@ -186,6 +186,7 @@ static int32_t get_devices_direntry(FileSystem* fs, Inode* inode, uint32_t* offs
     uint8_t instance;
     char buff[4];
     int dev_count = device_count_devices();
+    debug("devices:");debug_i(device_count_devices(),10);debug("\n");
 
     if (*offset < dev_count +2){
 

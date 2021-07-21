@@ -16,7 +16,8 @@ COREOBJS=stdlib.o 	\
 	 netutils.o	\
 	 malloc.o	\
 	 mmap.o		\
-	 ioctl.o
+	 ioctl.o	\
+	 env.o
 
 all: minios.a gfx.a
 

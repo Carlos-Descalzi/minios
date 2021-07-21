@@ -16,6 +16,7 @@ char*   strrchr     (const char*s, int c);
 int     strcmp      (const char*s1, const char* s2);
 int     strncmp     (const char*s1, const char* s2, size_t n);
 char*   strcat      (char* dest, const char* src);
-char*   getenv      (const char* name);
+char*   strstr      (const char*str, const char* search);
+char*   strtok_r    (char* str, const char* delim, char** saveptr);
 
 #endif

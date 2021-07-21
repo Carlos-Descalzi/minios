@@ -1,5 +1,6 @@
 #include "stdlib.h"
 #include "syscall.h"
+#include "path.h"
 
 const char NUMBERS[] = "0123456789ABCDEF";
 
@@ -97,24 +98,6 @@ void exit(int status){
     while(1);
 }
 
-#include "string.h"
-static const Env* _env = (Env*)0xFFFFD804;
-
-char* getenv(const char* name){
-    int l = strlen(name);
-    for (int i=0;i<_env->nenv;i++){
-        if(!strncmp(name, _env->vars[i],l)
-            && _env->vars[i][l] == '='){
-            return strchr(_env->vars[i],'=')+1;
-        }
-    }
-    return NULL;
-}
-void listenv(ListEnvFunc func){
-    for (int i=0;i<_env->nenv;i++){
-        func(_env->vars[i]);
-    }
-}
-int putenv(const char* env){
-    // FIXME todo
+char* realpath(const char* path, char* resolved_path){
+    return path_absolute(path, resolved_path);
 }

@@ -7,8 +7,8 @@
  * Minimal shell interface, good enough for running other programs
  **/
 
-static char     pwd[100];
 static char     parambuffer[256];
+static char     envbuffer[2048];    // used to setup environment for child processes
 
 static char**   parse_params    (char* param_string, int* nargs);
 static void     execute         (const char* file);
@@ -18,8 +18,6 @@ static void     showenv         (void);
 
 int main(int argc, char** argv){
     char buff[256];
-
-    strcpy(pwd,getenv("PWD"));
 
     printf("\e[2J\e[4;0mShell v0.1\n\n");
     //printf("\e[2JShell v0.1\n\n");
@@ -91,13 +89,15 @@ static void execute(const char* file){
     }
 
     memset(path,0,100);
-
-    strcat(path,getenv("PATH"));
-    strcat(path,file);
+    path_append(path, getenv("PATH"));
+    path_append(path, file);
     strcat(path,".elf");
 
+    int env_count;
+    copy_env(envbuffer, 2048, &env_count);
+
     if (!stat(path, &statb)){
-        int pid = spawn(path, nargs, argv, 0, NULL);
+        int pid = spawn(path, nargs, argv, env_count, (char**) envbuffer);
         if (!background){
             waitpid(pid);
         } else {
@@ -109,28 +109,43 @@ static void execute(const char* file){
 }
 
 static void changedir(const char* cmd){
-    char buff[256];
-    if(strlen(cmd) == 2){
-        strcpy(buff,"PWD=");
-        strcat(buff,getenv("HOME"));
-        putenv(buff);
-        strcpy(pwd,getenv("PWD"));
-    } else if (strlen(cmd) > 3){
-        strcpy(pwd,cmd+3);
-        strcpy(buff,"PWD=");
-        strcat(buff,pwd);
-        putenv(buff);
+    char buff[200];
+    char env[205];
+    struct stat statb;
+
+    memset(buff,0,200);
+    memset(env,0,205);
+
+    char* path = strchr(cmd,' ');
+
+    if (path){
+        if (realpath(path+1, buff)){
+
+            if (!stat(buff, &statb)){
+                sprintf(env,"PWD=%s",buff);
+                putenv(env);
+            } else {
+                printf("No such directory\n\n");
+            }
+        } else {
+            printf("No such directory\n\n");
+        }
+
+    } else {
+        sprintf(env,"PWD=%s",getenv("HOME"));
+        putenv(env);
+        printf("Current path now %s\n",getenv("PWD"));
     }
 }
 
 static void showpwd(void){
-    printf("%s\n",pwd);
+    printf("%s\n",getenv("PWD"));
 }
 
-static void show(const char* e){
+static void show(const char* e, void* data){
     printf("%s\n",e);
 }
 
 static void showenv(void){
-    listenv(show);
+    listenv(show, NULL);
 }

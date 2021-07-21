@@ -223,6 +223,7 @@ static void setup_str_writer (Writer* writer, char* str){
     writer->putc = str_putc;
     writer->puts = str_puts;
     writer->str = str;
+    writer->str[0] = '\0';
     writer->pos = 0;
 }
 static void setup_fp_writer (Writer* writer, FILE* fp){
@@ -237,6 +238,7 @@ static int str_putc (Writer* writer, char c){
 static int str_puts (Writer* writer, const char* str){
     int l = strlen(str);
     strcat(writer->str,str);
+    writer->pos += l;
     return l;
 }
 static int fp_putc (Writer* writer, char c){

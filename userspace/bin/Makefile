@@ -9,7 +9,8 @@ BINS=init.elf 		\
 	 sendmsg.elf	\
 	 testnet.elf	\
 	 test.elf		\
-	 testmouse.elf
+	 testmouse.elf	\
+	 str.elf
 
 XBINS=testgfx.elf
 

@@ -6,4 +6,4 @@
 	$(AS) $(ASFLAGS) -o $@ $<
 
 clean:
-	@rm -rf *.o *.bin *.img lst/*.lst *.log *.elf *.lst *.map kernellib.asm *.symtable
+	@rm -rf *.a *.o *.bin *.img lst/*.lst *.log *.elf *.lst *.map kernellib.asm *.symtable
