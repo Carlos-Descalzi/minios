@@ -3,7 +3,8 @@ A very simple operating system for i386 with its own bootloader, just for self l
 So far these features are implemented (barely):
 * bootloader with available memory detection.
 * Basic chipset and buses: PCI, PIC, PIT, Serial, PS/2 in progress.
-* Basic raw console
+* Text console and QEMU-compatible graphics mode.
+* Keyboard and mouse drivers.
 * base libraries: strings, heap, string/int conversion, etc.
 * IDE harddisk (read only, no IRQ, no DMA).
 * Virtual file system layer.
@@ -14,7 +15,7 @@ So far these features are implemented (barely):
 * Basic IPC by using message passing.
 * Process loading and execution.
 * Loadable kernel modules, used for device drivers.
-* Barebones userspace C library.
+* Simple userspace C library.
 * Minimall command line interface.
 * System calls for:
   * Open/close/read files, directories and stream handling.
