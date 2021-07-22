@@ -14,7 +14,6 @@ typedef void (*SysCall)(InterruptFrame *f);
 
 static SysCall syscalls[0x100];
 static void handle_syscall(InterruptFrame* f, void* data);
-static void syscall_debug(InterruptFrame* f);
 
 void syscall_init(){
     memset(syscalls,0,sizeof(syscalls));
@@ -30,6 +29,8 @@ void syscall_init(){
     syscalls[0x09] = syscall_mmap;
     syscalls[0x10] = syscall_ioctl;
     // ....
+    syscalls[0x20] = syscall_debug;
+    // ....
     syscalls[0x4d] = syscall_stat;
     syscalls[0x4e] = syscall_getdents;
     // ....
@@ -44,7 +45,6 @@ void syscall_init(){
     // ... to be filled
     // ... leave these for last
     syscalls[0x90] = syscall_modload;
-    syscalls[0x98] = syscall_debug;
     syscalls[0x99] = syscall_exit;
 
     isr_install(0x31, handle_syscall, NULL);
@@ -69,10 +69,3 @@ static void handle_syscall(InterruptFrame* f, void* data){
     }
 }
 
-
-static void syscall_debug(InterruptFrame* f){
-    uint8_t* str_ptr = tasks_to_kernel_address((uint8_t*)f->ebx);
-    console_print(str_ptr);
-    f->ebx = 0;
-    f->eax = 0;
-}

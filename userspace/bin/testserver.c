@@ -13,17 +13,13 @@ int main(int argc,char **argv){
 
     while(1){
         if (!msg_recv(&message)){
-            strcpy(buff,"Hello from server! replying to \"");
-            strcat(buff,message.body);
-            strcat(buff,"\"");
-            /*FIXME sprintf*/
-            /*sprintf(
+            sprintf(
                 buff,
                 "Received message from %d %d saying \"%s\"", 
                 message.source,
                 message.target,
                 message.body
-            );*/
+            );
             strcpy(message.body, buff);
             uint32_t t = message.source;
             message.source = message.target;

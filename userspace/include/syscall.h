@@ -13,6 +13,8 @@
 
 #define SYS_IOCTL   0x10
 
+#define SYS_DEBUG   0x20
+
 #define SYS_STAT    0x4D
 #define SYS_GETDENT 0x4E
 
@@ -27,7 +29,6 @@
 #define SYS_WAITPID 0x81
 
 #define SYS_MODLOAD 0x90
-#define SYS_DEBUG   0x98
 #define SYS_EXIT    0x99
 
 int syscall(int number, void* argptr);

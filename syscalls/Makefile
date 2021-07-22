@@ -17,6 +17,7 @@ OBJS=exit.o		\
 	getpid.o	\
 	msg.o		\
 	ioctl.o		\
-	mmap.o
+	mmap.o		\
+	debug.o
 
 all: $(OBJS)

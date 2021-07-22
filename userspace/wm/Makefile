@@ -1,6 +1,10 @@
 include ../Make.defs
 
-OBJS=main.o
+OBJS=main.o		\
+	 wm.o		\
+	 window.o	\
+	 list.o		\
+	 common.o	
 
 all: wm.elf
 

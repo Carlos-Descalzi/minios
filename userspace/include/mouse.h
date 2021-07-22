@@ -12,6 +12,6 @@ typedef struct __attribute__((__packed__)) {
             yo:1;
     int8_t  xm;
     int8_t  ym;
-} MouseEvent;
+} MouseState;
 
 #endif
