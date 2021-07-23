@@ -8,7 +8,8 @@ BINS=init.elf 		\
 	 testserver.elf	\
 	 sendmsg.elf	\
 	 testnet.elf	\
-	 testmouse.elf
+	 testmouse.elf	\
+	 testmalloc.elf
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/minios.a

@@ -1,103 +1,99 @@
 #include "stdlib.h"
 #include "stdint.h"
+#include "string.h"
 /**
- * This is a very simple but unefficient malloc implementation,
- * will be replaced in the future
+ * Very simple malloc based in double linked lists of blocks.
+ * Each time a memory block is requested, a bigger block is split, or
+ * if there is a block of the required size, is just returned.
+ *
+ * On free, it merges the released block with contiguous unused blocks.
  **/
 
-typedef struct MemoryBlock {
+typedef struct Block {
     uint32_t size:31,
              used:1;
-    struct  MemoryBlock* next;
-    char    block[];
-} MemoryBlock;
+    struct Block* prev;
+    struct Block* next;
+    char chunk[];
+} Block;
 
-#define HEADER_SIZE (sizeof(MemoryBlock))
+#define HEADER_SIZE (sizeof(Block))
 #define HEAP_SIZE   (HEAP_MEMORY_END_ADDRESS - HEAP_MEMORY_START_ADDRESS)
 
 extern int _HEAP_START;
 extern int _HEAP_END;
 
-static MemoryBlock* heap_start = NULL;
-static MemoryBlock* heap_end = NULL;
+static Block* heap_start = NULL;
 
 void* malloc(size_t size){
 
     if (!heap_start){
         // not initialized
-        heap_start = (MemoryBlock*) &_HEAP_START;
-        heap_end = (MemoryBlock*) &_HEAP_END;
+        heap_start = (Block*) &_HEAP_START;
         heap_start->used = 0;
-        heap_start->size = ((uint32_t)heap_end) - ((uint32_t)heap_start) - HEADER_SIZE;
-        heap_start->next = heap_end;
+        heap_start->size = ((uint32_t)&_HEAP_END) - ((uint32_t)&_HEAP_START) - HEADER_SIZE;
+        heap_start->prev = NULL;
+        heap_start->next = NULL;
     }
 
-    MemoryBlock* block = heap_start;
     if (size % 4 != 0){
-        size+=4 - (size % 4);   // always word aligned.
+        size+=4 - (size % 4);   // always dword aligned.
     }
-    while(block != heap_end
-        && (block->used || block->size < ((uint32_t)size))){
-        block = block->next;
-    }
-
-    if (!block){
-        // out of memory
-        return NULL;
-    }
-    if (block->used){
-        return NULL;
-    }
-
-    if (block->size - size > 2 * HEADER_SIZE){ 
-        // I split the block only if the difference is 2 * header size
-        // totally empirical
-        uint32_t old_size = block->size;
-
-        uint32_t total_block_size = size + HEADER_SIZE;
-
-        MemoryBlock* next = block->next;
-
-        block->size = size;
-        block->next = ((void*)block) + total_block_size;
-
-        block->next->size = old_size - total_block_size;
-        block->next->next = next;
-        block->next->used = 0;
-    } 
-
-    block->used = 1;
-    
-    return block->block;
-}
-
-void free(void* address){
-    MemoryBlock* block = (MemoryBlock*)(address - HEADER_SIZE);
-    block->used = 0;
-
-    for (block = heap_start; block != heap_end; block = block->next){
-        
+    for (Block* block = heap_start; block; block = block->next){
         if (!block->used){
-            // start to merge all unused consecutive blocks
-            MemoryBlock* next_block = block->next;
-
-            int size = 0;
-
-            while (next_block != heap_end && !next_block->used){
-                size += next_block->size + HEADER_SIZE;
-                next_block = next_block->next;
+            if (block->size - size > 2 * HEADER_SIZE){
+                // split block if remainder is useful for another usable chunk
+                Block* next = block->next;
+                block->used = 1;
+                block->next = (Block*) (block->chunk + size);
+                block->next->prev = block;
+                block->next->size = block->size - HEADER_SIZE - size;
+                block->next->used = 0;
+                block->next->next = next;
+                block->size = size;
+                return block->chunk;
+            } else if (block->size >= size){
+                // otherwise return the block even if is a bit bigger than requested.
+                block->used = 1;
+                return block->chunk;
             }
-            block->size += size;
-            block->next = next_block;
-
         }
     }
+    return NULL;
+}
 
-    int size = 0;
-
-    MemoryBlock* free = heap_start;
-    while(free != heap_end) {
-        size += free->size;
-        free = free->next;
+void free(void* chunk){
+    if (!chunk){
+        return;
     }
+    Block* block = (Block*) (chunk - HEADER_SIZE);
+    block->used = 0;
+
+    for (Block* b = block; b && !b->used; b = b->next){
+        // merge contiguous unused blocks forward
+        if (b->next && !b->next->used){
+            b->size += b->next->size + HEADER_SIZE;
+            b->next = b->next->next;
+            if (b->next){
+                b->next->prev = b;
+            }
+        }
+    }
+    for (Block* b = block; b && !b->used; b = b->prev){
+        // merge contiguous unused blocks backward.
+        if (b->prev && !b->prev->used){
+            b->prev->size += b->size + HEADER_SIZE;
+            b->prev->next = b->next;
+            if (b->next){
+                b->next->prev = b->prev;
+            }
+            b = b->prev;
+        }
+    }
+}
+
+void* calloc(size_t nmemb, size_t size){
+    size_t total_size = nmemb * size;
+    void* chunk = malloc(total_size);
+    return memset(chunk, 0, total_size);
 }
