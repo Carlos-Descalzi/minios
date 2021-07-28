@@ -13,4 +13,6 @@ typedef unsigned int    pid_t;
 
 typedef unsigned int    off_t;
 
+typedef unsigned long   time_t;
+typedef unsigned long   suseconds_t;
 #endif
