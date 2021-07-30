@@ -121,20 +121,20 @@ static void setup_isr_page(PageTableEntry* page_table, uint8_t us){
     debug_i((PAGE_LAST << 22) | (PAGE_LAST << 12),16);debug("\n");
 }
 
-static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_t physical_address, uint8_t rw){
+static uint32_t setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint8_t rw){
     uint32_t index = vaddress.page_dir_index;
+    uint32_t physical_address = 0;
 
-    debug("PAGING - Setup page for vaddress:");debug_i(vaddress.address,16);debug(",rw:");debug_i(rw,10);debug("\n");
+    debug("PAGING - Setup page for vaddress:");debug_i(vaddress.address,16);debug(",rw:");debug_i(rw,10);(",");debug("\n");
 
     set_exchange_page(dir);
 
     if (!local_page_dir[index].present){
-        uint32_t page_table_address = memory_alloc_block();
         debug("PAGING - Setup page directory entry\n");
         local_page_dir[index].present = 1;
         local_page_dir[index].read_write = 1;
         local_page_dir[index].user_supervisor = 1;
-        local_page_dir[index].page_table_address = page_table_address >> 12;
+        local_page_dir[index].page_table_address = memory_alloc_block() >> 12;
     }
 
     set_exchange_page(local_page_dir[index].page_table_address << 12);
@@ -145,8 +145,14 @@ static void setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uint32_
         local_table[index].present = 1;
         local_table[index].read_write = rw;
         local_table[index].user_supervisor = 1;
+
+        physical_address = memory_alloc_block();
+
         local_table[index].physical_page_address = physical_address >> 12;
+    } else {
+        physical_address = local_table[index].physical_page_address << 12;
     }
+    return physical_address;
 }
 
 
@@ -161,6 +167,7 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
     uint32_t j;
 
     debug("PAGING - Reading elf header\n");
+
     elf_read_header(stream, &header);
 
     for (i=0;i< header.program_header_table_entry_count;i++){
@@ -172,20 +179,21 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
             blocks = TO_PAGES(prg_header.segment_mem_size);
 
             for (j=0;j<blocks;j++){
-                uint32_t phys_block = memory_alloc_block();
+                uint32_t phys_block = setup_page(
+                    dir, 
+                    (VirtualAddress)(prg_header.virtual_address + ( j * PAGE_SIZE )), 
+                    (prg_header.flags & 0x2) != 0);
+
                 debug("PAGING - Alloc physical block:");debug_i(phys_block,16);debug("\n");
+
                 set_exchange_page(phys_block);
+
                 elf_read_program_page(
                     stream, 
                     &prg_header, 
                     local_ptr,
                     j, 
                     PAGE_SIZE);
-                setup_page(
-                    dir, 
-                    (VirtualAddress)(prg_header.virtual_address + ( j * PAGE_SIZE )), 
-                    phys_block,
-                    (prg_header.flags & 0x2) != 0);
             }
         } else {
             //debug("PAGING - Segment type:");debug_i(prg_header.segment_type,16);debug("\n");
@@ -295,6 +303,7 @@ PageDirectoryEntry* paging_new_task_space(void){
         memory_free_block(table_address_1);
         memory_free_block(table_address_2);
         memory_free_block(stack_block);
+        return NULL;
     }
 
     debug("PAGING - Allocated page table 0 at ");debug_i(table_address_1,16);debug("\n");
@@ -360,23 +369,26 @@ void paging_release_task_space(PageDirectoryEntry* page_directory){
     for (i=0;i<PAGES_MAX;i++){
         set_exchange_page(page_directory);
         if (local_page_dir[i].present){
-            local_page_dir[i].present = 0;
             set_exchange_page(local_page_dir[i].page_table_address << 12);
             for (j=0;j<PAGES_MAX;j++){
-                if (!(
+                if (
                     (i == 0 && j < 256) 
-                    || (i == PAGE_LAST && j >= (PAGE_LAST-1)))){
+                    || (i == PAGE_LAST && j == (PAGE_LAST))){
                     // skip the shared pages
+                    //debug("Page dir ");debug_i(i,10);debug(",");debug_i(j,10);debug(" - Shared page, skipping\n");
+                } else {
                     if (local_table[j].present){
                         memory_free_block(local_table[j].physical_page_address << 12);
-                    }
+                    } 
                 }
+                local_table[j].present = 0;
             }
             set_exchange_page(page_directory);
+            local_page_dir[i].present = 0;
             memory_free_block(local_page_dir[i].page_table_address << 12);
         }
     }
-    memory_free_block((uint32_t)page_directory);
+    memory_free_block(((uint32_t)page_directory ) & ~0x03);
 }
 uint32_t paging_physical_address(PageDirectoryEntry* page_dir, void *address){
     uint32_t addr;

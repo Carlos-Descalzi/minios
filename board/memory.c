@@ -51,6 +51,7 @@ void memory_free_block(uint32_t block_address){
     block_address /= MEMORY_BLOCK_SIZE;
     bit = 1 << (block_address % 32);
     index = block_address / 32;
+    debug("\tBlock number:");debug_i((block_address % 32) + index * 32,10);debug("\n");
     USER_MEMORY_BITMAP[index] &= ~bit; 
 }
 

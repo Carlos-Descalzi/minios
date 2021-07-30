@@ -5,7 +5,7 @@ static void print_stats(int total, int used);
 int main(int argc,char **argv){
     char* token;
     char buffer[256];
-    char* p;
+    char* p = NULL;
     int total;
     int used;
     FILE* fp;
@@ -20,8 +20,10 @@ int main(int argc,char **argv){
         fclose(fp);
 
         token = strtok_r(buffer,",",&p);
+        printf(">%s\n",token);
         total = atoi(token) / 1024;
         token = strtok_r(NULL,",",&p);
+        printf(">%s\n",token);
         used = atoi(token) / 1024;
 
         printf("User Memory:\n");
@@ -31,6 +33,8 @@ int main(int argc,char **argv){
     memset(buffer,0,256);
 
     fp = fopen("sys0:/memory/kernel","r");
+
+    p = NULL;
 
     if (fp){
         fread(buffer,256,1,fp);
