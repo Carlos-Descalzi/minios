@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/device.h"
 #include "lib/heap.h"
 #include "misc/debug.h"
@@ -312,7 +312,7 @@ static void handle_console_write(ConsoleDevice* device, uint8_t chr){
             device->mode = MODE_ESCAPE;
         } else if (chr == 8){
             backspace(device);
-        } else if (chr == 9){
+        } else if (chr == '\t'){
             tab(device);
         } else if (chr == '\n'){
             newline(device);
@@ -446,14 +446,19 @@ static void move_cursor(ConsoleDevice* console){
 }
 
 static void tab(ConsoleDevice* console){
-
     int x, y;
+    int new_x;
+
     get_pos(console, &x, &y);
 
-    uint8_t new_x = x / 8 + 8;
-    if (new_x <= x){new_x+=8;}
+    int r = x % 8;
 
-    set_pos(console, x, y);
+    new_x = x + ( r ? (8 - r) : 8);
+    if (new_x > 79){
+        new_x = 79;
+    }
+
+    set_pos(console, new_x, y);
 }
 
 static void get_pos(ConsoleDevice* device, int *x, int *y){

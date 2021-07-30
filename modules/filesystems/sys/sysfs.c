@@ -331,33 +331,36 @@ static Stream* open_stream (FileSystem* fs, uint32_t inodenum, uint32_t flags){
 
 static Stream* user_memory_stream(FileSystem* fs, uint32_t flags){
     uint32_t total;
-    uint32_t avail;
+    uint32_t used;
     char buff[10];
 
-    memory_stats(&total, &avail);
+    memory_stats(&total, &used);
+
+    debug("memory stats, total:");debug_i(total,10);debug("\n");
 
     Stream* stream = char_array_stream_open(20, O_RDONLY);
 
     strcat(CHAR_ARRAY_STREAM(stream)->buffer, itoa(total * 4096,buff,10));
     strcat(CHAR_ARRAY_STREAM(stream)->buffer, ",");
-    strcat(CHAR_ARRAY_STREAM(stream)->buffer, itoa(avail * 4096,buff,10));
+    strcat(CHAR_ARRAY_STREAM(stream)->buffer, itoa(used* 4096,buff,10));
     strcat(CHAR_ARRAY_STREAM(stream)->buffer, "\n");
+    debug(CHAR_ARRAY_STREAM(stream)->buffer);
 
     return stream;
 }
 
 static Stream* kernel_memory_stream(FileSystem* fs, uint32_t flags){
     uint32_t total;
-    uint32_t avail;
+    uint32_t used;
     char buff[10];
 
-    heap_stats(&total, &avail);
+    heap_stats(&total, &used);
 
     Stream* stream = char_array_stream_open(16, O_RDONLY);
 
     strcat(CHAR_ARRAY_STREAM(stream)->buffer, itoa(total,buff,10));
     strcat(CHAR_ARRAY_STREAM(stream)->buffer, ",");
-    strcat(CHAR_ARRAY_STREAM(stream)->buffer, itoa(avail,buff,10));
+    strcat(CHAR_ARRAY_STREAM(stream)->buffer, itoa(used,buff,10));
     strcat(CHAR_ARRAY_STREAM(stream)->buffer, "\n");
 
     return stream;

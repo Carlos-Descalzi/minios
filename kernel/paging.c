@@ -368,10 +368,12 @@ void paging_release_task_space(PageDirectoryEntry* page_directory){
                     || (i == PAGE_LAST && j >= (PAGE_LAST-1)))){
                     // skip the shared pages
                     if (local_table[j].present){
-                        memory_free_block(local_table[j].physical_page_address);
+                        memory_free_block(local_table[j].physical_page_address << 12);
                     }
                 }
             }
+            set_exchange_page(page_directory);
+            memory_free_block(local_page_dir[i].page_table_address << 12);
         }
     }
     memory_free_block((uint32_t)page_directory);

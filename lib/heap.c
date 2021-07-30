@@ -109,12 +109,12 @@ void heap_free(void* address){
         free = free->next;
     }
 }
-void heap_stats (uint32_t* total, uint32_t* free){
+void heap_stats (uint32_t* total, uint32_t* used){
     *total = HEAP_SIZE - HEADER_SIZE;
 
     for (MemoryBlock* b = HEAP_START; b != HEAP_END; b = b->next){
-        if (!b->used){
-            (*free)+=b->size;
+        if (b->used){
+            (*used)+=b->size;
         }
     }
 }
