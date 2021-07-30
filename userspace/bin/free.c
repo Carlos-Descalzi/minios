@@ -3,14 +3,14 @@
 static void print_stats(int total, int used);
 
 int main(int argc,char **argv){
-    char token[16];
+    char* token;
     char buffer[256];
+    char* p;
     int total;
     int used;
     FILE* fp;
 
     memset(buffer,0,256);
-    memset(token,0,16);
 
     fp = fopen("sys0:/memory/user","r");
 
@@ -19,17 +19,16 @@ int main(int argc,char **argv){
 
         fclose(fp);
 
-        memcpy(token,buffer,index(buffer,','));
-
+        token = strtok_r(buffer,",",&p);
         total = atoi(token) / 1024;
-        used = atoi(strchr(buffer,',')+1) / 1024;
+        token = strtok_r(NULL,",",&p);
+        used = atoi(token) / 1024;
 
         printf("User Memory:\n");
         print_stats(total, used);
     }
 
     memset(buffer,0,256);
-    memset(token,0,16);
 
     fp = fopen("sys0:/memory/kernel","r");
 
@@ -38,10 +37,11 @@ int main(int argc,char **argv){
 
         fclose(fp);
 
-        memcpy(token,buffer,index(buffer,','));
 
+        token = strtok_r(buffer,",",&p);
         total = atoi(token) / 1024;
-        used = atoi(strchr(buffer,',')+1) / 1024;
+        token = strtok_r(NULL,",",&p);
+        used = atoi(token) / 1024;
 
         printf("Kernel Memory:\n");
 
