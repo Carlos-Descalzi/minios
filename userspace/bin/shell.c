@@ -53,6 +53,8 @@ static char** parse_params(char* param_string, int* nargs){
         }
     }
 
+    memset(parambuffer,0,256);
+
     char** param_ptrs = (char**)parambuffer;
     char* ptr = parambuffer + nparams * sizeof(char*);
     strcpy(ptr, param_string);
@@ -94,6 +96,7 @@ static void execute(const char* file){
     strcat(path,".elf");
 
     int env_count;
+    memset(envbuffer,0,2048);
     copy_env(envbuffer, 2048, &env_count);
 
     if (!stat(path, &statb)){

@@ -9,10 +9,10 @@ static void         spc     (int n);
 static const char*  typename(uint8_t type);
 
 int main(int argc, char* argv[]){
-    char* path;
-    struct dirent* entry;
+    char* path = NULL;
+    struct dirent* entry = NULL;
 
-    if (argc){
+    if (argc > 0){
         path = argv[0];
     } else {
         path = getenv("PWD");

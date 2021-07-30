@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -508,6 +508,8 @@ void paging_write_env(PageDirectoryEntry* dir,
     
         address = local_table[PAGE_LAST-2].physical_page_address << 12;
         set_exchange_page(address);
+
+        memset(local_ptr,0, PAGE_SIZE);
 
         if (args){
             debug("Setting up arguments\n");

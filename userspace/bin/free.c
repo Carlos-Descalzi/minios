@@ -20,10 +20,8 @@ int main(int argc,char **argv){
         fclose(fp);
 
         token = strtok_r(buffer,",",&p);
-        printf(">%s\n",token);
         total = atoi(token) / 1024;
         token = strtok_r(NULL,",",&p);
-        printf(">%s\n",token);
         used = atoi(token) / 1024;
 
         printf("User Memory:\n");
