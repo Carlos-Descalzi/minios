@@ -77,7 +77,7 @@ static uint32_t         read_block          (FileSystem* fs, Inode* inode,
                                             uint32_t length);
 static int32_t          get_direntry        (FileSystem* fs, Inode* inode, 
                                             uint32_t* offset, DirEntry* direntry);
-static Stream*          open_stream         (FileSystem* fs, const char* path, uint32_t flags);
+static Stream*          open_stream         (FileSystem* fs, uint32_t inodenum, uint32_t flags);
 int16_t                 eth_read_byte       (Stream*);
 int16_t                 eth_write_byte      (Stream*,uint8_t);
 int16_t                 eth_read_bytes      (Stream*,uint8_t*,int16_t);
@@ -118,7 +118,7 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     FILE_SYSTEM(fs)->device = device;
     FILE_SYSTEM(fs)->close = close;
     FILE_SYSTEM(fs)->find_inode = find_inode;
-    FILE_SYSTEM(fs)->stream_open = open_stream;
+    FILE_SYSTEM(fs)->open_stream = open_stream;
     FILE_SYSTEM(fs)->alloc_inode = alloc_inode;
     FILE_SYSTEM(fs)->free_inode = free_inode;
     FILE_SYSTEM(fs)->release_resources = release_resources;
@@ -240,13 +240,7 @@ static int32_t load_inode (FileSystem* fs, uint32_t inodenum, Inode* inode){
     return 0;
 }
 
-static Stream* open_stream(FileSystem* fs, const char* path, uint32_t flags){
-
-    uint32_t inodenum = find_inode(fs, path);
-
-    if (inodenum == 0){
-        return NULL;
-    }
+static Stream* open_stream(FileSystem* fs, uint32_t inodenum, uint32_t flags){
 
     EthStream* stream = heap_new(EthStream);
     load_inode(fs,inodenum, INODE(&(stream->inode)));

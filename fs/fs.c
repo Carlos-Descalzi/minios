@@ -85,3 +85,13 @@ static FileSystem* create(BlockDevice* device){
     return NULL;
 }
 
+Stream* fs_open_stream_path (FileSystem* fs, const char* path, uint32_t flags){
+
+    uint32_t inodenum = fs_find_inode(fs, path);
+
+    if (inodenum){
+        return fs_open_stream(fs, inodenum, flags);
+    }
+
+    return NULL;
+}

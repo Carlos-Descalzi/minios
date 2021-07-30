@@ -89,7 +89,7 @@ static void load_program(FileSystem* fs, const char* path){
     console_print(path);
     console_print("\n");
     
-    Stream* stream = fs_file_stream_open(fs, path, O_RDONLY);
+    Stream* stream = fs_open_stream_path(fs, path, O_RDONLY);
     
     uint32_t task_id = tasks_new(
         stream,

@@ -88,6 +88,7 @@ void syscall_stat(InterruptFrame* f){
         f->ebx = 0;
 
     } else {
+        debug("not found\n");
         f->ebx = ((uint32_t)-4);
     }
 

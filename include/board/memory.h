@@ -29,5 +29,8 @@ uint32_t    memory_alloc_block  (void);
  * Frees a 4kb block
  **/
 void        memory_free_block   (uint32_t block_address);
-
+/**
+ * Returns the count of free blocks
+ **/
+void        memory_stats        (uint32_t* total, uint32_t* available);
 #endif

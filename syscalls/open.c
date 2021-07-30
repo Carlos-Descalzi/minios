@@ -8,11 +8,12 @@
 #include "fs/fs.h"
 #include "board/console.h"
 #include "lib/string.h"
+#include "lib/path.h"
 #include "io/streamimpl.h"
 
 typedef struct {
     uint32_t flags;
-    char* path
+    char* path;
 } OpenData;
 
 static int next_stream_pos(Task *task);
@@ -73,7 +74,7 @@ void syscall_open(InterruptFrame* f){
             return;
         }
 
-        stream = fs_file_stream_open(fs, path, flags);
+        stream = fs_open_stream_path(fs, path, flags);
         
         if (!stream){
             debug("File not found\n");

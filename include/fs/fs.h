@@ -73,7 +73,8 @@ struct FileSystem {
     int32_t     (*get_direntry)         (struct FileSystem*, Inode*, uint32_t*, DirEntry*);
     Inode*      (*alloc_inode)          (struct FileSystem*);
     void        (*free_inode)           (struct FileSystem*, Inode*);
-    Stream*     (*stream_open)          (struct FileSystem*, const char*, uint32_t);
+    Stream*     (*open_stream)          (struct FileSystem*, uint32_t, uint32_t);
+    //Stream*     (*stream_open)          (struct FileSystem*, const char*, uint32_t);
     void        (*release_resources)    (struct FileSystem*);
 
 };
@@ -95,6 +96,7 @@ FileSystem*     fs_get_filesystem           (BlockDevice* device);
  **/
 void            fs_release_filesystem       (FileSystem* fs);
 
+Stream*         fs_open_stream_path         (FileSystem* fs, const char* path, uint32_t flags);
 #define         FILE_SYSTEM(f)              ((FileSystem*)(f))
 
 #define         fs_type_create(fst,d)       ((fst)->create(fst, d))
@@ -115,9 +117,10 @@ void            fs_release_filesystem       (FileSystem* fs);
  **/
 #define         fs_free_inode(fs,i)         ((fs)->free_inode(fs,i))
 /**
- * Opens a stram for a given file path
+ * Opens a stream for a given an inode number
  **/
-#define         fs_file_stream_open(fs,p,m) ((fs)->stream_open(fs,p,m))
+//#define         fs_file_stream_open(fs,p,m) ((fs)->stream_open(fs,p,m))
+#define         fs_open_stream(fs,i,f)      ((fs)->open_stream(fs,i,f))
 /**
  * Releases any resource taken by a file system like caches and work inodes
  **/

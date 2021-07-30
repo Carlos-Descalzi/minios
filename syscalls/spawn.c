@@ -74,7 +74,7 @@ void syscall_spawn(InterruptFrame* f){
         new_env = task_params_copy(current_task->env);
     }
 
-    Stream* stream = fs_file_stream_open(fs, filepath, O_RDONLY);
+    Stream* stream = fs_open_stream_path(fs, filepath, O_RDONLY);
 
     if (stream){
         f->ebx = tasks_new(stream, new_args, new_env);

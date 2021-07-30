@@ -51,3 +51,19 @@ static uint8_t check_avail_ram(MemoryRegion* region, uint8_t number, void* data)
     }
     return 0;
 }
+
+void memory_stats(uint32_t* total, uint32_t* available){
+    uint32_t count = 0;
+
+    for (uint32_t i = 0;i< frame_bitmap_length;i++){
+        for (int j=0;j<32;j++){
+            if (!(USER_MEMORY_BITMAP[i] & ( 1 << j))){
+                count++;
+            }
+        }
+    }
+
+
+    *available = count;
+    *total = frame_bitmap_length * 8;
+}

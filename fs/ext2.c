@@ -34,7 +34,7 @@ typedef struct {
     uint32_t        numblocks;
     uint32_t        current_block;
     uint8_t*        block_buffer;
-    char            path[1];
+    //char            path[1];
 } FileStream;
 
 #define     FILE_STREAM(fs)  ((FileStream*)fs)
@@ -63,7 +63,8 @@ static int32_t          get_direntry            (FileSystem* fs, Inode* inode,
 static Inode*           alloc_inode             (FileSystem* fs);
 static void             free_inode              (FileSystem* fs, Inode* inode);
 static void             release_resources       (FileSystem* fs);
-static Stream*          ext2_stream_open        (FileSystem* fs, const char* path, uint32_t flags);
+static Stream*          ext2_open_stream        (FileSystem* fs, uint32_t inodenum, uint32_t flags);
+//static Stream*          ext2_stream_open        (FileSystem* fs, const char* path, uint32_t flags);
 int16_t                 ext2_stream_read_byte   (Stream*);
 int16_t                 ext2_stream_write_byte  (Stream*,uint8_t);
 int16_t                 ext2_stream_read_bytes  (Stream*,uint8_t*,int16_t);
@@ -150,7 +151,8 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     FILE_SYSTEM(fs)->get_direntry = get_direntry;
     FILE_SYSTEM(fs)->alloc_inode = alloc_inode;
     FILE_SYSTEM(fs)->free_inode = free_inode;
-    FILE_SYSTEM(fs)->stream_open = ext2_stream_open;
+    FILE_SYSTEM(fs)->open_stream = ext2_open_stream;
+    //FILE_SYSTEM(fs)->stream_open = ext2_stream_open;
     FILE_SYSTEM(fs)->release_resources = release_resources;
     FILE_SYSTEM(fs)->inode_size = sizeof(Ext2Inode);
     FILE_SYSTEM(fs)->block_size = 1024 << fs->super_block.log_block_size;
@@ -632,16 +634,17 @@ static int16_t ext2_iter_dir_block(Ext2FileSystem* fs, uint32_t block_num, DirVi
     return 0;
 }
 
-Stream* ext2_stream_open(FileSystem* fs, const char* path, uint32_t flags){
-    uint32_t inodenum;
+//Stream* ext2_stream_open(FileSystem* fs, const char* path, uint32_t flags){
+static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t flags){
+    //uint32_t inodenum;
     FileStream* stream;
 
     debug("EXT2 - Find inode for ");debug(path);debug("\n");
-    inodenum = find_inode(fs, path);
+    //inodenum = find_inode(fs, path);
     debug("EXT2 - Inode: ");debug_i(inodenum,10);debug("\n");
 
     if (inodenum){
-        stream = heap_alloc(sizeof(FileStream) + strlen(path));
+        stream = heap_alloc(sizeof(FileStream));// + strlen(path));
         if (!stream){
             debug("EXT2 - No memory for creating stream\n");
             return NULL;
@@ -650,7 +653,7 @@ Stream* ext2_stream_open(FileSystem* fs, const char* path, uint32_t flags){
         stream->fs = E2FS(fs);
         stream->block_buffer = heap_alloc(fs->block_size);
         load_inode(fs, inodenum, INODE(&(stream->inode)));
-        strcpy(stream->path, path);
+        //strcpy(stream->path, path);
         debug("EXT2 - inode size:");debug_i(fs->block_size,10);debug("\n");
         stream->numblocks = stream->inode.inode.size / fs->block_size;
         if (stream->inode.inode.size % fs->block_size){
