@@ -37,3 +37,11 @@ ListNode* list_remove   (ListNode* list, ListNode* node){
     node->next = NULL;
     return list;
 }
+
+int list_size(ListNode* list){
+    int count = 0;
+
+    for (ListNode* n = list; n; count++, n = n->next);
+
+    return count;
+}

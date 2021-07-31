@@ -24,11 +24,21 @@ typedef struct {
     char                body[1024];
 } Message;
 
+typedef union {
+    void*       ptr_data;
+    uint32_t    int_data;
+} ConditionData;
+
+
+typedef struct Task Task;
+
+typedef int (*Condition)(Task*);
+
 #define MESSAGE_SIZE    (sizeof(Message)+1024)
 /**
  * Task structure definition
  **/
-typedef struct Task {
+struct Task {
     uint32_t            tid;   
     uint32_t            status;
     CPUState            cpu_state; 
@@ -39,10 +49,10 @@ typedef struct Task {
     Stream*             streams[32];        // max open files
     CharDevice*         console;            // console associated to task.
     IORequest           io_requests[4];     // max active IO requests
-    int                 (*waitcond)(struct Task*); // wait condition
-    void*               cond_data;
+    Condition           waitcond;           // wait condition
+    ConditionData       cond_data;
     ListNode*           incoming_messages;
-} Task;
+};
 
 typedef int (*TaskVisitor)                  (Task*, void*);
 

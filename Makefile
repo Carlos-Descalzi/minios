@@ -32,7 +32,7 @@ QEMU_TEST_ARGS=    \
 	-D trace.log
 
 QEMU_NET_ARGS=	   \
-	-netdev tap,id=n0 \
+    -netdev user,id=n0,net=192.168.76.0/24,dhcpstart=192.168.76.9,hostfwd=tcp::8823-:23,hostfwd=udp::8867-:67 \
 	-device rtl8139,netdev=n0,mac=32:2f:67:52:ab:bd 
 
 QEMU_DEBUG_ARGS=   \

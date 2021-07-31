@@ -9,5 +9,6 @@ typedef struct ListNode {
 
 ListNode* list_add      (ListNode* list, ListNode* node);
 ListNode* list_remove   (ListNode* list, ListNode* node);
+int       list_size     (ListNode* list);
 
 #endif
