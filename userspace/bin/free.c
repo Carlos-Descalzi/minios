@@ -1,4 +1,6 @@
 #include "stdio.h"
+#include "string.h"
+#include "stdlib.h"
 
 static void print_stats(int total, int used);
 

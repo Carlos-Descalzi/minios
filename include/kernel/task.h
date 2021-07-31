@@ -44,6 +44,8 @@ typedef struct Task {
     ListNode*           incoming_messages;
 } Task;
 
+typedef int (*TaskVisitor)                  (Task*, void*);
+
 /**
  * Initializes task scheduler
  **/
@@ -118,4 +120,12 @@ int         tasks_check_for_message         (Message* message);
  * Puts task in wait state until message arrives
  **/
 int         tasks_wait_message              (Message* message);
+/**
+ * Returns the amount of tasks in the system
+ **/
+int         tasks_count                     (void);
+/**
+ * Iterates over tasks
+ **/
+void        tasks_iter_tasks                (TaskVisitor visitor, void* data);
 #endif

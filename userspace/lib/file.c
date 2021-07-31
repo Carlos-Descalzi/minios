@@ -57,13 +57,16 @@ char* fgets(char* buff, int size, FILE* stream){
     int i;
     char c;
     for (i=0;i<size-1;){
-        read(stream->fd,&c,1);
-        if (c == '\b'){
-            if (i > 0){
-                i--;
+        if (read(stream->fd,&c,1) > 0){
+            if (c == '\b'){
+                if (i > 0){
+                    i--;
+                }
+            } else if (c != '\n'){
+                buff[i++] = c;
+            } else {
+                break;
             }
-        } else if (c != '\n'){
-            buff[i++] = c;
         } else {
             break;
         }

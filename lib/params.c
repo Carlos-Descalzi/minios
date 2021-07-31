@@ -3,7 +3,8 @@
 #include "lib/string.h"
 #include "misc/debug.h"
 
-#define OFFSET(b,a) (((uint32_t)b)-((uint32_t)a))
+#define OFFSET(b,a)     (((uint32_t)b)-((uint32_t)a))
+#define REALPTR(b,a)    (char*)(((uint32_t)b)+((uint32_t)a))
 
 TaskParams* task_params_from_char_array(int count, char**params){
     int size = 0;
@@ -43,4 +44,20 @@ void task_params_copy_with_offset(TaskParams* params, TaskParams* dest, uint32_t
     for (int i=0;i<params->count;i++){
         dest->params[i] += offset;
     }
+}
+
+char* params_to_string(TaskParams* params, char* buffer){
+
+    if (params && buffer){
+        buffer[0] = '\0';
+
+        for (int i=0;i<params->count;i++){
+            if (i > 0){
+                strcat(buffer," ");
+            }
+            strcat(buffer,REALPTR(params->params[i],params));
+        }
+    }
+
+    return buffer;
 }

@@ -5,11 +5,11 @@
 int main(int argc, char**argv){
     char buff[1024];
 
-    if (argc == 0){
+    if (argc < 2){
         return 0;
     }
 
-    FILE* fp = fopen(argv[0],"r");
+    FILE* fp = fopen(argv[1],"r");
 
     if (!fp){
         printf("File not found\n");

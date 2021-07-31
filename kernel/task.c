@@ -492,3 +492,29 @@ static void setup_console(Task* task){
         debug("Error: No console!\n");
     }
 }
+
+int tasks_count (void){
+    int count = 0;
+
+    for (ListNode* n = task_list; n; n = n->next){
+        count++;
+    }
+    for (ListNode* n = io_wait_list; n; n = n->next){
+        count++;
+    }
+
+    return count;
+}
+
+void tasks_iter_tasks(TaskVisitor visitor, void* data){
+    for (ListNode* n = task_list; n; n = n->next){
+        if (visitor(&(TASK_NODE(n)->task), data)){
+            break;
+        }
+    }
+    for (ListNode* n = io_wait_list; n; n = n->next){
+        if (visitor(&(TASK_NODE(n)->task), data)){
+            break;
+        }
+    }
+}

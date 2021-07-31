@@ -76,14 +76,16 @@ static void execute(const char* file){
     struct stat statb;
     int nargs = 0;
     int background = 0;
+    char* executable;
     char**argv = NULL;
 
+    executable = file;
     char* param_start = strchr(file, ' ');
 
+    argv = parse_params(file, &nargs);
     if (param_start){
-        argv = parse_params(param_start+1, &nargs);
         *param_start = '\0';
-    }
+    } 
 
     if (nargs > 0 && !strcmp(argv[nargs-1],"&")){
         nargs--;

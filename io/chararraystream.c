@@ -33,6 +33,7 @@ Stream* char_array_stream_open (size_t buffer_size, int mode){
     STREAM(stream)->size = size;
     STREAM(stream)->seek = seek;
     STREAM(stream)->flush = flush;
+    STREAM(stream)->close = close;
 
     return STREAM(stream);
 }

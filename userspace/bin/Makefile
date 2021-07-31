@@ -10,7 +10,8 @@ BINS=init.elf 		\
 	 testnet.elf	\
 	 testmouse.elf	\
 	 testmalloc.elf	\
-	 free.elf
+	 free.elf		\
+	 ps.elf
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/minios.a

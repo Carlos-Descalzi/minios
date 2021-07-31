@@ -21,5 +21,7 @@ TaskParams* task_params_copy                (TaskParams* other);
 void        task_params_copy_with_offset    (TaskParams* params,
                                             TaskParams* dest,
                                             uint32_t offset);
+char*       params_to_string                (TaskParams* params, 
+                                            char* buffer);
 
 #endif

@@ -265,11 +265,10 @@ static void request_callback(IORequest* request, void* data){
             if (device->console_status.echo){
                 handle_console_write(CONSOLE_DEVICE(device),data);
             }
-            handle_io_request(device->user_request, &data, 1, TASK_IO_REQUEST_DONE);
+            handle_io_request(device->user_request, (uint8_t*) &data, 1, TASK_IO_REQUEST_DONE);
             reset_console_request(device);
         } else {
             debug("Unknown keycode ");debug_i(key_code,16);debug("\n");
-            char data = 0;
             set_keyboard_request(device);
         }
     } else {
@@ -544,20 +543,13 @@ static inline void clear_buff(ConsoleDevice* screen){
     screen->buff_index = 0;
 }
 static void clear_screen (ConsoleDevice* console){
-    int screen_size = console->width * console->height;
-
     device_setopt(console->screen,SCREEN_OPT_CLEAR,NULL);
 }
 void fb_write (ConsoleDevice* console, uint8_t chr){
-
-
     char_device_write(console->screen, console->color);
     char_device_write(console->screen, chr);
 }
 
 static void adjust_view_to_pos(ConsoleDevice* console){
-
-    int screen_size = console->width * console->height;
-
     device_setopt(console->screen, SCREEN_OPT_SCROLL,NULL);
 }

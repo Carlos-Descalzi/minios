@@ -90,10 +90,14 @@ static void load_program(FileSystem* fs, const char* path){
     console_print("\n");
     
     Stream* stream = fs_open_stream_path(fs, path, O_RDONLY);
+
+    char* args[]  = {
+        path
+    };
     
     uint32_t task_id = tasks_new(
         stream,
-        NULL,
+        task_params_from_char_array(1,args),
         task_params_from_char_array(N_ENV, ENV)
     );
     

@@ -237,7 +237,7 @@ static int str_putc (Writer* writer, char c){
 }
 static int str_puts (Writer* writer, const char* str){
     int l = strlen(str);
-    strcat(writer->str,str);
+    strcpy(writer->str + writer->pos,str);
     writer->pos += l;
     return l;
 }

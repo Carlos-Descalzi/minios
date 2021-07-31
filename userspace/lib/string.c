@@ -137,13 +137,3 @@ char* strtok_r (char* str, const char* delim, char** saveptr){
 
     return token;
 }
-int index (const char* s, int c){
-
-    for (int i=0;s[i];i++){
-        if (s[i] == c){
-            return i;
-        }
-    }
-
-    return -1;
-}

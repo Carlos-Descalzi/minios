@@ -12,8 +12,8 @@ int main(int argc, char* argv[]){
     char* path = NULL;
     struct dirent* entry = NULL;
 
-    if (argc > 0){
-        path = argv[0];
+    if (argc > 1){
+        path = argv[1];
     } else {
         path = getenv("PWD");
     }
