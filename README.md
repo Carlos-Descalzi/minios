@@ -72,3 +72,10 @@ Lists all available devices
 ### cat
 Dumps to console the contents of a given file, syntax:
 ```$ cat [path]```
+
+### free
+Displays user and kernel memory statistics.
+
+### ps
+Shows current processes
+
