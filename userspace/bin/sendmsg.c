@@ -9,11 +9,11 @@
 int main(int argc, char** argv){
     Message message;
 
-    if (argc == 0){
+    if (argc < 2){
         return 0;
     }
 
-    int target = atoi(argv[0]);
+    int target = atoi(argv[1]);
 
     message.source = getpid();
     message.target = target;
