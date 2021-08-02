@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/syscalls.h"
 #include "kernel/task.h"
 #include "lib/path.h"

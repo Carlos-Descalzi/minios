@@ -482,7 +482,7 @@ static void setup_console(Task* task){
         // stderr
         task->streams[2] = device_stream_open(task->console,STREAM_WRITE);
     } else {
-        debug("Error: No console!\n");
+        debug("Warning: No console\n");
     }
 }
 

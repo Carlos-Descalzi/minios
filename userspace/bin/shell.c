@@ -102,6 +102,7 @@ static void execute(const char* file){
     copy_env(envbuffer, 2048, &env_count);
 
     if (!stat(path, &statb)){
+        debug("Spawning new task\n");
         int pid = spawn(path, nargs, argv, env_count, (char**) envbuffer);
         if (!background){
             waitpid(pid);

@@ -7,98 +7,10 @@
 #include "string.h"
 #include "net.h"
 #include "netutils.h"
+#include "sched.h"
+#include "msg.h"
 
 /*
-static void read_mac(char* mac){
-    int fd = open("net0:/self",O_RDONLY);
-    read(fd, mac,6);
-    close(fd);
-    printf("MAC address:");
-    for (int i=0;i<6;i++){
-        if (i>0) printf(":");
-        printf("%2x",mac[i]);
-    }
-    printf("\n");
-}
-
-static void make_arp_announcement(char* source_mac, char* ip, int fd){
-    ArpPacket arp;
-
-    arp.ether_type = htons2(ETHER_TYPE_ARP);
-    arp.arp.hw_type = htons2(ARP_HW_ETH);
-    arp.arp.proto_type = htons2(ARP_PROTO_TYPE_IPV4);
-    arp.arp.hw_addr_len = 6;
-    arp.arp.proto_addr_len = 4;
-    arp.arp.opcode = htons2(ARP_REQUEST);
-    memcpy(arp.arp.sender_hw_address, source_mac, 6);
-    memcpy(arp.arp.sender_proto_addr, ip, 4);
-    memcpy(arp.arp.target_proto_addr, ip, 4);
-    memset(arp.arp.target_hw_address, 0, 6);
-
-    write(fd, &arp, sizeof(ArpPacket));
-}
-ArpPacket arp;
-EthFrame eth_frame;
-
-static void answer_arp(int fd, char* source_mac, char* source_ip, EthFrame* frame){
-    arp.ether_type = htons2(ETHER_TYPE_ARP);
-    arp.arp.hw_type = htons2(ARP_HW_ETH);
-    arp.arp.proto_type = htons2(ARP_PROTO_TYPE_IPV4);
-    arp.arp.hw_addr_len = 6;
-    arp.arp.proto_addr_len = 4;
-    arp.arp.opcode = htons2(ARP_REPLY);
-    memcpy(arp.arp.sender_hw_address, source_mac, 6);
-    memcpy(arp.arp.sender_proto_addr, source_ip,4);
-    memcpy(arp.arp.target_hw_address, frame->arp_packet.arp.sender_hw_address, 6);
-    memcpy(arp.arp.target_proto_addr, frame->arp_packet.arp.sender_proto_addr, 4);
-    write(fd, &arp, sizeof(ArpPacket));
-}
-
-static void make_arp_query(char* source_mac, char* source_ip, char* dest_mac, char* dest_ip, int fd){
-
-    arp.ether_type = htons2(ETHER_TYPE_ARP);
-    arp.arp.hw_type = htons2(ARP_HW_ETH);
-    arp.arp.proto_type = htons2(ARP_PROTO_TYPE_IPV4);
-    arp.arp.hw_addr_len = 6;
-    arp.arp.proto_addr_len = 4;
-    arp.arp.opcode = htons2(ARP_REQUEST);
-    memcpy(arp.arp.sender_hw_address, source_mac, 6);
-    memcpy(arp.arp.sender_proto_addr, source_ip,4);
-    memset(arp.arp.target_hw_address,0, 6);
-    memcpy(arp.arp.target_proto_addr, dest_ip, 4);
-
-    write(fd, &arp, sizeof(ArpPacket));
-
-    memset(&arp, 0, sizeof(ArpPacket));
-
-    while(1){
-        int result = read(fd, &eth_frame,sizeof(EthFrame));
-
-        printf("Received packet of type: %04x, result: %d\n",htons2(eth_frame.ether_type),result);
-
-        if (eth_frame.ether_type == htons2(ETHER_TYPE_IP)){
-            printf("\tReceived IP packet\n");
-            if (eth_frame.ipv4_packet.ipv4.protocol == IPV4_TYPE_UDP){
-                printf("\t  Received UDP packet, payload: %s\n",
-                        eth_frame.ipv4_packet.payload);
-            } else {
-                printf("\t  Packet of protocol %04x\n", eth_frame.ipv4_packet.ipv4.protocol);
-            }
-
-        } else if (eth_frame.ether_type == htons2(ETHER_TYPE_ARP)){
-            printf("\tReceived ARP packet\n");
-            if (eth_frame.arp_packet.arp.opcode == htons2(ARP_REQUEST)){
-                printf("\t  Answering ARP\n");
-                answer_arp(fd, source_mac, source_ip, &eth_frame);
-            } else {
-                printf("\t  ARP opcode: %04x\n",eth_frame.arp_packet.arp.opcode);
-            }
-        } else {
-            printf("Recevied packet %04x\n", htons2(eth_frame.ether_type));
-        }
-        printf("Done\n");
-    }
-}
 
 static char ip_addr[] = {192,168,102,3};
 char dest_ip[] = {192,168,100,4};
@@ -132,35 +44,8 @@ static void send_udp_message(int fd){
     write(fd, packet, sizeof(Ipv4Packet) + strlen(message) + 1);
 }
 
-static char dest_mac[] = {0x1c, 0x39, 0x47, 0xb0, 0x39, 0x1f};
 
-int main(int argc,char **argv){
-    char mac[6];
-
-    read_mac(mac);
-    int fd = open("net0:/00:00:00:00:00:00", O_RDWR| O_NONBLOCK);
-
-    if (fd < 0){
-        printf("Unable to open device\n");
-        return 1;
-    }
-
-    make_arp_announcement(mac, ip_addr, fd);
-    //make_arp_query(mac, ip_addr, NULL, dest_ip, fd);
-    printf("Closing\n");
-    close(fd);
-    printf("Closed\n");
-    
-    //int fd = open(dest_addr, O_RDWR | O_NONBLOCK);
-
-    //if (fd < 0){
-    //    printf("Unable to open device\n");
-    //}
-    //send_udp_message(fd);
-
-    //close(fd);
-    return 0;
-}*/
+*/
 
 char rx_buffer[8192];
 char tx_buffer[8192];
@@ -179,16 +64,16 @@ static void print_ip(char* ip){
 
 static void print_arp_packet(EthFrame* frame){
     printf("\t\tSender proto address:");
-    print_ip(frame->arp_packet.arp.sender_proto_addr);
+    print_ip(frame->arp_packet.sender_proto_addr);
     printf("\n");
     printf("\t\tSender hw address:");
-    print_mac(frame->arp_packet.arp.sender_hw_address);
+    print_mac(frame->arp_packet.sender_hw_address);
     printf("\n");
     printf("\t\tTarget proto address:");
-    print_ip(frame->arp_packet.arp.target_proto_addr);
+    print_ip(frame->arp_packet.target_proto_addr);
     printf("\n");
     printf("\t\tTarget hw address:");
-    print_mac(frame->arp_packet.arp.target_hw_address);
+    print_mac(frame->arp_packet.target_hw_address);
     printf("\n");
 }
 
@@ -200,17 +85,15 @@ static void answer_arp_request(int fd, EthFrame* frame){
     memcpy(answer->source_mac, my_mac, 6);
     memcpy(answer->target_mac, frame->source_mac, 6);
     answer->ether_type = htons2(ETHER_TYPE_ARP);
-    answer->arp_packet.arp.hw_type = htons2(ARP_HW_ETH);
-    answer->arp_packet.arp.proto_type = frame->arp_packet.arp.proto_type;
-    answer->arp_packet.arp.proto_addr_len = frame->arp_packet.arp.proto_addr_len;
-    answer->arp_packet.arp.opcode = htons2(ARP_REPLY);
+    answer->arp_packet.hw_type = htons2(ARP_HW_ETH);
+    answer->arp_packet.proto_type = frame->arp_packet.proto_type;
+    answer->arp_packet.proto_addr_len = frame->arp_packet.proto_addr_len;
+    answer->arp_packet.opcode = htons2(ARP_REPLY);
 
-    memcpy(answer->arp_packet.arp.sender_hw_address, my_mac,6);
-    memcpy(answer->arp_packet.arp.sender_proto_addr, my_ip, 4);
-    memcpy(answer->arp_packet.arp.target_hw_address, frame->arp_packet.arp.sender_hw_address, 6);
-    memcpy(answer->arp_packet.arp.target_proto_addr, frame->arp_packet.arp.sender_proto_addr, 4);
-
-    //print_arp_packet(answer);
+    memcpy(answer->arp_packet.sender_hw_address, my_mac,6);
+    memcpy(answer->arp_packet.sender_proto_addr, my_ip, 4);
+    memcpy(answer->arp_packet.target_hw_address, frame->arp_packet.sender_hw_address, 6);
+    memcpy(answer->arp_packet.target_proto_addr, frame->arp_packet.sender_proto_addr, 4);
 
     write(fd, answer, ARP_PACKET_SIZE);
 }
@@ -219,26 +102,26 @@ static void make_arp_announcement(int fd){
     EthFrame* eth_frame = (EthFrame*) tx_buffer;
 
     eth_frame->ether_type = htons2(ETHER_TYPE_ARP);
-    eth_frame->arp_packet.arp.hw_type = htons2(ARP_HW_ETH);
-    eth_frame->arp_packet.arp.proto_type = htons2(ARP_PROTO_TYPE_IPV4);
-    eth_frame->arp_packet.arp.hw_addr_len = 6;
-    eth_frame->arp_packet.arp.proto_addr_len = 4;
-    eth_frame->arp_packet.arp.opcode = htons2(ARP_REQUEST);
-    memcpy(eth_frame->arp_packet.arp.sender_hw_address, my_mac, 6);
-    memcpy(eth_frame->arp_packet.arp.sender_proto_addr, my_ip, 4);
-    memset(eth_frame->arp_packet.arp.target_hw_address, 0, 6);
-    memcpy(eth_frame->arp_packet.arp.target_proto_addr, my_ip, 4);
+    eth_frame->arp_packet.hw_type = htons2(ARP_HW_ETH);
+    eth_frame->arp_packet.proto_type = htons2(ARP_PROTO_TYPE_IPV4);
+    eth_frame->arp_packet.hw_addr_len = 6;
+    eth_frame->arp_packet.proto_addr_len = 4;
+    eth_frame->arp_packet.opcode = htons2(ARP_REQUEST);
+    memcpy(eth_frame->arp_packet.sender_hw_address, my_mac, 6);
+    memcpy(eth_frame->arp_packet.sender_proto_addr, my_ip, 4);
+    memset(eth_frame->arp_packet.target_hw_address, 0, 6);
+    memcpy(eth_frame->arp_packet.target_proto_addr, my_ip, 4);
 
     write(fd, &tx_buffer, ARP_PACKET_SIZE);
 }
 
 static void handle_arp_request(int fd, EthFrame* frame){
-    switch(htons2(frame->arp_packet.arp.opcode)){
+    switch(htons2(frame->arp_packet.opcode)){
         case ARP_REQUEST:
             printf("\t\tARP Request:\n");
             print_arp_packet(frame);
 
-            if (!memcmp(frame->arp_packet.arp.target_proto_addr, my_ip, 4)){
+            if (!memcmp(frame->arp_packet.target_proto_addr, my_ip, 4)){
                 answer_arp_request(fd, frame);
             }
             break;
@@ -265,7 +148,12 @@ static void handle_ipv4_packet(int fd, EthFrame* frame){
     }
 }
 
+static void handle_user_message(Message* message){
+}
+
 int main(int argc, char** argv){
+
+    Message message;
 
     int fd = open("net0:", O_RDWR | O_NONBLOCK);
 
@@ -279,28 +167,38 @@ int main(int argc, char** argv){
     while (1){
         memset(rx_buffer, 0, 8192);
         int received = read(fd, rx_buffer, 8192);
-        printf("Received %d bytes\n", received);
 
-        EthFrame* eth_frame = (EthFrame*) rx_buffer;
-        printf("\tsource:");
-        print_mac(eth_frame->source_mac);
-        printf("\n\ttarget:");
-        print_mac(eth_frame->target_mac);
-        printf("\n");
+        if (received > 0){
+            printf("Received %d bytes\n", received);
 
-        switch(htons2(eth_frame->ether_type)){
-            case ETHER_TYPE_ARP:
-                printf("\tARP packet\n");
-                handle_arp_request(fd, eth_frame);
-                break;
-            case ETHER_TYPE_IP:
-                printf("\tIPv4 packet\n");
-                handle_ipv4_packet(fd, eth_frame);
-                break;
-            default:
-                printf("\tUnknown packet type %x\n", eth_frame->ether_type);
-                break;
+            EthFrame* eth_frame = (EthFrame*) rx_buffer;
+            printf("\tsource:");
+            print_mac(eth_frame->source_mac);
+            printf("\n\ttarget:");
+            print_mac(eth_frame->target_mac);
+            printf("\n");
+
+            switch(htons2(eth_frame->ether_type)){
+                case ETHER_TYPE_ARP:
+                    printf("\tARP packet\n");
+                    handle_arp_request(fd, eth_frame);
+                    break;
+                case ETHER_TYPE_IP:
+                    printf("\tIPv4 packet\n");
+                    handle_ipv4_packet(fd, eth_frame);
+                    break;
+                default:
+                    printf("\tUnknown packet type %x\n", eth_frame->ether_type);
+                    break;
+            }
         }
+
+        if (!msg_recv(&message)){
+            printf("Received user request\n");
+            handle_user_message(&message);
+        }
+
+        sched_yield();
     }
 
     return 0;

@@ -22,19 +22,9 @@
 #include "kernel/modules.h"
 #include "lib/params.h"
 
-const static char* ENV[] = {
-    "DEV=disk0",
-    "HOME=disk0:/",
-    "PWD=disk0:/",
-    "PATH=disk0:/bin/"
-};
-
-#define N_ENV   4
-
 static void     test_timer          (void);
 static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
-static void     load_modules        (void);
 static void     load_program        (FileSystem* fs, const char* path);
 
 extern void     ide_register        (void);     // FIXME
@@ -58,7 +48,6 @@ void init(){
 
     pic_init();
     pit_init();
-    load_modules();
     
     tasks_init();
     syscall_init();
@@ -92,13 +81,13 @@ static void load_program(FileSystem* fs, const char* path){
     Stream* stream = fs_open_stream_path(fs, path, O_RDONLY);
 
     char* args[]  = {
-        path
+        "init"
     };
     
     uint32_t task_id = tasks_new(
         stream,
         task_params_from_char_array(1,args),
-        task_params_from_char_array(N_ENV, ENV)
+        NULL
     );
     
     stream_close(stream);
@@ -117,7 +106,7 @@ static void start_init(void){
         return;
     }
     fs = fs_get_filesystem(device);
-    load_program(fs, "/bin/shell.elf");
+    load_program(fs, "/bin/init.elf");
     sti();
     //pic_eoi1();
     //pic_eoi2();
@@ -127,28 +116,4 @@ static void start_init(void){
         }
     }
     console_print("System shutdown\n");
-}
-
-static void load_modules(void){
-    debug("Loading modules\n");
-    Device* device = device_find(DISK, 0);
-    if (device){
-        FileSystem* fs = fs_get_filesystem(device);
-        if (fs){
-            // TODO: have module configuration outside init
-            modules_load(fs, "/modules/screen.elf");
-            modules_load(fs, "/modules/keyboard.elf");
-            modules_load(fs, "/modules/console.elf");
-            //modules_load(fs, "/modules/serial.elf");
-            modules_load(fs, "/modules/sys.elf");
-            modules_load(fs, "/modules/sysfs.elf");
-            modules_load(fs, "/modules/rtl8139.elf");
-            modules_load(fs, "/modules/mouse.elf");
-            debug("Modules loaded\n");
-        } else {
-            debug("No fs\n");
-        }
-    } else {
-        debug("No device\n");
-    }
 }

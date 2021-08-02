@@ -106,7 +106,6 @@ void ext2_register_type(void){
 FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     int i;
     Ext2FileSystem* fs;
-    debug("EXT2 - Opening ext2 filesystem\n");
 
     if (!device){
         debug("No device\n");
@@ -389,7 +388,6 @@ static int32_t load(FileSystem* fs, Inode* inode, void* dest){
         block_num = get_block_by_index(E2FS(fs), E2INODE(inode), block_index);
         ext2_device_gotoblock(E2FS(fs), block_num);
         ext2_device_read_block_b(E2FS(fs), dest + offset, to_read);
-        debug(dest + offset);
         offset+=to_read;
         size-=to_read;
         block_index++;
@@ -407,12 +405,10 @@ static uint32_t get_block_by_index(Ext2FileSystem* fs, Ext2Inode* inode, uint32_
         return E2INODE(inode)->blocks[block_index];
     } else if (block_index >= 12 && block_index < entries_per_block + 12){
         uint32_t iblock = E2INODE(inode)->blocks[12];
-        debug("\tIndirect block:");debug_i(iblock,10);debug("\n");
         ext2_device_gotoblock(E2FS(fs), iblock);
         ext2_device_read_block(E2FS(fs));
         block_index-=12;
         uint32_t bnum = ((uint32_t*)E2FS(fs)->block_buffer)[block_index];
-        debug("\tIndirect block number:");debug_i(bnum,10);debug("\n");
         return bnum;
 
     } else if (block_index >= entries_per_block + 12){
@@ -456,10 +452,8 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
         return 0;
     }
     if (inode.inode.type != EXT2_INODE_TYPE_DIRECTORY){
-        debug("\tNot a directory:");debug(dirent_name);debug("\n");
         return 0;
     } else {
-        debug("\tIs a directory:");debug(dirent_name);debug("\n");
     }
 
     ext2_list_dir_inode(fs, &inode, find_dirent, &dirent_find_data);
@@ -496,8 +490,6 @@ static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t n
     for (i=0;i<nblocks;i++){
         if (blocks[i] != 0){
             
-            debug("EXT2 - Listing block "); debug_i(blocks[i],10);debug("\n");
-
             if (ext2_iter_dir_block(fs, blocks[i], visitor, data)){
                 return 1;
             }
@@ -509,7 +501,6 @@ static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t n
 static int32_t get_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
 
     if (inode->type != EXT2_INODE_TYPE_DIRECTORY){
-        debug("Not a directory\n");
         return -1;
     }
 
@@ -639,8 +630,6 @@ static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t fla
     //uint32_t inodenum;
     FileStream* stream;
 
-    debug("EXT2 - Find inode for ");debug(path);debug("\n");
-    //inodenum = find_inode(fs, path);
     debug("EXT2 - Inode: ");debug_i(inodenum,10);debug("\n");
 
     if (inodenum){
@@ -654,7 +643,6 @@ static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t fla
         stream->block_buffer = heap_alloc(fs->block_size);
         load_inode(fs, inodenum, INODE(&(stream->inode)));
         //strcpy(stream->path, path);
-        debug("EXT2 - inode size:");debug_i(fs->block_size,10);debug("\n");
         stream->numblocks = stream->inode.inode.size / fs->block_size;
         if (stream->inode.inode.size % fs->block_size){
             stream->numblocks++;
@@ -674,7 +662,6 @@ static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t fla
         STREAM(stream)->size = ext2_stream_size;
         STREAM(stream)->close = ext2_stream_close;
         stream->current_block = 0;
-        debug("EXT2 - reading blocks\n");
         read_block(fs, INODE(&(stream->inode)), stream->current_block, stream->block_buffer, 0);
         return STREAM(stream);
     }
@@ -750,8 +737,6 @@ int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
         nblocks = size / block_size + (size % block_size ? 1 : 0);
         bytes_read = 0;
 
-        debug("EXT2 - Block:");debug_i(block,10);debug("\n");
-
         for (i=0;i<nblocks;i++){
             read_block(
                 FILE_SYSTEM(FILE_STREAM(stream)->fs),
@@ -776,7 +761,6 @@ uint32_t ext2_stream_pos(Stream* stream){
     return FILE_STREAM(stream)->pos;
 }
 int16_t ext2_stream_seek(Stream* stream,uint32_t pos){
-    debug("EXT2 - seek ");debug_i(pos,10);debug("\n");
     if (pos > FILE_STREAM(stream)->inode.inode.size -1){
         return -1;
     }
@@ -791,11 +775,9 @@ static Inode* alloc_inode(FileSystem* fs){
     for (int i=0;i<5;i++){
         if (!E2FS(fs)->work_inodes[i].in_use){
             E2FS(fs)->work_inodes[i].in_use = 1;
-            debug("EXT2 - alloc_inode: node allocated\n");
             return INODE(&(E2FS(fs)->work_inodes[i].inode));
         }
     }
-    debug("EXT2 - alloc_inode: No more inodes\n");
     return NULL;
 }
 static void free_inode(FileSystem* fs, Inode* inode){

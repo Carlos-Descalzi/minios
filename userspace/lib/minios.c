@@ -1,6 +1,7 @@
 #include "minios.h"
 #include "stdio.h"
 #include "syscall.h"
+#include "string.h"
 #include <stdarg.h>
 
 void debug(const char* fmt, ...){
@@ -9,6 +10,7 @@ void debug(const char* fmt, ...){
 
     va_start(parameters, fmt);
 
+    memset(buffer,0,256);
     vsprintf(buffer, fmt, parameters);
 
     syscall(SYS_DEBUG, buffer);

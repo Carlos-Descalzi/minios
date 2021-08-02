@@ -13,7 +13,7 @@ typedef struct __attribute__((__packed__)){
     uint8_t     sender_proto_addr[4];
     uint8_t     target_hw_address[6];
     uint16_t    target_proto_addr[4];
-} Arp;
+} ArpPacket;
 
 typedef struct __attribute__((__packed__)){
     uint8_t     version;
@@ -35,10 +35,6 @@ typedef struct __attribute__((__packed__)){
     uint16_t    length;
     uint16_t    checksum;
 } UdpHeader;
-
-typedef struct {
-    Arp arp;
-} ArpPacket;
 
 typedef struct {
     Ipv4Header ipv4;
