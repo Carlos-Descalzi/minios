@@ -1,7 +1,7 @@
 include ../Make.defs
 
 TOPTARGETS=all clean
-SUBDIRS=sys eth
+SUBDIRS=sys 
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 

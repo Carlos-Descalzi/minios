@@ -143,7 +143,6 @@ static void load_modules(void){
             modules_load(fs, "/modules/sys.elf");
             modules_load(fs, "/modules/sysfs.elf");
             modules_load(fs, "/modules/rtl8139.elf");
-            modules_load(fs, "/modules/ethfs.elf");
             modules_load(fs, "/modules/mouse.elf");
             debug("Modules loaded\n");
         } else {

@@ -37,22 +37,27 @@ typedef struct __attribute__((__packed__)){
 } UdpHeader;
 
 typedef struct {
-    uint16_t ether_type;
     Arp arp;
 } ArpPacket;
 
 typedef struct {
-    uint16_t ether_type;
     Ipv4Header ipv4;
     UdpHeader udp;
     char payload[];
 } Ipv4Packet;
 
-typedef union {
+typedef struct __attribute__((__packed__)){
+    uint8_t target_mac[6];
+    uint8_t source_mac[6];
     uint16_t ether_type;
-    ArpPacket arp_packet;
-    Ipv4Packet ipv4_packet;
+    union {
+        ArpPacket arp_packet;
+        Ipv4Packet ipv4_packet;
+    };
 } EthFrame;
+
+#define ARP_PACKET_SIZE     (12+sizeof(ArpPacket))
+#define IPV4_PACKET_SIZE    (12+sizeof(Ipv4Packet))
 
 #define ETHER_TYPE_ARP      0x0806
 #define ETHER_TYPE_IP       0x0800
@@ -62,7 +67,7 @@ typedef union {
 #define ARP_HW_ETH          0x0001
 #define ARP_PROTO_TYPE_IPV4 0x0800
 
-#define IPV4_TYPE_UDP       0x11
+#define IPV4_TYPE_UDP       0x1100
 
 #define htons2(v)           ((((v) & 0xFF00) >> 8) | (((v) & 0xFF)<<8))
 

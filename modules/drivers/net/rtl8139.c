@@ -88,6 +88,12 @@ typedef struct {
     IORequest*  request;
 } NetDevice;
 
+typedef struct {
+    uint16_t header;
+    uint16_t length;
+    uint8_t data[];
+} ReceivedPacket;
+
 static int      check_pci       (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
 static int      count_pci       (uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header, void* data);
 static uint8_t  count_devices   (DeviceType* device_type);
@@ -262,7 +268,18 @@ static int check_pci(uint8_t bus,uint8_t device,uint8_t func, PCIHeader* header,
 }
 
 static int16_t read_async(BlockDevice* device, IORequest* request){
-    NET_DEVICE(device)->request = request;
+    if (NET_DEVICE(device)->rx_available){
+        ReceivedPacket* packet = NET_DEVICE(device)->rx_buffer;
+        NET_DEVICE(device)->rx_available = 0;
+        handle_io_request(
+            request,
+            packet->data,
+            packet->length,
+            TASK_IO_REQUEST_DONE
+        );
+    } else {
+        NET_DEVICE(device)->request = request;
+    }
     return 0;
 }
 
@@ -340,11 +357,6 @@ static void isr_handler(InterruptFrame* frame, void* data){
     pic_eoi1();
 }
 
-typedef struct {
-    uint16_t header;
-    uint16_t length;
-    uint8_t data[];
-} ReceivedPacket;
 
 #define htons(v)    ((v >> 8) | ((v & 0xFF)<<8))
 
@@ -355,6 +367,7 @@ static void handle_receive(NetDevice* device){
 
     if (request){
         device->request = NULL;
+        debug("Handling packet received of ");debug_i(packet->length,10);debug("bytes\n");
 
         handle_io_request(
             request, 
@@ -372,6 +385,7 @@ static void handle_receive(NetDevice* device){
 static int16_t read (BlockDevice* device, uint8_t* buffer, uint16_t size){
 
     if (NET_DEVICE(device)->rx_available){
+        debug("Reading already present packet\n");
 
         ReceivedPacket* packet = NET_DEVICE(device)->rx_buffer;
 

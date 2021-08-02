@@ -42,6 +42,19 @@ void* memsetdw (void* s, uint32_t c, size_t dwords){
     return s;
 }
 
+int memcmp(void* s1, void* s2, size_t n){
+
+    for (int i=0;i<n;i++){
+        int d = ((char*)s1)[i] - ((char*)s2)[i];
+
+        if (d){
+            return d;
+        }
+    }
+
+    return 0;
+}
+
 char* strcpy(char* dest, const char* src){
     int i=0;
     do{

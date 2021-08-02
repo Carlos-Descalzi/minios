@@ -25,5 +25,6 @@ void syscall_msg_answer     (InterruptFrame* f);
 void syscall_ioctl          (InterruptFrame* f);
 void syscall_mmap           (InterruptFrame* f);
 void syscall_debug          (InterruptFrame* f);
+void syscall_kill           (InterruptFrame* f);
 
 #endif

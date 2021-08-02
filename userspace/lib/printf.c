@@ -182,6 +182,13 @@ static int do_vfprintf(Writer* writer, const char* format, va_list parameters){
                             &tformat, 10, &written, writer);
                         break;
                     }
+                case 'u':{
+                        unsigned int d = va_arg(parameters, unsigned int);
+                        print_num(
+                            utoa(d, buffer, 10),
+                            &tformat, 10, &written, writer);
+                        break;
+                    }
 
                 case 'c': {
                         char c = (char) va_arg(parameters, int);

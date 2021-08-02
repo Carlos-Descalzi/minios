@@ -48,7 +48,7 @@ static const char FS_TYPE_NAME[] = "ext2";
 
 static FileSystemType FS_TYPE;
 
-#define OFFSET      (512 + 65536)   // boot sector + kernel
+#define OFFSET          (KIMAGESIZE)   // boot sector + kernel
 
 static FileSystem*      create_fs               (FileSystemType* fs_type, BlockDevice* device);
 static void             list_inodes             (FileSystem* fs, InodeVisitor visitor, void*data);

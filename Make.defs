@@ -2,6 +2,7 @@
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
 TOPDIR=$(MAKEFILE_DIR)
+KIMAGESIZE=82432 
 CC=gcc
 LD=i686-gnu-ld 
 AS=nasm
@@ -9,9 +10,9 @@ ASFLAGS=-f elf32
 CFLAGS=-march=i386 -m32 -mno-80387 -I$(TOPDIR)/include -nodefaultlibs -no-pie -fno-PIC -Wall \
     -Wno-address-of-packed-member
 CFLAGS+=-DDEBUGMODE
+CFLAGS+=-DKIMAGESIZE=$(KIMAGESIZE)
 KLDFLAGS=-T linker.ld
 IMAGE=os.img
-IMAGESIZE=66048
 OBJDIR=$(TOPDIR)/obj
 LSTDIR=$(TOPDIR)/lst
 .DEFAULT_GOAL=all

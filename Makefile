@@ -32,7 +32,7 @@ QEMU_TEST_ARGS=    \
 	-D trace.log
 
 QEMU_NET_ARGS=	   \
-    -netdev user,id=n0,net=192.168.76.0/24,dhcpstart=192.168.76.9,hostfwd=tcp::8823-:23,hostfwd=udp::8867-:67 \
+    -netdev user,id=n0,net=192.168.76.0/24,dhcpstart=192.168.76.9,hostfwd=tcp::8823-:23,hostfwd=udp::8867-192.168.76.9:67 \
 	-device rtl8139,netdev=n0,mac=32:2f:67:52:ab:bd 
 
 QEMU_DEBUG_ARGS=   \
@@ -67,7 +67,7 @@ baseimage: boot kernel.bin
 
 padding:
 	$(eval fsize:=$(shell stat --printf="%s" ./$(IMAGE)))
-	$(eval remaining:=$(shell expr $(IMAGESIZE) - $(fsize)))
+	$(eval remaining:=$(shell expr $(KIMAGESIZE) - $(fsize)))
 	@echo "Code size: $(fsize) bytes"
 	@echo "Filling with $(remaining) bytes"
 	@dd if=/dev/zero bs=$(remaining) count=1 >> $(IMAGE)
@@ -90,7 +90,6 @@ e2fs.img: userspace modules
 	@sudo cp modules/drivers/sys/*.elf tmp/modules
 	@sudo cp modules/drivers/mouse/*.elf tmp/modules
 	@sudo cp modules/filesystems/sys/*.elf tmp/modules
-	@sudo cp modules/filesystems/eth/*.elf tmp/modules
 	@sudo umount tmp
 	@rm -rf tmp
 
