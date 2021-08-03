@@ -63,7 +63,7 @@ print:
 .end:
     ret
 ;
-; load 128 sectors (64k) into memory.
+; load 160 sectors (80k) into memory.
 ; at position 0x10000
 ; TODO: Allow arbitrary kernel sizes
 load:
