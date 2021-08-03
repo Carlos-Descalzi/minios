@@ -66,7 +66,7 @@ Syntax:
 ```$ ls [path]```
 Path can be relative, absolute with no drive, or absolute with drive included.
 
-### lsenv
+### lsdev
 Lists all available devices
 
 ### cat
