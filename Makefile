@@ -3,7 +3,7 @@ include ./Make.rules
 
 TOPTARGETS=all clean
 
-MODULES=kernel lib devices fs board testfiles bin syscalls io 
+MODULES=kernel lib devices fs board testfiles bin syscalls io ipc
 SUBDIRS=$(MODULES) userspace modules
 
 KOBJS=$(shell find kernel -name '*.o') 
@@ -14,7 +14,7 @@ KOBJS+=$(shell find bin -name '*.o')
 KOBJS+=$(shell find devices -name '*.o')
 KOBJS+=$(shell find syscalls -name '*.o')
 KOBJS+=$(shell find io -name '*.o')
-KOBJS+=$(shell find tests -name '*.o')
+KOBJS+=$(shell find ipc -name '*.o')
 
 QEMU=qemu-system-i386
 QEMU_ARGS=         \
@@ -98,7 +98,7 @@ e2fs.img: userspace modules
 kernel.bin: kernel.elf 
 	@mkdir -p $(LSTDIR)
 	objcopy -O binary -j .text -j .rodata -j .data kernel.elf kernel.bin
-	objdump -d $< > $(LSTDIR)/kernel.lst
+	objdump -D $< > $(LSTDIR)/kernel.lst
 
 kernel.elf: $(MODULES)
 	i686-gnu-ld $(KLDFLAGS) $(KOBJS) -o kernel.elf

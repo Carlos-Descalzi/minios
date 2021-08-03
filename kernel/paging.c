@@ -607,3 +607,20 @@ uint32_t  paging_map_to_task (PageDirectoryEntry* page_dir, uint32_t address, ui
     debug("UNABLE TO MAP\n");
     return 0;
 }
+
+uint32_t paging_alloc_kernel_page (int rw){
+    return paging_kernel_alloc_pages(1, rw);
+}
+
+void paging_free_kernel_page (uint32_t virtual_address){
+    VirtualAddress addr = { .address = virtual_address };
+
+    debug("Releasing kernel page ");debug_i(virtual_address,16);debug("\n"); 
+
+    if (KERNEL_PAGE_DIR[addr.page_dir_index].present){
+        set_exchange_page(KERNEL_PAGE_DIR[addr.page_dir_index].page_table_address);
+
+        local_table[addr.page_index].present = 0;
+        memory_free_block(local_table[addr.page_index].physical_page_address << 12);
+    }
+}

@@ -6,18 +6,29 @@
 #include "io/streamimpl.h"
 #include "board/memory.h"
 #include "kernel/task.h"
+#include "lib/list.h"
+#include "ipc/pipe.h"
 
 #define SYSFS(fs)               ((SysFileSystem*)fs)
 #define SYSFS_INODE(i)          ((SysFsInode*)i)
 #define INODE(i)                ((Inode*)i)
+#define PIPE_NODE(n)            ((PipeNode*)n)
 #define WORK_INODES_COUNT       10
 
 #define SYSFS_INODE_PROCESSES   3
 #define SYSFS_INODE_DEVICES     4
 #define SYSFS_INODE_FILESYSTEMS 5
 #define SYSFS_INODE_MEMORY      6
+#define SYSFS_INODE_PIPES       7
+#define SYSFS_INODE_SHM         8
 
-#define SYSFS_INODE_MAX         5
+#define SYSFS_INODE_MAX         8
+
+typedef struct {
+    ListNode header;
+    Pipe* pipe;
+    char name[32];
+} PipeNode;
 /**
  * SYS File system
  **/
@@ -37,6 +48,7 @@ typedef struct {
     SysFsInode work_inodes[WORK_INODES_COUNT];
     int process_count;
     uint32_t* process_list;
+    ListNode* pipes;
 } SysFileSystem;
 
 
@@ -51,6 +63,8 @@ static const char       NAME_PROCESSES[]            = "processes";
 static const char       NAME_DEVICES[]              = "devices";
 static const char       NAME_FILESYSTEMS[]          = "filesystems";
 static const char       NAME_MEMORY[]               = "memory";
+static const char       NAME_PIPES[]                = "pipes";
+static const char       NAME_SHM[]                  = "shm";
 
 static const char       DIRENT_KERNEL[]             = "kernel";
 static const char       DIRENT_USER[]               = "user";
@@ -76,6 +90,8 @@ static int32_t          get_filesystems_direntry    (FileSystem* fs, Inode* inod
                                                     uint32_t* offset, DirEntry* direntry);
 static int32_t          get_memory_direntry         (FileSystem* fs, Inode* inode, 
                                                     uint32_t* offset, DirEntry* direntry);
+static int32_t          get_pipes_direntry          (FileSystem* fs, Inode* inode, 
+                                                    uint32_t* offset, DirEntry* direntry);
 static Inode*           alloc_inode                 (FileSystem* fs);
 static void             free_inode                  (FileSystem* fs, Inode* inode);
 static void             release_resources           (FileSystem* fs);
@@ -86,6 +102,7 @@ static Stream*          open_stream                 (FileSystem* fs, uint32_t in
 static Stream*          user_memory_stream          (FileSystem* fs, uint32_t flags);
 static Stream*          kernel_memory_stream        (FileSystem* fs, uint32_t flags);
 static Stream*          process_memory_stream       (FileSystem* fs, uint32_t flags, uint32_t task_id);
+static uint32_t         add_entry                   (FileSystem* fs, Inode*, const char*, uint32_t);
 static void             get_process_list            (SysFileSystem* fs);
 
 void module_init(){
@@ -104,6 +121,10 @@ void module_init(){
     ROOT_DIR_ENTRIES[4].name = NAME_FILESYSTEMS;
     ROOT_DIR_ENTRIES[5].inode = SYSFS_INODE_MEMORY;
     ROOT_DIR_ENTRIES[5].name = NAME_MEMORY;
+    ROOT_DIR_ENTRIES[6].inode = SYSFS_INODE_PIPES;
+    ROOT_DIR_ENTRIES[6].name = NAME_PIPES;
+    ROOT_DIR_ENTRIES[6].inode = SYSFS_INODE_SHM;
+    ROOT_DIR_ENTRIES[6].name = NAME_SHM;
 }
 
 static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
@@ -115,6 +136,8 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     }
 
     SysFileSystem* fs = heap_alloc(sizeof(SysFileSystem));
+
+    fs->pipes = NULL;
 
     FILE_SYSTEM(fs)->type = fs_type;
     FILE_SYSTEM(fs)->device = device;
@@ -131,6 +154,7 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     FILE_SYSTEM(fs)->inode_size = sizeof(Inode);
     FILE_SYSTEM(fs)->block_size = 1024;
     FILE_SYSTEM(fs)->open_stream = open_stream;
+    FILE_SYSTEM(fs)->add_entry = add_entry;
 
     return FILE_SYSTEM(fs);
 }
@@ -199,6 +223,8 @@ static int32_t get_direntry(FileSystem* fs, Inode* inode,
             return get_filesystems_direntry(fs, inode, offset, direntry);
         case SYSFS_INODE_MEMORY:
             return get_memory_direntry(fs, inode, offset, direntry);
+        case SYSFS_INODE_PIPES:
+            return get_pipes_direntry(fs, inode, offset, direntry);
     }
     return -1;
 }
@@ -357,6 +383,33 @@ static int32_t get_memory_direntry (FileSystem* fs, Inode* inode, uint32_t* offs
 
 }
 
+static int32_t get_pipes_direntry (FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
+
+    debug("get pipes direntry\n");
+    
+    if (*offset < list_size(SYSFS(fs)->pipes) + 2){
+        switch(*offset){
+            case 0:
+                setup_direntry(direntry, NAME_CWD, 2, SYSFS_INODE(inode)->id);
+                break;
+            case 1:
+                setup_direntry(direntry, NAME_PARENT, 2, FS_INODE_ROOT_DIR);
+                break;
+            default: {
+                int pipe_index = *offset-2;
+                PipeNode* pipe = PIPE_NODE(list_element_at(SYSFS(fs)->pipes, pipe_index));
+                setup_direntry(direntry, pipe->name, 1, SYSFS_INODE(inode)->id << 16 | pipe_index);
+                break;
+                }
+        }
+
+        (*offset)++;
+    }
+
+    return *offset >=4;
+
+}
+
 static Stream* open_stream (FileSystem* fs, uint32_t inodenum, uint32_t flags){
     if (inodenum >= 0x10000){
         uint32_t foldernum = inodenum >> 16;
@@ -445,3 +498,25 @@ static void get_process_list (SysFileSystem* fs){
     tasks_iter_tasks(get_tasks, &visitor_data);
 }
 
+static uint32_t add_entry (FileSystem* fs, Inode* inode, const char* name, uint32_t type){
+
+    if (SYSFS_INODE(inode)->id != SYSFS_INODE_PIPES){
+        debug("Unable to create new entries in places other than pipes folder\n");
+        return 0;
+    }
+    if (type != FS_INODE_TYPE_FIFO){
+        debug("Only fifo inodes can be created\n");
+        return 0;
+    }
+
+    PipeNode* pipe_node = heap_new(PipeNode);
+
+    uint32_t inodenum = SYSFS_INODE_PIPES << 16 | (list_size(SYSFS(fs)->pipes) + 2);
+
+    SYSFS(fs)->pipes = list_add(SYSFS(fs)->pipes, pipe_node);
+
+    pipe_node->pipe = pipe_new();
+    strcpy(pipe_node->name, name);
+
+    return inodenum;
+}

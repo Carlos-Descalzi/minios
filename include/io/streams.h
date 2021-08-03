@@ -50,6 +50,7 @@ typedef struct Stream {
     int16_t     (*write_byte)       (struct Stream*,uint8_t);
     int16_t     (*read_bytes)       (struct Stream*,uint8_t*,int16_t);
     int16_t     (*write_bytes)      (struct Stream*,uint8_t*,int16_t);
+    int16_t     (*write_async)      (struct Stream*,IORequest* request);
     void        (*flush)            (struct Stream*);
     uint32_t    (*pos)              (struct Stream*);
     int16_t     (*seek)             (struct Stream*,uint32_t);
@@ -69,6 +70,7 @@ typedef struct Stream {
 #define stream_read_bytes(s,b,l)    (STREAM(s)->read_bytes(STREAM(s),b,l))
 #define stream_write_bytes(s,b,l)   (STREAM(s)->write_bytes(STREAM(s),b,l))
 #define stream_read_async(s,b)      (STREAM(s)->read_async(STREAM(s),b))
+#define stream_write_async(s,b)     (STREAM(s)->write_async(STREAM(s),b))
 #define stream_flush(s)             (STREAM(s)->flush(STREAM(s)))
 #define stream_pos(s)               (STREAM(s)->pos(STREAM(s)))
 #define stream_seek(s,p)            (STREAM(s)->seek(STREAM(s),p))

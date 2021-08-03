@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/isr.h"
 #include "misc/debug.h"
 #include "lib/string.h"
@@ -125,6 +125,8 @@ inline void cld(void){
 
 void isr_init(){
     int i;
+
+    debug("INIT ISR ");debug_i(handle_isr_ref,16);debug("\n");
 
     for (i=0;i<32;i++){
         isr_handlers[i].isr = dummy_trap_handler;

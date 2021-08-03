@@ -19,7 +19,8 @@ COREOBJS=stdlib.o 	\
 	 ioctl.o	\
 	 env.o		\
 	 minios.o	\
-	 signal.o
+	 signal.o	\
+	 fifo.o
 
 all: minios.a gfx.a
 

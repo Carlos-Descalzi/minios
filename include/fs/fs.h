@@ -76,6 +76,7 @@ struct FileSystem {
     Stream*     (*open_stream)          (struct FileSystem*, uint32_t, uint32_t);
     //Stream*     (*stream_open)          (struct FileSystem*, const char*, uint32_t);
     void        (*release_resources)    (struct FileSystem*);
+    uint32_t    (*add_entry)            (struct FileSystem*, Inode*, const char*, uint32_t);
 
 };
 
@@ -107,6 +108,7 @@ Stream*         fs_open_stream_path         (FileSystem* fs, const char* path, u
 #define         fs_load(fs,i,b)             ((fs)->load(fs,i,b))
 #define         fs_read_block(fs,i,n,b,s)   ((fs)->read_block(fs,i,n,b,s))
 #define         fs_get_direntry(fs,i,o,d)   ((fs)->get_direntry(fs,i,o,d))
+#define         fs_add_entry(fs,i,p,t)      ((fs)->add_entry(fs,i,p,t))
 /**
  * Allocates a work inode of the specific type for the file system
  * being used

@@ -67,6 +67,14 @@ uint32_t            paging_load_code            (Stream* stream, PageDirectoryEn
  **/
 uint32_t            paging_kenel_load_code      (Stream* stream);
 /**
+ * Allocates a kernel page
+ **/
+uint32_t            paging_alloc_kernel_page    (int rw);
+/**
+ * Releases a kernel page
+ **/
+void                paging_free_kernel_page     (uint32_t virtual_address);
+/**
  * Returns a page directory configured for a new task
  **/
 PageDirectoryEntry* paging_new_task_space       (void);

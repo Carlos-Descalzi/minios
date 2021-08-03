@@ -13,6 +13,8 @@
 
 #define SYS_IOCTL   0x10
 
+#define SYS_PIPE    0x16
+
 #define SYS_DEBUG   0x20
 
 #define SYS_KILL    0x3E

@@ -45,3 +45,15 @@ int list_size(ListNode* list){
 
     return count;
 }
+
+ListNode* list_element_at(ListNode* list, int index){
+    int i;
+    ListNode* n;
+
+    for (n = list, i = 0; n && i<index; n = n->next, i++){
+        if (i == index){
+            return n;
+        }
+    }
+    return NULL;
+}

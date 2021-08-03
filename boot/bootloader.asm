@@ -26,6 +26,8 @@ start:
     add     al,     0x41    ; representing the error code
     mov     ah,     0x0a
     int     0x10
+    mov     ax,     msg2
+    call    print
     hlt                     ; die here on error.
 .done:
     cli
@@ -63,18 +65,37 @@ print:
 ;
 ; load 128 sectors (64k) into memory.
 ; at position 0x10000
-;
+; TODO: Allow arbitrary kernel sizes
 load:
-    mov     ax,     0x1000  ; load it after this code: 0x10000
-    mov     es,     ax
-    mov     bx,     0x0000  ;
-    mov     dl,     0x80    ; drive A
-    mov     dh,     0x0     ; head 0
-    mov     al,     0x80    ; 128 sectors = 64k
-    mov     cx,     0x2     ; sector 1 - cylinder 1
-    mov     ah,     0x2     ; read sectors option
+    mov     si,     lba_addr_packet1
+    mov     ax,     0x4200
+    mov     dl,     0x80
+    int     0x13
+
+    mov     si,     lba_addr_packet2
+    mov     ax,     0x4200
+    mov     dl,     0x80
     int     0x13
     ret
+
+align 4
+lba_addr_packet1:
+    db      0x10
+    db      0x0
+    dw      0x0080
+    dw      0x0000
+    dw      0x1000
+    dd      0x1
+    dd      0x0
+lba_addr_packet2:
+    db      0x10
+    db      0x0
+    dw      0x0020
+    dw      0x0000
+    dw      0x2000
+    dd      0x81
+    dd      0x0
+
 
 enable_a20:
     in      al,     0x92
@@ -155,6 +176,7 @@ init_regs_and_start:
 ;
 ; Messages
 msg1:   db "Loading kernel ...",13,10,0
+msg2:   db "Error loading kernel",13,10,0
 
 ; Global Descriptors Table
 gdt:    dw 0        ; NULL segment              0x00
