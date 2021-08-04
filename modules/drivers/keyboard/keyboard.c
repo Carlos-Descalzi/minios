@@ -129,7 +129,7 @@ static int16_t setopt(Device* device, uint32_t option, void* data){
 }
 
 static void write_to_request(KeyboardDevice* kbd, IORequest* request){
-    char buff[2];
+    uint8_t buff[2];
     memcpy(buff, kbd->key_event.cdata, 2);
 
     kbd->pos = 0;
@@ -185,9 +185,7 @@ static void do_handle(KeyboardDevice* device, int val, int state){
 }
 
 static void read_keyboard(KeyboardDevice* device){
-    uint8_t state = 0;
     uint8_t val;
-    uint16_t key_code;
 
     val = ps2_read(PORT_DATA);
     device->buffer[device->bufindex++] = val;

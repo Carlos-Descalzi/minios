@@ -57,7 +57,7 @@ static int32_t          load_inode              (FileSystem* fs, uint32_t inoden
 static uint32_t         find_inode              (FileSystem* fs, const char* path);
 static int32_t          load                    (FileSystem* fs, Inode* inode, void* dest);
 static uint32_t         read_block              (FileSystem* fs, Inode* inode, 
-                                                uint32_t b_index, uint8_t* dest, uint32_t length);
+                                                uint32_t b_index, void* dest, uint32_t length);
 static int32_t          get_direntry            (FileSystem* fs, Inode* inode, 
                                                 uint32_t* offset, DirEntry* direntry);
 static Inode*           alloc_inode             (FileSystem* fs);
@@ -418,7 +418,7 @@ static uint32_t get_block_by_index(Ext2FileSystem* fs, Ext2Inode* inode, uint32_
 }
 
 static uint32_t read_block(FileSystem* fs, Inode* inode, 
-                         uint32_t b_index, uint8_t* dest, uint32_t length){
+                         uint32_t b_index, void* dest, uint32_t length){
     uint32_t block;
 
     block = get_block_by_index(E2FS(fs), E2INODE(inode), b_index);
@@ -674,7 +674,6 @@ void ext2_stream_close(Stream* stream){
 int16_t ext2_stream_read_byte(Stream* stream){
     uint32_t rel_pos;
     uint32_t block_size;
-    uint32_t block;
     uint8_t val;
 
     if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.inode.size){
@@ -691,7 +690,6 @@ int16_t ext2_stream_read_byte(Stream* stream){
 
     if (!(FILE_STREAM(stream)->pos % fs->block_size)){
         FILE_STREAM(stream)->current_block++;
-        block = FILE_STREAM(stream)->pos / fs->block_size;
         read_block(
             FILE_SYSTEM(FILE_STREAM(stream)->fs),  
             INODE(&(FILE_STREAM(stream)->inode)),
@@ -782,7 +780,7 @@ static Inode* alloc_inode(FileSystem* fs){
 }
 static void free_inode(FileSystem* fs, Inode* inode){
     for (int i=0;i<5;i++){
-        if (&(E2FS(fs)->work_inodes[i].inode) == inode){
+        if (&(E2FS(fs)->work_inodes[i].inode) == E2INODE(inode)){
             E2FS(fs)->work_inodes[i].in_use = 0;
             break;
         }

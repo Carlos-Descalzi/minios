@@ -65,7 +65,7 @@ uint32_t            paging_load_code            (Stream* stream, PageDirectoryEn
 /**
  *
  **/
-uint32_t            paging_kenel_load_code      (Stream* stream);
+uint32_t            paging_kernel_load_code     (Stream* stream);
 /**
  * Allocates a kernel page
  **/

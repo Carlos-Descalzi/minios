@@ -4,7 +4,7 @@
 #include "dirent.h"
 
 int main(int argc, char** argv){
-    char path[40];
+    char path[275];
     char buffer[256];
 
     struct dirent* entry = NULL;

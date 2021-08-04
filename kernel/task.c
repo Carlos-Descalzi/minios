@@ -318,7 +318,7 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
             task->io_requests[i].tid = current_task->tid;
             task->io_requests[i].type = type;
             task->io_requests[i].stream = stream_num;
-            task->io_requests[i].target_buffer = paging_physical_address(
+            task->io_requests[i].target_buffer = (uint8_t*) paging_physical_address(
                 current_task->page_directory, buffer);
             task->io_requests[i].size = size;
             task->status = TASK_STATUS_IOWAIT;
@@ -359,7 +359,6 @@ int tasks_check_for_message(Message* message){
     Task* task = current_task;
 
     if (task->incoming_messages){
-        Message temp;
 
         MessageNode* message_node = MSG_NODE(task->incoming_messages);
         task->incoming_messages = list_remove(task->incoming_messages, LIST_NODE(message_node));
@@ -367,7 +366,7 @@ int tasks_check_for_message(Message* message){
         Message* incoming_message = message_node->message;
         heap_free(message_node);
 
-        message = paging_physical_address(task->page_directory, message);
+        message = (Message*) paging_physical_address(task->page_directory, message);
         answer_message(incoming_message, message);
 
         return 0;
@@ -380,6 +379,7 @@ int tasks_wait_message(Message* message){
     task->status = TASK_STATUS_WAITCND;
     task->waitcond = wait_msg_answer;
     task->cond_data.ptr_data = (void*) paging_physical_address(task->page_directory, message);
+    return 0;
 }
 
 static int wait_tid(Task* task){
@@ -435,7 +435,7 @@ static void do_send_message(Message* message){
     if (target_task){
         target_task->incoming_messages = list_add(
             target_task->incoming_messages,
-            message_node
+            LIST_NODE(message_node)
         );
     } else {
         debug("Task not found\n");
@@ -476,11 +476,11 @@ static void setup_console(Task* task){
     task->console = CHAR_DEVICE(device_find(TERM,0));
     if (task->console){
         // stdin
-        task->streams[0] = device_stream_open(task->console,STREAM_READ);
+        task->streams[0] = device_stream_open(DEVICE(task->console),STREAM_READ);
         // stdout
-        task->streams[1] = device_stream_open(task->console,STREAM_WRITE);
+        task->streams[1] = device_stream_open(DEVICE(task->console),STREAM_WRITE);
         // stderr
-        task->streams[2] = device_stream_open(task->console,STREAM_WRITE);
+        task->streams[2] = device_stream_open(DEVICE(task->console),STREAM_WRITE);
     } else {
         debug("Warning: No console\n");
     }

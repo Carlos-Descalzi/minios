@@ -19,6 +19,7 @@ OBJS=exit.o		\
 	ioctl.o		\
 	mmap.o		\
 	debug.o		\
-	kill.o
+	kill.o		\
+	pipe.o
 
 all: $(OBJS)

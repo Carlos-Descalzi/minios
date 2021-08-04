@@ -125,7 +125,7 @@ static uint32_t setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uin
     uint32_t index = vaddress.page_dir_index;
     uint32_t physical_address = 0;
 
-    debug("PAGING - Setup page for vaddress:");debug_i(vaddress.address,16);debug(",rw:");debug_i(rw,10);(",");debug("\n");
+    debug("PAGING - Setup page for vaddress:");debug_i(vaddress.address,16);debug(",rw:");debug_i(rw,10);debug("\n");
 
     set_exchange_page(dir);
 
@@ -206,9 +206,7 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
 uint32_t paging_kernel_load_code(Stream* stream){
     ElfHeader header;
     ElfProgramHeader prg_header;
-    ElfSectionHeader section_header;
     uint32_t blocks;
-    uint32_t size;
     uint32_t i;
     uint32_t j;
 
@@ -245,7 +243,7 @@ uint32_t paging_kernel_load_code(Stream* stream){
                     elf_read_program_page(
                         stream, 
                         &prg_header, 
-                        address + j * PAGE_SIZE,
+                        (void*) (address + j * PAGE_SIZE),
                         j, 
                         PAGE_SIZE);
                 }

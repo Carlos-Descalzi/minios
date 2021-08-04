@@ -1,6 +1,7 @@
 #include "kernel/modules.h"
 #include "io/streams.h"
 #include "misc/debug.h"
+#include "kernel/paging.h"
 
 int32_t modules_load(FileSystem* fs, const char* path){
     debug("Loading module ");debug(path);debug(" ...\n");

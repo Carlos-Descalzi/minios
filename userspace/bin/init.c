@@ -5,6 +5,7 @@
 #include "spawn.h"
 #include "unistd.h"
 #include "minios.h"
+#include "string.h"
 /**
  * User space initialization program, not yet started nor in use.
  **/
@@ -68,9 +69,9 @@ int main(int argc,char **argv){
 
     int pid = spawn("disk0:/bin/shell.elf", 
         SHELL_NARGS, 
-        make_param_array(SHELL_NARGS, shell_args, arg_buffer), 
+        make_param_array(SHELL_NARGS, (char**) shell_args, arg_buffer), 
         SHELL_NENVS, 
-        make_param_array(SHELL_NENVS, shell_env, env_buffer) 
+        make_param_array(SHELL_NENVS, (char**) shell_env, env_buffer) 
     );
 
     waitpid(pid);

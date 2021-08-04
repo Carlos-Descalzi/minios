@@ -2,6 +2,7 @@
 #include "string.h"
 #include "stdint.h"
 #include "stdio.h"
+#include "stdlib.h"
 
 char* path_absolute(const char* path, char* targetpath){
     char buffer[256];

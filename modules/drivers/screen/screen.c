@@ -119,7 +119,6 @@ static uint8_t  count_devices       (DeviceType* device_type);
 static Device*  instantiate         (DeviceType* device_type, uint8_t device_number);
 static void     release             (DeviceType* device_type, Device* device);
 static void     bga_write           (uint16_t index, uint16_t value);
-static uint16_t bga_read            (uint16_t index);
 static void     bga_set_mode        (uint16_t width, uint16_t height, uint8_t bpp, int linear);
 static void     bga_set_text        (void);
 static void     write_char          (ScreenDevice* device, uint8_t chr);
@@ -128,6 +127,8 @@ static void     clear_screen        (ScreenDevice* device);
 static void     do_scroll           (ScreenDevice* device);
 static void     set_mode            (ScreenDevice* device, ModeSetting* mode_setting);
 static void     set_bank            (int bank);
+
+//static uint16_t bga_read            (uint16_t index);
 
 static DeviceType DEVICE_TYPE;
 
@@ -374,10 +375,12 @@ static void bga_write(uint16_t index, uint16_t value){
     outw(VBE_DISPI_IOPORT_DATA, value);
 }
 
+/*
 static uint16_t bga_read(uint16_t index){
     outw(VBE_DISPI_IOPORT_INDEX, index);
     return inw(VBE_DISPI_IOPORT_DATA);
 }
+*/
 
 static void bga_set_text(){
     bga_set_mode(TEXT_MODE_XRES, TEXT_MODE_YRES, TEXT_MODE_BPP, 0);

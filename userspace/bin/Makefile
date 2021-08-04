@@ -11,7 +11,9 @@ BINS=init.elf 		\
 	 testmouse.elf	\
 	 testmalloc.elf	\
 	 free.elf		\
-	 ps.elf
+	 ps.elf			\
+	 pipeserver.elf \
+	 pipeclient.elf
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/minios.a

@@ -8,7 +8,7 @@ void  handle_io_request(IORequest* request, uint8_t* data, uint32_t size, uint32
 
     uint8_t* buffer = request->kernel
         ? request->target_buffer
-        : paging_to_kernel_space(request->target_buffer);
+        : paging_to_kernel_space( (uint32_t) request->target_buffer);
 
     if (request->kernel){
         debug("Handling kernel request\n");

@@ -4,6 +4,7 @@
 #include "board/pic.h"
 #include "board/io.h"
 #include "lib/heap.h"
+#include "lib/string.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
 
@@ -100,7 +101,7 @@ static void release (DeviceType* device_type, Device* device){
 }
 
 static void handle_request (MouseDevice* device, IORequest* request){
-    char buff[3];
+    uint8_t buff[3];
 
     memcpy(buff, MOUSE_DEVICE(device)->buffer,3);
     MOUSE_DEVICE(device)->bufindex  = 0;
@@ -108,7 +109,7 @@ static void handle_request (MouseDevice* device, IORequest* request){
 
 }
 static void handle_empty_request (MouseDevice* device, IORequest* request){
-    char buff;
+    uint8_t buff;
     handle_io_request(request, &buff,0, TASK_IO_REQUEST_DONE);
 }
 
@@ -117,7 +118,7 @@ static int16_t read_async (CharDevice* device,IORequest* request){
     if (MOUSE_DEVICE(device)->bufindex == 3){
         handle_request(MOUSE_DEVICE(device), request);
     } else if (request->type & TASK_IO_NOBLOCK){
-        handle_empty_request(device, request);
+        handle_empty_request(MOUSE_DEVICE(device), request);
     } else {
         MOUSE_DEVICE(device)->request = request;
     }

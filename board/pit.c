@@ -79,7 +79,7 @@ void pit_add_callback(Isr callback, uint64_t ticks){
 
 void pit_remove_callback(Isr callback){
     for (int i=0;i<MAX_SLOTS;i++){
-        if (slots[i].callback = callback){
+        if (slots[i].callback == callback){
             slots[i].ticks = 0;
             slots[i].count = 0;
             slots[i].callback = NULL;

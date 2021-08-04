@@ -9,6 +9,7 @@ static uint8_t to_hexd(char cdigit){
     } else if (cdigit >= 'a' && cdigit <= 'f'){
         return 10 + cdigit - 'a';
     } 
+    return 0;
 }
 
 static uint8_t to_hex(char* token){
@@ -32,7 +33,6 @@ int parse_mac_address(const char* mac_string, uint8_t* dst_mac){
         if (isxdigit(c)){
             hex[k++] = c;
         } else if (c == ':'){
-            printf("stop %d\n",i);
             if (strlen(hex) != 2){
                 return -1;
             }

@@ -147,9 +147,9 @@ static void do_init_device(DeviceType* device_type, int*device_index){
     for (j=0;j<device_count;j++){
         devices[*device_index].device_type = device_type;
         Device* device = device_type->instantiate(device_type, j);
-        debug("Device initialized: ");debug_i(device,16);debug("\n");
-        devices[*device_index].device = device;
-        if (devices[*device_index].device){
+
+        if (device){
+            devices[*device_index].device = device;
             devices[*device_index].device->kind = device_type->kind;
             devices[*device_index].device->instance_number = j;
             (*device_index)++;

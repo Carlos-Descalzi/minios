@@ -11,7 +11,7 @@ typedef struct {
 
 typedef struct {
     unsigned char stream_num;
-    void* buff;
+    const void* buff;
     unsigned int size;
 } IOData;
 

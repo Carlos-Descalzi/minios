@@ -9,6 +9,7 @@
 #include "netutils.h"
 #include "sched.h"
 #include "msg.h"
+#include "unistd.h"
 
 /*
 
@@ -57,7 +58,7 @@ static void print_mac(uint8_t* mac){
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
-static void print_ip(char* ip){
+static void print_ip(uint8_t * ip){
     printf("%u.%u.%u.%u", 
         ip[0] & 0xFF, ip[1] & 0xFF , ip[2] & 0xFF, ip[3] & 0xFF);
 }

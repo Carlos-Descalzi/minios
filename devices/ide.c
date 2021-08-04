@@ -369,7 +369,6 @@ static void ide_read_reg_buffer(IDEChannel* channel, uint8_t reg, uint32_t* buff
 }
 
 static int8_t ide_poll(IDEChannel* channel, uint32_t check){
-    int i;
 
     //for (i=0;i<5;i++){
     //    ide_read_reg(channel, ATA_REG_ALTSTATUS);
@@ -539,6 +538,7 @@ static void read_callback(IDEDevice* device, uint8_t* sector, ReadRequest* reque
     request->remaining-=to_read;
 }
 
+/*
 static uint32_t block_crc(uint8_t* block, uint16_t size){
     uint32_t crc = 0;
     for (int i=0;i<size;i++){
@@ -546,6 +546,7 @@ static uint32_t block_crc(uint8_t* block, uint16_t size){
     }
     return crc;
 }
+*/
 
 static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
     ReadRequest read_request = {
@@ -566,10 +567,10 @@ static int16_t ide_read(BlockDevice* device, uint8_t* buffer, uint16_t size){
         &read_request
     )){
         debug("IDE - Error reading block\n");
-        debug("\tCRC:");debug_i(block_crc(buffer, size),16);debug("\n");
+        //debug("\tCRC:");debug_i(block_crc(buffer, size),16);debug("\n");
         return -1;
     }
-    debug("\tCRC:");debug_i(block_crc(buffer, size),16);debug("\n");
+    //debug("\tCRC:");debug_i(block_crc(buffer, size),16);debug("\n");
     IDE_DEVICE(device)->current_pos+=SECTOR_SIZE * nsectors;
     return 0;
 }

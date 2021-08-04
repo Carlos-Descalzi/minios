@@ -80,6 +80,8 @@ static int16_t write_bytes (Stream* stream,uint8_t* data,int16_t size){
     return 0;
 }
 static int16_t read_async (Stream* stream,IORequest* request){
+    return 0;
 }
 static int16_t write_async (Stream* stream,IORequest* request){
+    return 0;
 }

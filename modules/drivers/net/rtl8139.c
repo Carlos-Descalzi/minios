@@ -278,7 +278,7 @@ static int16_t read_async(BlockDevice* device, IORequest* request){
             TASK_IO_REQUEST_DONE
         );
     } else if (request->type & TASK_IO_NOBLOCK){
-        char buff;
+        uint8_t buff;
         handle_io_request(request, &buff, 0, TASK_IO_REQUEST_DONE);
     } else {
         NET_DEVICE(device)->request = request;

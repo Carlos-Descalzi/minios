@@ -7,7 +7,7 @@ int main(int argc, char** argv){
 
     sprintf(data, "hello world!\n");
 
-    printf(data);
+    printf("%s\n", data);
 
     free(data);
 

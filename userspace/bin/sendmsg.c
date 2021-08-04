@@ -1,5 +1,7 @@
 #include "stdio.h"
 #include "msg.h"
+#include "stdlib.h"
+#include "unistd.h"
 /**
  * Simple program to test message passing, sends
  * a fixed message to a process identified by the

@@ -22,7 +22,6 @@
 #include "kernel/modules.h"
 #include "lib/params.h"
 
-static void     test_timer          (void);
 static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
 static void     load_program        (FileSystem* fs, const char* path);
@@ -58,7 +57,6 @@ void init(){
 }
 
 static void bsod(InterruptFrame* frame, void* data){
-    int i;
     console_color(CONSOLE_COLOR_BLUE << 4 | CONSOLE_COLOR_WHITE);
     console_gotoxy(30,11);
     console_print("+------------------------+");
@@ -98,14 +96,13 @@ static void load_program(FileSystem* fs, const char* path){
 static void start_init(void){
     FileSystem* fs;
     Device* device;
-    uint32_t task_id;
 
     device = device_find(DISK, 0);
     if (!device){
         console_print("Device not found\n");
         return;
     }
-    fs = fs_get_filesystem(device);
+    fs = fs_get_filesystem(BLOCK_DEVICE(device));
     load_program(fs, "/bin/init.elf");
     sti();
     //pic_eoi1();

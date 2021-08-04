@@ -66,7 +66,7 @@ void syscall_open(InterruptFrame* f){
     } else {
         debug("Opening file ");debug(path);debug("\n");
 
-        FileSystem* fs = fs_get_filesystem(device);
+        FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
         if (!fs){
             debug("File system not found\n");

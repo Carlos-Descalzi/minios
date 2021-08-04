@@ -24,7 +24,7 @@ TaskParams* task_params_from_char_array(int count, char**params){
     char* ptr = start;
 
     for (int i=0;i<count;i++){
-        task_params->params[i] = OFFSET(ptr, task_params);
+        task_params->params[i] = (char*) OFFSET(ptr, task_params);
         strcpy(ptr, params[i]);
         ptr += strlen(params[i]);
         *ptr++ = '\0';

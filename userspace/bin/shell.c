@@ -3,6 +3,8 @@
 #include "string.h"
 #include "spawn.h"
 #include "stdlib.h"
+#include "path.h"
+#include "minios.h"
 /**
  * Minimal shell interface, good enough for running other programs
  **/
@@ -11,7 +13,7 @@ static char     parambuffer[256];
 static char     envbuffer[2048];    // used to setup environment for child processes
 
 static char**   parse_params    (char* param_string, int* nargs);
-static void     execute         (const char* file);
+static void     execute         (char* file);
 static void     changedir       (const char* cmd);
 static void     showpwd         (void);
 static void     showenv         (void);
@@ -71,15 +73,13 @@ static char** parse_params(char* param_string, int* nargs){
     return param_ptrs;
 }
 
-static void execute(const char* file){
+static void execute(char* file){
     char path[100];
     struct stat statb;
     int nargs = 0;
     int background = 0;
-    char* executable;
     char**argv = NULL;
 
-    executable = file;
     char* param_start = strchr(file, ' ');
 
     argv = parse_params(file, &nargs);

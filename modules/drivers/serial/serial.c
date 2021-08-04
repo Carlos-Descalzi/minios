@@ -13,7 +13,7 @@ int16_t serial_setopt(Device* device, uint32_t option, void* data);
 int16_t serial_read(CharDevice* device);
 int16_t serial_write(CharDevice* device, uint8_t chr);
 static void release(DeviceType* device_type, Device* device);
-static void handle_irq (InterruptFrame* f, void* data);
+//static void handle_irq (InterruptFrame* f, void* data);
 
 typedef struct {
     CharDevice device;
@@ -50,13 +50,14 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     //isr_install(PIC_IRQ_BASE + 11, handle_irq, device);
     return DEVICE(device);
 }
+/*
 static void handle_irq (InterruptFrame* f, void* data){
     cli();
     debug("serial irq\n");
     pic_eoi2();
     sti();
 }
-
+*/
 static void release(DeviceType* device_type, Device* device){
     heap_free(device);
 }
