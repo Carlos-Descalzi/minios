@@ -8,7 +8,7 @@
 #include <stdarg.h>
 
 typedef struct {
-    uint8_t digits;
+    int16_t digits;
     uint8_t decimals;
     uint8_t padding;
     uint8_t ftype;
@@ -117,7 +117,12 @@ int fputs(const char* c, FILE* fp){
 
 static void parse_format(const char* format, int* pos, char* buffer, Format* tformat){
     int i=0;
+    int neg = 0;
     
+    if (format[*pos] == '-'){
+        neg = 1;
+        (*pos)++;
+    }
     if(format[*pos] == '0'){
         tformat->padding=1;
         (*pos)++;
@@ -126,7 +131,7 @@ static void parse_format(const char* format, int* pos, char* buffer, Format* tfo
         buffer[i++] = format[(*pos)++];
     }
     buffer[i] = '\0';
-    tformat->digits = atoi(buffer);
+    tformat->digits = atoi(buffer) * ( neg ? -1 : 1);
 
     if (format[*pos] == '.'){
         (*pos)++;
@@ -153,7 +158,39 @@ static void print_num(char* buffer, Format* tformat, int radix, int* written, Wr
     if (l > printable){
         buffer+=(l-printable);
     }
-    written += writer_puts(writer, buffer);
+    (*written) += writer_puts(writer, buffer);
+}
+static void print_str(const char*str, Format* tformat, int* written, Writer* writer){
+
+    if (!str){
+        str = "(null)";
+    }
+
+    int l = strlen(str);
+
+    if (tformat->digits > 0){
+        if (tformat->digits > l){
+            int padding = tformat->digits - l;
+            for (int i=0;i<padding;i++){
+                writer_putc(writer,' ');
+            }
+
+            (*written) += padding;
+        } 
+    }
+
+    (*written) += writer_puts(writer,str);
+
+    if (tformat->digits < 0){
+        if (-tformat->digits > l){
+            int padding = -tformat->digits - l;
+            for (int i=0;i<padding;i++){
+                writer_putc(writer,' ');
+            }
+
+            (*written) += padding;
+        } 
+    }
 }
 
 static int do_vfprintf(Writer* writer, const char* format, va_list parameters){ 
@@ -199,10 +236,7 @@ static int do_vfprintf(Writer* writer, const char* format, va_list parameters){
 
                 case 's':{
                         const char* str = va_arg(parameters, const char*);
-                        if (!str){
-                            str = "(null)";
-                        }
-                        written+=writer_puts(writer,str);
+                        print_str(str,&tformat, &written, writer);
                         break;
                     }
 

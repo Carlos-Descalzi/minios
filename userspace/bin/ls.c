@@ -6,9 +6,8 @@
  * Simple directory listing
  **/
 
-static void         spc     (int n);
 static const char*  typename(uint8_t type);
-static const char* color    (uint8_t type);
+static const char*  color   (uint8_t type);
 
 int main(int argc, char* argv[]){
     char* path = NULL;
@@ -31,24 +30,19 @@ int main(int argc, char* argv[]){
     int i=0;
 
     while ((entry = readdir(dir))){
-        printf(color(entry->d_type));
-        printf("%s",entry->d_name);
-        spc(20-strlen(entry->d_name));
-        printf("%s",typename(entry->d_type));
-        printf(color(0));
-        printf("\n");
+        printf(
+            "%s%-20s%s%s\n",
+            color(entry->d_type), 
+            entry->d_name,
+            typename(entry->d_type),
+            color(0)
+        );
         i++;
     }
 
     printf("%d entries found.\n",i);
 
     return 0;
-}
-
-static void spc(int n){
-    for (int i=0;i<n;i++){
-        printf(" ");
-    }
 }
 
 static const char* color(uint8_t type){
