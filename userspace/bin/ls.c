@@ -34,8 +34,8 @@ int main(int argc, char* argv[]){
             "%s%-20s%s%s\n",
             color(entry->d_type), 
             entry->d_name,
-            typename(entry->d_type),
-            color(0)
+            color(0),
+            typename(entry->d_type)
         );
         i++;
     }

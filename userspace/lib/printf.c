@@ -29,6 +29,7 @@ typedef struct Writer {
 
 static void parse_format        (const char* format, int* pos, char* buffer, Format* tformat);
 static void print_num           (char* buffer, Format* tformat, int radix, int* written, Writer* w);
+static void print_str           (const char*str, Format* tformat, int* written, Writer* writer);
 static int  do_vfprintf         (Writer* writer, const char* format, va_list parameters);
 static void setup_str_writer    (Writer* writer, char* str);
 static void setup_fp_writer     (Writer* writer, FILE* fp);
