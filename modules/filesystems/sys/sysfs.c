@@ -8,11 +8,13 @@
 #include "kernel/task.h"
 #include "lib/list.h"
 #include "ipc/pipe.h"
+#include "ipc/shm.h"
 
 #define SYSFS(fs)               ((SysFileSystem*)fs)
 #define SYSFS_INODE(i)          ((SysFsInode*)i)
 #define INODE(i)                ((Inode*)i)
 #define PIPE_NODE(n)            ((PipeNode*)n)
+#define SHM_NODE(n)             ((ShmNode*)n)
 #define WORK_INODES_COUNT       10
 
 #define SYSFS_INODE_PROCESSES   3
@@ -26,9 +28,17 @@
 
 typedef struct {
     ListNode header;
+    uint16_t pipe_id;
     Pipe* pipe;
     char name[32];
 } PipeNode;
+
+typedef struct {
+    ListNode header;
+    uint16_t shm_id;
+    SharedMemory* shm;
+    char name[32];
+} ShmNode;
 /**
  * SYS File system
  **/
@@ -49,11 +59,16 @@ typedef struct {
     int process_count;
     uint32_t* process_list;
     ListNode* pipes;
+    ListNode* shm;
+    uint16_t next_pipe_id;
+    uint16_t next_shm_id;
 } SysFileSystem;
 
 
 static FileSystemType   FS_TYPE;
-static FsDirentry       ROOT_DIR_ENTRIES[6];
+static FsDirentry       ROOT_DIR_ENTRIES[SYSFS_INODE_MAX];
+
+#define ROOT_DIR_SIZE   (sizeof(ROOT_DIR_ENTRIES)/sizeof(FsDirentry))
 
 static const char       FS_TYPE_NAME[]              = "sys";
 
@@ -80,6 +95,7 @@ static uint32_t         read_block                  (FileSystem* fs, Inode* inod
                                                     uint32_t length);
 static int32_t          get_direntry                (FileSystem* fs, Inode* inode, 
                                                     uint32_t* offset, DirEntry* direntry);
+static uint32_t         add_entry                   (FileSystem* fs, Inode*, const char*, uint32_t);
 static int32_t          get_root_direntry           (FileSystem* fs, Inode* inode, 
                                                     uint32_t* offset, DirEntry* direntry);
 static int32_t          get_processes_direntry      (FileSystem* fs, Inode* inode, 
@@ -92,6 +108,8 @@ static int32_t          get_memory_direntry         (FileSystem* fs, Inode* inod
                                                     uint32_t* offset, DirEntry* direntry);
 static int32_t          get_pipes_direntry          (FileSystem* fs, Inode* inode, 
                                                     uint32_t* offset, DirEntry* direntry);
+static int32_t          get_shm_direntry            (FileSystem* fs, Inode* inode, 
+                                                    uint32_t* offset, DirEntry* direntry);
 static Inode*           alloc_inode                 (FileSystem* fs);
 static void             free_inode                  (FileSystem* fs, Inode* inode);
 static void             release_resources           (FileSystem* fs);
@@ -102,8 +120,10 @@ static Stream*          open_stream                 (FileSystem* fs, uint32_t in
 static Stream*          user_memory_stream          (FileSystem* fs, uint32_t flags);
 static Stream*          kernel_memory_stream        (FileSystem* fs, uint32_t flags);
 static Stream*          process_memory_stream       (FileSystem* fs, uint32_t flags, uint32_t task_id);
-static uint32_t         add_entry                   (FileSystem* fs, Inode*, const char*, uint32_t);
 static void             get_process_list            (SysFileSystem* fs);
+static Pipe*            find_pipe_by_id             (ListNode* pipe_list, uint16_t pipe_id);
+static uint32_t         add_pipe_entry              (FileSystem* fs, Inode* dirinode, const char* name, uint32_t type);
+static uint32_t         add_shm_entry               (FileSystem* fs, Inode* dirinode, const char* name, uint32_t type);
 
 void module_init(){
     FS_TYPE.type_name = FS_TYPE_NAME;
@@ -123,8 +143,8 @@ void module_init(){
     ROOT_DIR_ENTRIES[5].name = NAME_MEMORY;
     ROOT_DIR_ENTRIES[6].inode = SYSFS_INODE_PIPES;
     ROOT_DIR_ENTRIES[6].name = NAME_PIPES;
-    ROOT_DIR_ENTRIES[6].inode = SYSFS_INODE_SHM;
-    ROOT_DIR_ENTRIES[6].name = NAME_SHM;
+    ROOT_DIR_ENTRIES[7].inode = SYSFS_INODE_SHM;
+    ROOT_DIR_ENTRIES[7].name = NAME_SHM;
 }
 
 static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
@@ -138,6 +158,9 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     SysFileSystem* fs = heap_alloc(sizeof(SysFileSystem));
 
     fs->pipes = NULL;
+    fs->shm = NULL;
+    fs->next_pipe_id = 1;
+    fs->next_shm_id = 1;
 
     FILE_SYSTEM(fs)->type = fs_type;
     FILE_SYSTEM(fs)->device = device;
@@ -225,6 +248,8 @@ static int32_t get_direntry(FileSystem* fs, Inode* inode,
             return get_memory_direntry(fs, inode, offset, direntry);
         case SYSFS_INODE_PIPES:
             return get_pipes_direntry(fs, inode, offset, direntry);
+        case SYSFS_INODE_SHM:
+            return get_shm_direntry(fs, inode, offset, direntry);
     }
     return -1;
 }
@@ -253,23 +278,13 @@ static void release_resources(FileSystem* fs){
 }
 
 static int32_t get_root_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
-    debug("get root direntry\n");
-
-    if (*offset <= SYSFS_INODE_MAX){
-        debug(ROOT_DIR_ENTRIES[*offset].name);debug("\n");
-
-        strcpy(direntry->name,ROOT_DIR_ENTRIES[*offset].name);
-        direntry->name_len = strlen(ROOT_DIR_ENTRIES[*offset].name);
-        direntry->rec_len = direntry->name_len + sizeof(DirEntry);
-        direntry->inode = ROOT_DIR_ENTRIES[*offset].inode;
-        direntry->file_type = 2;
-        
+    if (*offset < ROOT_DIR_SIZE){
+        setup_direntry(direntry, ROOT_DIR_ENTRIES[*offset].name, 2, ROOT_DIR_ENTRIES[*offset].inode);
         (*offset)++;
     } 
 
-    return *offset > SYSFS_INODE_MAX;
+    return *offset >= ROOT_DIR_SIZE;
 }
-
 
 static void setup_direntry(DirEntry* direntry, const char* name, int file_type, uint32_t inode){
     strcpy(direntry->name, name);
@@ -293,28 +308,28 @@ static int32_t get_processes_direntry(FileSystem* fs, Inode* inode, uint32_t* of
             (*offset)++;
             break;
         default: {
-                int proc_index = *offset - 2;
-                char buff[10];
+            int proc_index = *offset - 2;
+            char buff[10];
 
-                if (SYSFS(fs)->process_count == 0){
-                    get_process_list(SYSFS(fs));
-                }
+            if (SYSFS(fs)->process_count == 0){
+                get_process_list(SYSFS(fs));
+            }
 
-                int process_id = SYSFS(fs)->process_list[proc_index];
+            int process_id = SYSFS(fs)->process_list[proc_index];
 
-                itoa(process_id, buff, 10);
-                setup_direntry(direntry, buff, 1, (SYSFS_INODE(inode)->id << 16) | process_id);
+            itoa(process_id, buff, 10);
+            setup_direntry(direntry, buff, 1, (SYSFS_INODE(inode)->id << 16) | process_id);
 
-                (*offset)++;
+            (*offset)++;
 
-                finish = proc_index >= SYSFS(fs)->process_count -1;
+            finish = proc_index >= SYSFS(fs)->process_count -1;
 
-                if (finish){
-                    SYSFS(fs)->process_count = 0;
-                    heap_free(SYSFS(fs)->process_list);
-                }
+            if (finish){
+                SYSFS(fs)->process_count = 0;
+                heap_free(SYSFS(fs)->process_list);
             }
             break;
+        }
     }
 
     return finish;
@@ -386,8 +401,10 @@ static int32_t get_memory_direntry (FileSystem* fs, Inode* inode, uint32_t* offs
 static int32_t get_pipes_direntry (FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
 
     debug("get pipes direntry\n");
+
+    int pipes_count = list_size(SYSFS(fs)->pipes);
     
-    if (*offset < list_size(SYSFS(fs)->pipes) + 2){
+    if (*offset < pipes_count + 2){
         switch(*offset){
             case 0:
                 setup_direntry(direntry, NAME_CWD, 2, SYSFS_INODE(inode)->id);
@@ -398,22 +415,55 @@ static int32_t get_pipes_direntry (FileSystem* fs, Inode* inode, uint32_t* offse
             default: {
                 int pipe_index = *offset-2;
                 PipeNode* pipe = PIPE_NODE(list_element_at(SYSFS(fs)->pipes, pipe_index));
-                setup_direntry(direntry, pipe->name, 1, SYSFS_INODE(inode)->id << 16 | pipe_index);
+                setup_direntry(direntry, pipe->name, 1, SYSFS_INODE(inode)->id << 16 | pipe->pipe_id);
                 break;
-                }
+            }
         }
-
         (*offset)++;
     }
 
-    return *offset >=4;
+    return *offset >= pipes_count + 2;
 
+}
+
+static int32_t get_shm_direntry (FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
+
+    int shm_count = list_size(SYSFS(fs)->shm);
+
+    if (*offset < shm_count + 2){
+        switch(*offset) {
+            case 0:
+                setup_direntry(direntry, NAME_CWD, 2, SYSFS_INODE(inode)->id);
+                break;
+            case 1:
+                setup_direntry(direntry, NAME_PARENT, 2, FS_INODE_ROOT_DIR);
+                break;
+            default: {
+                int shm_index = *offset-2;
+                ShmNode* shm = SHM_NODE(list_element_at(SYSFS(fs)->shm, shm_index));
+                setup_direntry(direntry, shm->name, 1, SYSFS_INODE(inode)->id << 16 | shm->shm_id);
+                break;
+            }
+        }
+        (*offset)++;
+    }
+
+    return *offset >= shm_count + 2;
+}
+
+static Pipe* find_pipe_by_id(ListNode* pipe_list, uint16_t pipe_id){
+    for (ListNode* n = pipe_list; n; n = n->next){
+        if (PIPE_NODE(n)->pipe_id == pipe_id){
+            return PIPE_NODE(n)->pipe;
+        }
+    }
+    return NULL;
 }
 
 static Stream* open_stream (FileSystem* fs, uint32_t inodenum, uint32_t flags){
     if (inodenum >= 0x10000){
-        uint32_t foldernum = inodenum >> 16;
-        uint32_t filenum = inodenum & 0xFF;
+        uint16_t foldernum = inodenum >> 16;
+        uint16_t filenum = inodenum & 0xFF;
         if (foldernum == SYSFS_INODE_MEMORY){
             switch(filenum){
                 case 2:
@@ -423,6 +473,11 @@ static Stream* open_stream (FileSystem* fs, uint32_t inodenum, uint32_t flags){
             }
         } else if (foldernum == SYSFS_INODE_PROCESSES){
             return process_memory_stream(fs, flags, filenum);
+        } else if (foldernum == SYSFS_INODE_PIPES){
+            Pipe* pipe = find_pipe_by_id(SYSFS(fs)->pipes, filenum);
+            if (pipe){
+                return pipe_stream_open(pipe, flags);
+            }
         }
     }
     
@@ -498,12 +553,8 @@ static void get_process_list (SysFileSystem* fs){
     tasks_iter_tasks(get_tasks, &visitor_data);
 }
 
-static uint32_t add_entry (FileSystem* fs, Inode* inode, const char* name, uint32_t type){
+static uint32_t add_pipe_entry (FileSystem* fs, Inode* dirinode, const char* name, uint32_t type){
 
-    if (SYSFS_INODE(inode)->id != SYSFS_INODE_PIPES){
-        debug("Unable to create new entries in places other than pipes folder\n");
-        return 0;
-    }
     if (type != FS_INODE_TYPE_FIFO){
         debug("Only fifo inodes can be created\n");
         return 0;
@@ -511,12 +562,28 @@ static uint32_t add_entry (FileSystem* fs, Inode* inode, const char* name, uint3
 
     PipeNode* pipe_node = heap_new(PipeNode);
 
-    uint32_t inodenum = SYSFS_INODE_PIPES << 16 | (list_size(SYSFS(fs)->pipes) + 2);
-
-    SYSFS(fs)->pipes = list_add(SYSFS(fs)->pipes, pipe_node);
+    SYSFS(fs)->pipes = list_add(SYSFS(fs)->pipes, LIST_NODE(pipe_node));
 
     pipe_node->pipe = pipe_new();
+    pipe_node->pipe_id = SYSFS(fs)->next_pipe_id++;
     strcpy(pipe_node->name, name);
 
-    return inodenum;
+    return SYSFS_INODE_PIPES << 16 | pipe_node->pipe_id;
+}
+
+static uint32_t add_shm_entry (FileSystem* fs, Inode* dirinode, const char* name, uint32_t type){
+    return 0;
+}
+
+static uint32_t add_entry (FileSystem* fs, Inode* dirinode, const char* name, uint32_t type){
+
+    switch(SYSFS_INODE(dirinode)->id){
+        case SYSFS_INODE_PIPES:
+            return add_pipe_entry(fs, dirinode, name, type);
+        case SYSFS_INODE_SHM:
+            return add_shm_entry(fs, dirinode, name, type);
+    }
+    debug("Unable to create new entries in places other than pipes or shm folder\n");
+
+    return 0;
 }

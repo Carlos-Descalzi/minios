@@ -16,8 +16,8 @@ void    pipe_ref        (Pipe* pipe);
 int     pipe_unref      (Pipe* pipe);
 void    pipe_release    (Pipe* pipe);
 int     pipe_can_write  (Pipe* pipe, int count);
-void    pipe_write      (Pipe* pipe, void* data, int count);
 int     pipe_can_read   (Pipe* pipe, int count);
+void    pipe_write      (Pipe* pipe, void* buffer, int count);
 void    pipe_read       (Pipe* pipe, void* buffer, int count);
 int     pipe_elem_count (Pipe* pipe);
 

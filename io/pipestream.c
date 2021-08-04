@@ -45,10 +45,7 @@ Stream* pipe_stream_open(Pipe* pipe, int mode){
 }
 
 static void close (Stream* stream){
-
-    if (!pipe_unref(PIPE_STREAM(stream)->pipe)){
-        pipe_release(PIPE_STREAM(stream)->pipe);
-    }
+    pipe_unref(PIPE_STREAM(stream)->pipe);
     heap_free(stream);
 }
 static uint32_t size (Stream* stream){
