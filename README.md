@@ -66,7 +66,7 @@ Syntax:
 ```$ ls [path]```
 Path can be relative, absolute with no drive, or absolute with drive included.
 
-### lsenv
+### lsdev
 Lists all available devices
 
 ### cat
@@ -78,4 +78,21 @@ Displays user and kernel memory statistics.
 
 ### ps
 Shows current processes
+
+## Filesystem and devices.
+There isn't a signle file system as in unix, instead devices can have a filesystem associated.
+Devices are identified by its type and instance number, in this way:
+
+* disk0: The main drive
+* sys0: A virtual device which is a place holder where system fs is mounted on.
+* keyboard0: raw keyboard access.
+* screen0: Raw screen access.
+* console0: This is a "device" which ends up using keyboard and screen, if present, processes reference it for stdin, stdout, and stderr.
+* net0: Raw ethernet access, supported by rtl8139 driver.
+
+Finally, the filesystems available for the moment are these:
+
+* disk0:/ the main ext2 filesystem
+* sys0:/ this file system provides access to system resources, like processes, memory statistics, and IPC resources (in progress). Programs like ps and free read this filesystem to show system information.
+
 
