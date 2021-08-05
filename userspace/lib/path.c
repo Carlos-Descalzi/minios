@@ -30,7 +30,7 @@ char* path_absolute(const char* path, char* targetpath){
         }
         char* token;
         char* ptr1 = buffer;
-        char* ptr2;
+        char* ptr2 = NULL;
 
         while ((token = strtok_r(ptr1,"/",&ptr2))){
             ptr1 = NULL;

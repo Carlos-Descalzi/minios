@@ -40,14 +40,14 @@ void syscall_open(InterruptFrame* f){
     uint16_t device_id;
 
     if (path_parse(full_path, &device_id, path)){
-        f->ebx = ((uint32_t)-1);
+        f->ebx = ((uint32_t)-2);
         return;
     }
 
     Device* device = device_find_by_id(device_id);
 
     if (!device){
-        f->ebx = ((uint32_t)-2);
+        f->ebx = ((uint32_t)-3);
         return;
     }
 
