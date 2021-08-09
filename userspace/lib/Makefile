@@ -22,12 +22,15 @@ COREOBJS=stdlib.o 	\
 	 signal.o	\
 	 fifo.o
 
-all: minios.a gfx.a
+all: minios.a gfx.a socket.a
 
 minios.a: $(COREOBJS)
 	ar -crs $@ $(COREOBJS)
 
 gfx.a: gfx.o
+	ar -crs $@ $<
+
+socket.a: socket.o
 	ar -crs $@ $<
 
 include ../../Make.rules

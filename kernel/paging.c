@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -18,11 +18,8 @@
 // Use the available RAM region of ~30kb which is behind boot sector,
 // for page directory.
 // The region starts at 0x500 but I need 4k aligned addresses.
-#define mkvaddr(d,p,o)          (((d) << 22)|((p) << 12)|(o))
 #define KERNEL_PAGE_DIR         ((PageDirectoryEntry*)KERNEL_PAGE_DIR_ADDRESS)
 #define KERNEL_PAGE_TABLE       ((PageTableEntry*)KERNEL_PAGE_TABLE_ADDRESS)
-#define PAGES_MAX               1024
-#define PAGE_LAST               ((PAGES_MAX)-1)
 /**
  * I use this page as a kind of window to map to other physical addresses
  * belonging to task pages when I need to operate them
@@ -333,16 +330,16 @@ PageDirectoryEntry* paging_new_task_space(void){
     }
 
     set_exchange_page(table_address_2);
-    // Page 1021 of last table is 2k for arguments + 2k for environment
-    local_table[PAGE_LAST-2].present = 1;
-    local_table[PAGE_LAST-2].read_write = 1;
-    local_table[PAGE_LAST-2].user_supervisor = 1;
-    local_table[PAGE_LAST-2].physical_page_address = env_block >> 12;
-    // Page 1022 of last table maps to stack.
-    local_table[PAGE_LAST-1].present = 1;
-    local_table[PAGE_LAST-1].read_write = 1;
-    local_table[PAGE_LAST-1].user_supervisor = 1;
-    local_table[PAGE_LAST-1].physical_page_address = stack_block >> 12;
+    // Page 1021 of last table maps to where stack begins.
+    local_table[PAGING_TASK_STACK_PAGE].present = 1;
+    local_table[PAGING_TASK_STACK_PAGE].read_write = 1;
+    local_table[PAGING_TASK_STACK_PAGE].user_supervisor = 1;
+    local_table[PAGING_TASK_STACK_PAGE].physical_page_address = stack_block >> 12;
+    // Page 1022 of last table is 2k for arguments + 2k for environment
+    local_table[PAGING_TASK_ENV_PAGE].present = 1;
+    local_table[PAGING_TASK_ENV_PAGE].read_write = 1;
+    local_table[PAGING_TASK_ENV_PAGE].user_supervisor = 1;
+    local_table[PAGING_TASK_ENV_PAGE].physical_page_address = env_block >> 12;
     // Last page (1023) of last table maps to ISRs
     setup_isr_page(local_table, 1);
 
@@ -504,19 +501,19 @@ void paging_write_env(PageDirectoryEntry* dir,
         uint32_t address = local_page_dir[PAGE_LAST].page_table_address << 12;
         set_exchange_page(address);
     
-        address = local_table[PAGE_LAST-2].physical_page_address << 12;
+        address = local_table[PAGING_TASK_ENV_PAGE].physical_page_address << 12;
         set_exchange_page(address);
 
         memset(local_ptr,0, PAGE_SIZE);
 
         if (args){
             debug("Setting up arguments\n");
-            uint32_t offset = mkvaddr(PAGE_LAST, PAGE_LAST-2, 0);
+            uint32_t offset = PAGING_TASK_ENV_VADDR;
             task_params_copy_with_offset(args, local_ptr, offset);
         }
         if (env){
             debug("Setting up environment\n");
-            uint32_t offset = mkvaddr(PAGE_LAST, PAGE_LAST-2, PAGE_SIZE / 2);
+            uint32_t offset = PAGING_TASK_ENV_VADDR + PAGE_SIZE /2;
             task_params_copy_with_offset(env, local_ptr + PAGE_SIZE / 2, offset);
         }
     }

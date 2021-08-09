@@ -13,6 +13,7 @@ static int16_t   seek          (Stream*,uint32_t);
 static uint32_t  size          (Stream*);
 static void      close         (Stream*);
 static void      flush         (Stream*);
+static uint32_t  available     (Stream*);
 
 Stream* char_array_stream_open (size_t buffer_size, int mode){
 
@@ -34,6 +35,7 @@ Stream* char_array_stream_open (size_t buffer_size, int mode){
     STREAM(stream)->seek = seek;
     STREAM(stream)->flush = flush;
     STREAM(stream)->close = close;
+    STREAM(stream)->available = available;
 
     return STREAM(stream);
 }
@@ -97,4 +99,8 @@ static void close (Stream* stream){
     heap_free(stream);
 }
 static void flush (Stream* stream){
+}
+static uint32_t available (Stream* stream){
+    return CHAR_ARRAY_STREAM(stream)-> pos < 
+        CHAR_ARRAY_STREAM(stream)->buffer_size -1;
 }

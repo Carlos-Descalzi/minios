@@ -20,6 +20,7 @@ OBJS=exit.o		\
 	mmap.o		\
 	debug.o		\
 	kill.o		\
-	pipe.o
+	pipe.o		\
+	waitcnd.o
 
 all: $(OBJS)

@@ -109,6 +109,7 @@ static void     handle_receive  (NetDevice* device);
 static void     seek            (BlockDevice* device, uint32_t pos);
 static void     flush           (BlockDevice* device);
 static uint32_t pos             (BlockDevice* device);
+static uint32_t available       (BlockDevice* device);
 
 #define NET_DEVICE(d) ((NetDevice*)d)
 
@@ -165,6 +166,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     BLOCK_DEVICE(device)->seek = seek;
     BLOCK_DEVICE(device)->flush = flush;
     BLOCK_DEVICE(device)->pos = pos;
+    BLOCK_DEVICE(device)->available = available;
 
     device->descritor_index = 0;
     device->iobase = pci_data.header.type00.base_addresses[0] & ~0x0003;
@@ -409,3 +411,7 @@ static void seek(BlockDevice* device, uint32_t pos){}
 static void flush(BlockDevice* device){}
 
 static uint32_t pos (BlockDevice* device){ return 0; }
+
+static uint32_t available (BlockDevice* device){
+    return NET_DEVICE(device)->rx_available;
+}

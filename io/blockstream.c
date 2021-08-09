@@ -26,6 +26,7 @@ static uint32_t pos(Stream* stream);
 static int16_t seek(Stream* stream, uint32_t pos);
 static uint32_t size(Stream* stream);
 static void close(Stream* stream);
+static uint32_t available(Stream* stream);
 
 Stream* block_device_stream_open(BlockDevice* device, int flags){
 
@@ -47,6 +48,7 @@ Stream* block_device_stream_open(BlockDevice* device, int flags){
     STREAM(stream)->seek = seek;
     STREAM(stream)->size = size;
     STREAM(stream)->close = close;
+    STREAM(stream)->available = available;
 
     DEVICE_STREAM(stream)->device = DEVICE(device);
     stream->buffer_index = 0;
@@ -135,4 +137,7 @@ static int16_t read_async(Stream* stream, IORequest* request){
         return block_device_read_async(block_stream_device(stream), request);
     }
     return -1;
+}
+static uint32_t available(Stream* stream){
+    return block_device_available(block_stream_device(stream));
 }

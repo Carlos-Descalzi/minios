@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -17,18 +17,20 @@ typedef struct {
     Task task;
 } TaskNode;
 
+#define TASK_NODE(n)    ((TaskNode*)n)
+
 typedef struct {
     ListNode head;
-    Message* message;
+    Message message;
 } MessageNode;
 
-#define TASK_NODE(n)    ((TaskNode*)n)
 #define MSG_NODE(n)     ((MessageNode*)n)
 
 TaskStateSegment* TSS = (TaskStateSegment*)KERNEL_TSS_ADDRESS;
 GDTEntry* tss_gdt_entry = (GDTEntry*)KERNEL_TSS_GDT_ENTRY;
 Task** current_task_ptr = (Task**)KERNEL_CURRENT_TASK_PAGE;
-#define current_task (*current_task_ptr)
+
+#define current_task    (*current_task_ptr)
 
 static uint32_t next_tid;
 static ListNode* task_list;
@@ -40,8 +42,9 @@ static void     setup_console               (Task* task);
 static void     remove_current_task         (void);
 static void     check_io_wait_list          (void);
 static int      check_pending_io_requests   (Task* task);
-static int      wait_tid                    (Task* task);
-static int      wait_msg_answer             (Task* task);
+static int      cnd_wait_tid                (Task* task);
+static int      cnd_wait_msg_answer         (Task* task);
+static int      cnd_wait_cnd_list           (Task* task);
 static void     answer_message              (Message* source_message, Message* target_message);
 static void     do_send_message             (Message* message);
 
@@ -110,7 +113,6 @@ uint32_t tasks_new(Stream* exec_stream,
     TaskParams* args,
     TaskParams* env){
     
-    VirtualAddress v_address;
     Task* task = get_next_free_task();
 
     if (!task){
@@ -129,13 +131,12 @@ uint32_t tasks_new(Stream* exec_stream,
 
     task->cpu_state.cr3 = (uint32_t)task->page_directory;
     task->cpu_state.source_ss = 0x2B;
-    v_address.page_dir_index = 1023;
-    v_address.page_index = 1022;
-    v_address.offset = 0xFFF;
     task->args = args;
     task->env = env;
-    task->cpu_state.esp = v_address.address;
-    task->cpu_state.source_esp = v_address.address;
+
+    uint32_t task_esp = mkvaddr(PAGING_TASK_STACK_DIR, PAGING_TASK_STACK_PAGE, 0xFFF);
+    task->cpu_state.esp = task_esp;
+    task->cpu_state.source_esp = task_esp;
     task->cpu_state.flags.privilege_level = 3;
     task->cpu_state.flags.reserved_1 = 1;
     task->cpu_state.flags.interrupt_enable = 1;
@@ -335,7 +336,7 @@ void tasks_wait_tid(uint32_t tid){
     Task* task = current_task;
 
     task->status = TASK_STATUS_WAITCND;
-    task->waitcond = wait_tid;
+    task->waitcond = cnd_wait_tid;
     task->cond_data.int_data = tid;
 }
 
@@ -346,7 +347,7 @@ void tasks_send_message_sync(Message* message){
     do_send_message(message);
 
     task->status = TASK_STATUS_WAITCND;
-    task->waitcond = wait_msg_answer;
+    task->waitcond = cnd_wait_msg_answer;
     task->cond_data.int_data = paging_physical_address(task->page_directory, message);
 }
 
@@ -363,11 +364,12 @@ int tasks_check_for_message(Message* message){
         MessageNode* message_node = MSG_NODE(task->incoming_messages);
         task->incoming_messages = list_remove(task->incoming_messages, LIST_NODE(message_node));
 
-        Message* incoming_message = message_node->message;
-        heap_free(message_node);
+        //Message* incoming_message = message_node->message;
 
         message = (Message*) paging_physical_address(task->page_directory, message);
-        answer_message(incoming_message, message);
+        answer_message(&(message_node->message), message);
+
+        heap_free(message_node);
 
         return 0;
     }
@@ -376,47 +378,17 @@ int tasks_check_for_message(Message* message){
 int tasks_wait_message(Message* message){
     Task* task = current_task;
 
-    task->status = TASK_STATUS_WAITCND;
-    task->waitcond = wait_msg_answer;
-    task->cond_data.ptr_data = (void*) paging_physical_address(task->page_directory, message);
-    return 0;
-}
-
-static int wait_tid(Task* task){
-    if (!tasks_get_task_by_tid(task->cond_data.int_data)){
-        debug("Condition finished for ");debug_i(task->tid,10);debug("\n");
-        return 1;
+    if (tasks_check_for_message(message) < 0){
+        task->status = TASK_STATUS_WAITCND;
+        task->waitcond = cnd_wait_msg_answer;
+        task->cond_data.ptr_data = (void*) paging_physical_address(task->page_directory, message);
+    } else {
+        debug("Message already present, answered\n");
     }
     return 0;
 }
 
-static int wait_msg_answer(Task* task){
-    //debug("Checking conditions for task ");debug_i(task->tid,10);debug("\n");
-    for (ListNode* node = task->incoming_messages; node; node = node->next){
-        Message* waiting_msg = task->cond_data.ptr_data;
-        Message* local_waiting_msg = paging_to_kernel_space((uint32_t)waiting_msg);
-        uint32_t source = local_waiting_msg->source;
-        uint32_t target = local_waiting_msg->target;
 
-        if (source == 0 
-            && target == 0){
-            // receive any message
-            task->cpu_state.ebx = 0;
-            answer_message(MSG_NODE(node)->message, waiting_msg);
-            return 1;
-        } else {
-            // receive a message from a specific source to a specific target.
-            Message* message = paging_to_kernel_space((uint32_t)MSG_NODE(node)->message);
-            if (target == message->source 
-                && source == message->target){
-                task->cpu_state.ebx = 0;
-                answer_message(MSG_NODE(node)->message, waiting_msg);
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
 
 static void do_send_message(Message* message){
     /**
@@ -426,9 +398,13 @@ static void do_send_message(Message* message){
     Task* task = current_task;
 
     MessageNode* message_node = heap_alloc(sizeof(MessageNode));
-    message_node->message = (void*)paging_physical_address(task->page_directory, message);
+    message = (void*)paging_physical_address(task->page_directory, message);
 
-    message = paging_to_kernel_space((uint32_t)message_node->message);
+    message = paging_to_kernel_space( (uint32_t) message);
+
+    memcpy(&(message_node->message), message, sizeof(Message));
+
+    debug("TASKS - send message to ");debug_i(message->target,10);debug("\n");
 
     Task* target_task = tasks_get_task_by_tid(message->target);
 
@@ -442,33 +418,11 @@ static void do_send_message(Message* message){
     }
 }
 
-static void copymsg(Message* dest, Message* src){
-    dest->source = src->source;
-    dest->target = src->target;
-    dest->number = src->number;
-    dest->has_more = src->has_more;
-    memcpy(
-        ((void*)dest)+sizeof(uint32_t)*3,
-        ((void*)src)+sizeof(uint32_t)*3,
-        1024
-    );
-}
-
 static void answer_message(Message* source_message, Message* target_message){
-    /**
-     * Map source message into kernel space
-     * Copy to local variable
-     * Map target message into kernel space
-     * Copy local variable into target message
-     * TODO: Would be great to hage 2 pages available for mapping in kernel
-     * so I would just use 1 copy.
-     **/
-    Message temp;
-
-    source_message = paging_to_kernel_space((uint32_t)source_message);
-    copymsg(&temp, source_message);
-    target_message = paging_to_kernel_space((uint32_t)target_message);
-    copymsg(target_message, &temp);
+    debug("Message address:");debug_i((uint32_t)target_message,16);debug("\n");
+    target_message = paging_to_kernel_space( (uint32_t) target_message);
+    debug("Message address local:");debug_i((uint32_t)target_message,16);debug("\n");
+    memcpy(target_message, source_message, sizeof(Message));
 }
 
 static void setup_console(Task* task){
@@ -503,4 +457,89 @@ void tasks_iter_tasks(TaskVisitor visitor, void* data){
             break;
         }
     }
+}
+
+/** 
+ * Wait a given task to finish
+ **/
+static int cnd_wait_tid(Task* task){
+    if (!tasks_get_task_by_tid(task->cond_data.int_data)){
+        debug("Condition finished for ");debug_i(task->tid,10);debug("\n");
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * Waits for any of a list of conditions to apply
+ **/
+static int cnd_wait_cnd_list (Task* task){
+    WaitCondition* conditions = task->cond_data.ptr_data;
+
+    int applies = 0;
+    for (int i=0;i<conditions->n_conditions;i++){
+        switch(conditions->items[i].cond_type){
+            case COND_TYPE_FD:{
+                // wait a file descriptor to have data available
+                Stream* stream = task->streams[conditions->items[i].fd];
+                if (stream && stream_available(stream)){
+                    applies = 1;
+                    break;
+                }
+                break;
+            }
+            case COND_TYPE_MSG:
+                if (task->incoming_messages){
+                    applies = 1;
+                    break;
+                }
+                // Wait to have message avaiable
+                break;
+        }
+    }
+    if (applies){
+        heap_free(task->cond_data.ptr_data);
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * Wait an answer for a message
+ **/
+static int cnd_wait_msg_answer(Task* task){
+    debug("TASKS - wait message answer from ");debug_i(task->tid,10);debug("\n");
+    for (ListNode* node = task->incoming_messages; node; node = node->next){
+        Message* waiting_msg = task->cond_data.ptr_data;
+        Message* local_waiting_msg = paging_to_kernel_space((uint32_t)waiting_msg);
+        uint32_t source = local_waiting_msg->source;
+        uint32_t target = local_waiting_msg->target;
+
+        if (source == 0 
+            && target == 0){
+            // receive any message
+            task->cpu_state.ebx = 0;
+            answer_message(&(MSG_NODE(node)->message), waiting_msg);
+            task->incoming_messages = list_remove(task->incoming_messages, node);
+            heap_free(node);
+            return 1;
+        } else {
+            // receive a message from a specific source to a specific target.
+            debug("TASKS - answer message for task\n");
+            if (target == MSG_NODE(node)->message.source 
+                && source == MSG_NODE(node)->message.target){
+                task->cpu_state.ebx = 0;
+                //debug("ANSWER!!! ");debug_i(waiting_msg,16);debug(",");
+                //debug_i(local_waiting_msg,16);debug("\n");
+                answer_message(&(MSG_NODE(node)->message), waiting_msg);
+            } else {
+                debug("Wrong source - target: ");
+            }
+            task->incoming_messages = list_remove(task->incoming_messages, node);
+            heap_free(node);
+
+            return 1;
+        }
+    }
+    return 0;
 }

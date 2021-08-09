@@ -80,6 +80,7 @@ e2fs.img: userspace modules
 	@sudo mount e2fs.img tmp
 	@sudo mkdir tmp/bin
 	@sudo cp userspace/bin/*.elf tmp/bin
+	@sudo cp userspace/tcpip/*.elf tmp/bin
 	@sudo mkdir tmp/modules
 	@sudo mkdir tmp/etc
 	@echo "holaaaa !!!!"|sudo tee tmp/test.txt > /dev/null

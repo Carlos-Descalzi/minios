@@ -19,9 +19,9 @@
 typedef struct {
     uint32_t            source;
     uint32_t            target;
-    uint32_t            number:1,
+    uint32_t            number:31,
                         has_more:1;
-    char                body[1024];
+    char                body[1024 - sizeof(uint32_t)*3];
 } Message;
 
 typedef union {
@@ -29,6 +29,18 @@ typedef union {
     uint32_t    int_data;
 } ConditionData;
 
+#define COND_TYPE_FD    1
+#define COND_TYPE_MSG   2
+
+typedef struct {
+    int cond_type;
+    int fd;
+} WaitConditionItem;
+
+typedef struct {
+    int n_conditions;
+    WaitConditionItem items[];
+} WaitCondition;
 
 typedef struct Task Task;
 

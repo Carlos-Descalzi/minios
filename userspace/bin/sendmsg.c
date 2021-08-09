@@ -17,15 +17,15 @@ int main(int argc, char** argv){
 
     int target = atoi(argv[1]);
 
-    message.source = getpid();
-    message.target = target;
-    message.number = 0;
-    message.has_more = 0;
+    message.header.source = getpid();
+    message.header.target = target;
+    message.header.number = 0;
+    message.header.has_more = 0;
     sprintf(message.body, "HELLO FROM %d", getpid());
     printf("Sending message to %d\n",target);
 
     if (!msg_send_sync(&message)){
-        printf("Answer from %d: \"%s\"\n", message.source, message.body);
+        printf("Answer from %d: \"%s\"\n", message.header.source, message.body);
     } else {
         printf("No message received\n");
     }

@@ -4,7 +4,7 @@
 global _start, __stack_chk_fail
 extern main
 
-params_ptr: equ 0xFFFFD004
+params_ptr: equ 0xFFFFE004
 
 _start:
     ; TODO: initialization

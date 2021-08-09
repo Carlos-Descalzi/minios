@@ -4,8 +4,34 @@
 #include "lib/stdint.h"
 #include "io/streams.h"
 #include "lib/params.h"
+/**
+ *
+ * Task virtual memory layout
+ * dir 0, pages 0 - 256: 1mb of lower ram - unused, readonly.
+ * dir 0, page 257 - up to dir 20, page 47, free memory, used by memory mapping.
+ * dir 20, page 48: executable code (this is actually the same place where linux places executable).
+ * space between executable code and stack is all program memory.
+ * dir 1023, page 1021: stack top.
+ * dir 1023, page 1022: environment and parameters.
+ * dir 1023, page 1023: interrupt service routines.
+ **/
 
 #define PAGE_SIZE               4096
+#define PAGES_MAX               1024
+#define PAGE_LAST               ((PAGES_MAX)-1)
+/**
+ * Page directory index, page table index, offset
+ **/
+#define mkvaddr(d,p,o)          (((d) << 22)|((p) << 12)|(o))
+
+#define PAGING_TASK_ISR_PAGE    PAGE_LAST
+#define PAGING_TASK_ENV_DIR     PAGE_LAST
+#define PAGING_TASK_ENV_PAGE    (PAGE_LAST-1)
+#define PAGING_TASK_STACK_DIR   PAGE_LAST
+#define PAGING_TASK_STACK_PAGE  (PAGE_LAST-2)
+
+#define PAGING_TASK_ENV_VADDR   mkvaddr(PAGING_TASK_ENV_DIR, PAGING_TASK_ENV_PAGE,0)
+#define PAGING_TASK_STACK_VADDR mkvaddr(PAGING_TASK_STACK_DIR, PAGING_TASK_STACK_PAGE, 0xFFF)
 
 typedef struct {
     uint32_t 

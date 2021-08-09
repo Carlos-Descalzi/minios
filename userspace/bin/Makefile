@@ -7,15 +7,16 @@ BINS=init.elf 		\
 	 cat.elf		\
 	 testserver.elf	\
 	 sendmsg.elf	\
-	 testnet.elf	\
 	 testmouse.elf	\
 	 testmalloc.elf	\
 	 free.elf		\
 	 ps.elf			\
 	 pipeserver.elf \
-	 pipeclient.elf
+	 pipeclient.elf \
+	 udpserver.elf
 
 LIBS=../bootstrap/crt0.o
+LIBS+=../lib/socket.a
 LIBS+=../lib/minios.a
 
 all: $(BINS) 
@@ -23,6 +24,6 @@ all: $(BINS)
 
 %.elf: %.o
 	$(LD) $(LDFLAGS) $< $(LIBS) -o $@
-	objdump -d $@ > $@.lst
+	objdump -D $@ > $@.lst
 
 include ../../Make.rules

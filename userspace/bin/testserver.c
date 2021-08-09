@@ -16,14 +16,14 @@ int main(int argc,char **argv){
             sprintf(
                 buff,
                 "Received message from %d %d saying \"%s\"", 
-                message.source,
-                message.target,
+                message.header.source,
+                message.header.target,
                 message.body
             );
             strcpy(message.body, buff);
-            uint32_t t = message.source;
-            message.source = message.target;
-            message.target = t;
+            uint32_t t = message.header.source;
+            message.header.source = message.header.target;
+            message.header.target = t;
             msg_send(&message);
         }
         sched_yield();

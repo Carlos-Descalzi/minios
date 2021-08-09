@@ -21,6 +21,7 @@ static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size);
 static uint32_t pos (Stream* stream);
 static int16_t seek (Stream* stream, uint32_t pos);
 static uint32_t size (Stream* stream);
+static uint32_t available (Stream* stream);
 static void close(Stream* stream);
 
 Stream* char_device_stream_open  (CharDevice* device, int flags){
@@ -42,6 +43,7 @@ Stream* char_device_stream_open  (CharDevice* device, int flags){
     STREAM(stream)->pos = pos;
     STREAM(stream)->seek = seek;
     STREAM(stream)->size = size;
+    STREAM(stream)->available = available;
     STREAM(stream)->close = close;
 
     DEVICE_STREAM(stream)->device = DEVICE(device);
@@ -87,4 +89,7 @@ static uint32_t size (Stream* stream){
 }
 static void close(Stream* stream){
     heap_free(stream);
+}
+static uint32_t available (Stream* stream){
+    return char_device_available(char_stream_device(stream));
 }

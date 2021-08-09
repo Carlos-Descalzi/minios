@@ -73,6 +73,7 @@ typedef struct BlockDevice {
     void        (*seek)             (struct BlockDevice*, uint32_t);
     void        (*flush)            (struct BlockDevice*);
     uint32_t    (*pos)              (struct BlockDevice*);
+    uint32_t    (*available)        (struct BlockDevice*);
 } BlockDevice;
 
 /**
@@ -83,6 +84,7 @@ typedef struct CharDevice {
     int16_t     (*read)             (struct CharDevice*);
     int16_t     (*read_async)       (struct CharDevice*, IORequest* request);
     int16_t     (*write)            (struct CharDevice*, uint8_t);
+    uint32_t    (*available)        (struct CharDevice*);
 } CharDevice;
 
 #define DEVICE(d)                       ((Device*)d)
@@ -99,10 +101,12 @@ typedef struct CharDevice {
 #define block_device_flush(d)           (BLOCK_DEVICE(d)->flush(BLOCK_DEVICE(d)))
 #define block_device_pos(d)             (BLOCK_DEVICE(d)->pos(BLOCK_DEVICE(d)))
 #define block_device_read_async(d,r)    (BLOCK_DEVICE(d)->read_async(BLOCK_DEVICE(d),r))
+#define block_device_available(d)       (BLOCK_DEVICE(d)->available(BLOCK_DEVICE(d)))
 
 #define char_device_read(d)             (CHAR_DEVICE(d)->read(CHAR_DEVICE(d)))
 #define char_device_read_async(d,r)     (CHAR_DEVICE(d)->read_async(CHAR_DEVICE(d),r))
 #define char_device_write(d,c)          (CHAR_DEVICE(d)->write(CHAR_DEVICE(d),c))
+#define char_device_available(d)        (CHAR_DEVICE(d)->available(CHAR_DEVICE(d)))
 
 typedef uint16_t (*DeviceTypeVisitor)   (uint32_t, DeviceType*,void*);
 typedef uint16_t (*DeviceVisitor)       (uint32_t,uint8_t, Device* device,void*);

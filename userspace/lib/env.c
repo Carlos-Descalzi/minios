@@ -7,7 +7,7 @@ typedef struct {
     const char* vars[];
 } Env;
 
-static Env* _env = (Env*)0xFFFFD804;
+static Env* _env = (Env*)0xFFFFE804;
 
 static void copy_env_from(void* buffer, size_t buffer_size, Env* source, int* env_count);
 

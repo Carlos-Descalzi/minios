@@ -108,6 +108,7 @@ static void start_init(void){
     //pic_eoi1();
     //pic_eoi2();
     while (1){
+        //debug("INIT - Task loop\n");
         if (!tasks_loop()){
             asm volatile("hlt");
         }

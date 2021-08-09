@@ -12,8 +12,15 @@ typedef struct {
     uint32_t target;        // target tid
     uint32_t number:31,     // message number, optional
              has_more:1;    // if more messages are coming, optional
-    char body[1024];        // the message body, up to 1024 bytes
+} MessageHeader;
+
+
+typedef struct {
+    MessageHeader header;
+    char body[1024 - sizeof(MessageHeader)];        // the message body, up to 1024 bytes
 } Message;
+
+#define MESSAGE(m)          ((Message*)m)
 
 /**
  * Sends a message to a given process, waits for

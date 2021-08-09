@@ -56,6 +56,7 @@ typedef struct Stream {
     int16_t     (*seek)             (struct Stream*,uint32_t);
     uint32_t    (*size)             (struct Stream*);
     void        (*close)            (struct Stream*);
+    uint32_t    (*available)        (struct Stream*);
 } Stream;
 
 #define STREAM(s)                   ((Stream*)s)
@@ -75,6 +76,7 @@ typedef struct Stream {
 #define stream_pos(s)               (STREAM(s)->pos(STREAM(s)))
 #define stream_seek(s,p)            (STREAM(s)->seek(STREAM(s),p))
 #define stream_close(s)             (STREAM(s)->close(STREAM(s)))
+#define stream_available(s)         (STREAM(s)->available(STREAM(s)))
 
 #define STREAM_READ     0x01
 #define STREAM_WRITE    0x02
