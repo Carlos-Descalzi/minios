@@ -143,6 +143,10 @@ int         tasks_check_for_message         (Message* message);
  **/
 int         tasks_wait_message              (Message* message);
 /**
+ *
+ **/
+int         tasks_wait_conditions           (WaitCondition* conditions);
+/**
  * Returns the amount of tasks in the system
  **/
 int         tasks_count                     (void);

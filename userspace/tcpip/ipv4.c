@@ -182,12 +182,12 @@ static void handle_tcp_packet (int fd, Ipv4Packet* ipv4_packet){
     if (tcp_sockets[target_port].status & STATUS_ACTIVE){
         if (!(tcp_sockets[target_port].status & STATUS_ACCEPTING)){
             log("\t\tSocket %d not accepting\n", target_port);
-
+            /*
             uint16_t local_port;
             // find existing local tcp port
             local_port = find_local_tcp_port(
                 tcp_sockets[target_port].pid,
-                ipv4_packet->tcp.header.source_address,
+                ipv4_packet->ipv4.source_address,
                 ipv4_packet->tcp.header.source_port
             );
 
@@ -195,6 +195,7 @@ static void handle_tcp_packet (int fd, Ipv4Packet* ipv4_packet){
                 local_port = allocate_tcp_socket(tcp_sockets[target_port].pid);
 
             }
+            */
         }
     } else {
         log("\t\tSocket %d not active\n", target_port);

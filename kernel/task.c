@@ -1,4 +1,4 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -340,6 +340,14 @@ void tasks_wait_tid(uint32_t tid){
     task->cond_data.int_data = tid;
 }
 
+int tasks_wait_conditions (WaitCondition* conditions){
+    Task* task = current_task;
+
+    task->status = TASK_STATUS_WAITCND;
+    task->waitcond = cnd_wait_cnd_list;
+    task->cond_data.ptr_data = conditions;
+}
+
 void tasks_send_message_sync(Message* message){
 
     Task* task = current_task;
@@ -474,26 +482,35 @@ static int cnd_wait_tid(Task* task){
  * Waits for any of a list of conditions to apply
  **/
 static int cnd_wait_cnd_list (Task* task){
+    debug("1\n");
     WaitCondition* conditions = task->cond_data.ptr_data;
 
     int applies = 0;
+    debug("TASKS - Checking condition list\n");
     for (int i=0;i<conditions->n_conditions;i++){
+        debug("\tChecking condition ");debug_i(i,10);debug(",");
+        debug_i(conditions->items[i].cond_type,10);
+        debug("\n");
         switch(conditions->items[i].cond_type){
             case COND_TYPE_FD:{
+                debug("TASKS - \tWait for stream data available\n");
                 // wait a file descriptor to have data available
                 Stream* stream = task->streams[conditions->items[i].fd];
                 if (stream && stream_available(stream)){
+                    debug("TASKS - \t\tData available\n");
                     applies = 1;
                     break;
                 }
                 break;
             }
             case COND_TYPE_MSG:
+                debug("TASKS - \tWait for messages available\n");
+                // Wait to have message avaiable
                 if (task->incoming_messages){
+                    debug("TASKS - \t\tMessages available\n");
                     applies = 1;
                     break;
                 }
-                // Wait to have message avaiable
                 break;
         }
     }

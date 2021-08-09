@@ -41,15 +41,15 @@ void syscall_stat(InterruptFrame* f){
     debug("\n");
 
     if (path_parse(pathname, &device_id, filepath)){
+        debug("stat - unable to parse path: ");debug(pathname);debug("\n");
         f->ebx = ((uint32_t)-1);
-        debug("1\n");
         return;
     }
 
     Device* device = device_find_by_id(device_id);
 
     if (!device){
-        debug("2 ");debug_i(device_id,16);debug("\n");
+        debug("stat - unable to find device ");debug_i(device_id,16);debug("\n");
         f->ebx = ((uint32_t)-2);
         return;
     }
@@ -57,7 +57,7 @@ void syscall_stat(InterruptFrame* f){
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if(!fs){
-        debug("3\n");
+        debug("stat - unable to get filesystem for device\n");
         f->ebx = ((uint32_t)-3);
         return;
     }
@@ -88,7 +88,7 @@ void syscall_stat(InterruptFrame* f){
         f->ebx = 0;
 
     } else {
-        debug("not found\n");
+        debug("stat - inode not found for path\n");
         f->ebx = ((uint32_t)-4);
     }
 

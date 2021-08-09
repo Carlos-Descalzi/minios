@@ -46,7 +46,7 @@ void syscall_spawn(InterruptFrame* f){
     debug("Spawning new task:");debug(path);debug("\n");
 
     if (path_parse(path, &device_id, filepath)){
-        debug("Bad path\n");
+        debug("spawn - Bad path\n");
         f->ebx = ((uint32_t)-1);
         return;
     }
@@ -54,7 +54,7 @@ void syscall_spawn(InterruptFrame* f){
     Device* device = device_find_by_id(device_id);
 
     if (!device){
-        debug("No device\n");
+        debug("spawn - No device\n");
         f->ebx = ((uint32_t)-2);
         return;
     }
@@ -62,7 +62,7 @@ void syscall_spawn(InterruptFrame* f){
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if (!fs){
-        debug("No fs\n");
+        debug("spawn - No fs\n");
         f->ebx = ((uint32_t)-3);
         return;
     }
@@ -79,7 +79,7 @@ void syscall_spawn(InterruptFrame* f){
     if (stream){
         f->ebx = tasks_new(stream, new_args, new_env);
     } else {
-        debug("Not found\n");
+        debug("spawn - Not found\n");
         f->ebx = ((uint32_t)-4);
     }
 
