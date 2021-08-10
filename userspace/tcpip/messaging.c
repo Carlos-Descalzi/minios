@@ -3,6 +3,7 @@
 #include "tcpipd.h"
 #include "minios.h"
 #include "string.h"
+#include "stdlib.h"
 
 static void handle_open     (UserMessage* message);
 static void handle_close    (UserMessage* message);
@@ -94,19 +95,47 @@ static void handle_recv (UserMessage* message){
 void udp_received (int pid, int socket_type, uint16_t port,
     uint32_t remote_address,
     uint16_t remote_port,
-    uint16_t length,
+    uint16_t chunk_size,
+    uint16_t status,
     uint8_t* payload){
+
+    debug("udp received: %d, %d\n", chunk_size, status);
 
     message.header.source = getpid();
     message.header.target = pid;
     message.type = MSG_RECV;
-    message.recv_header_response.remote_address = remote_address;
-    message.recv_header_response.remote_port = remote_port;
 
-    message.recv_header_response.size = length;
+    uint16_t total_to_send = chunk_size;
+    uint16_t sent = 0;
 
-    memcpy(message.recv_header_response.payload, payload, length);
+    if (status == SEND_STATUS_START){
+        message.recv_header_response.remote_address = remote_address;
+        message.recv_header_response.remote_port = remote_port;
 
-    msg_send(MESSAGE(&message));
+        uint16_t sending = min(total_to_send, RECV_HEADER_RESPONSE_SIZE);
 
+        message.header.has_more = sending < total_to_send;
+        message.recv_header_response.size = sending;
+
+        memcpy(message.recv_header_response.payload, payload + sent, sending);
+
+        msg_send(MESSAGE(&message));
+        debug("udp sent package 1\n");
+
+        sent+=sending;
+        total_to_send -= sending;
+    }
+
+    while(total_to_send > 0){
+        debug("udp sending more %d \n", total_to_send);
+        uint16_t sending = min(total_to_send, RECV_HEADER_RESPONSE_SIZE);
+        message.recv_response.size = sending;
+        total_to_send -= sending;
+        memcpy(message.recv_header_response.payload, payload + sent, sending);
+
+        message.header.has_more = total_to_send > 0 || status != SEND_STATUS_END;
+        msg_send(MESSAGE(&message));
+        debug("\thas more? %d\n",message.header.has_more);
+        sent+=sending;
+    }
 }

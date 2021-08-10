@@ -372,8 +372,6 @@ int tasks_check_for_message(Message* message){
         MessageNode* message_node = MSG_NODE(task->incoming_messages);
         task->incoming_messages = list_remove(task->incoming_messages, LIST_NODE(message_node));
 
-        //Message* incoming_message = message_node->message;
-
         message = (Message*) paging_physical_address(task->page_directory, message);
         answer_message(&(message_node->message), message);
 
@@ -383,6 +381,7 @@ int tasks_check_for_message(Message* message){
     }
     return -1;
 }
+
 int tasks_wait_message(Message* message){
     Task* task = current_task;
 
@@ -395,8 +394,6 @@ int tasks_wait_message(Message* message){
     }
     return 0;
 }
-
-
 
 static void do_send_message(Message* message){
     /**
@@ -427,10 +424,8 @@ static void do_send_message(Message* message){
 }
 
 static void answer_message(Message* source_message, Message* target_message){
-    debug("Message address:");debug_i((uint32_t)target_message,16);debug("\n");
     target_message = paging_to_kernel_space( (uint32_t) target_message);
-    debug("Message address local:");debug_i((uint32_t)target_message,16);debug("\n");
-    memcpy(target_message, source_message, sizeof(Message));
+    memcpydw(target_message, source_message, sizeof(Message) / 4);
 }
 
 static void setup_console(Task* task){
@@ -482,32 +477,26 @@ static int cnd_wait_tid(Task* task){
  * Waits for any of a list of conditions to apply
  **/
 static int cnd_wait_cnd_list (Task* task){
-    debug("1\n");
+
     WaitCondition* conditions = task->cond_data.ptr_data;
 
     int applies = 0;
-    debug("TASKS - Checking condition list\n");
+  
     for (int i=0;i<conditions->n_conditions;i++){
-        debug("\tChecking condition ");debug_i(i,10);debug(",");
-        debug_i(conditions->items[i].cond_type,10);
-        debug("\n");
+        
         switch(conditions->items[i].cond_type){
             case COND_TYPE_FD:{
-                debug("TASKS - \tWait for stream data available\n");
                 // wait a file descriptor to have data available
                 Stream* stream = task->streams[conditions->items[i].fd];
                 if (stream && stream_available(stream)){
-                    debug("TASKS - \t\tData available\n");
                     applies = 1;
                     break;
                 }
                 break;
             }
             case COND_TYPE_MSG:
-                debug("TASKS - \tWait for messages available\n");
                 // Wait to have message avaiable
                 if (task->incoming_messages){
-                    debug("TASKS - \t\tMessages available\n");
                     applies = 1;
                     break;
                 }
@@ -525,7 +514,12 @@ static int cnd_wait_cnd_list (Task* task){
  * Wait an answer for a message
  **/
 static int cnd_wait_msg_answer(Task* task){
-    debug("TASKS - wait message answer from ");debug_i(task->tid,10);debug("\n");
+    debug("TASKS - wait message answer from ");debug_i(task->tid,10);
+    debug(",");debug_i(task->incoming_messages,16);
+    debug(",");debug_i(list_size(task->incoming_messages),16);
+    debug("\n");
+
+
     for (ListNode* node = task->incoming_messages; node; node = node->next){
         Message* waiting_msg = task->cond_data.ptr_data;
         Message* local_waiting_msg = paging_to_kernel_space((uint32_t)waiting_msg);

@@ -106,27 +106,16 @@ int stack_socket_accept (int pid, int socket_type, uint16_t port){
 }
 
 int stack_socket_receive (int pid, int socket_type, uint16_t port){
-    /*
-    if (socket_type & SOCKET_TYPE_TCP){
-
+    if (socket_type & SOCKET_TYPE_UDP){
+        return ipv4_udp_socket_receive(pid, port);
     } else {
-        if (!(udp_sockets[port].status & STATUS_ACTIVE)){
-            log("UDP socket %d not active\n", port);
-            return -1;
-        }
-        if (!(udp_sockets[port].status & STATUS_SERVER)){
-            log("UDP socket not server\n");
-            return -1;
-        }
-        udp_sockets[port].status |= STATUS_RECEIVING;
     }
-    */
+    
     return 0;
 }
 
 int stack_socket_send(int pid, int socket_type, uint16_t port, void* data, uint16_t length){
     if (socket_type & SOCKET_TYPE_UDP){
-
 
     } else {
 

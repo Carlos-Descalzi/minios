@@ -53,6 +53,8 @@ typedef struct {
     uint8_t payload[];
 } RecvHeaderResponse;
 
+#define RECV_HEADER_RESPONSE_SIZE   (MSG_MESSAGE_SIZE - sizeof(RecvHeaderResponse) - 1 - sizeof(MessageHeader))
+
 typedef struct {
     uint16_t size;
     uint8_t payload[];

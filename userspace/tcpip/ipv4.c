@@ -134,11 +134,25 @@ int ipv4_tcp_socket_open (int pid, int server, int port){
     return 0;
 }
 
+int ipv4_udp_socket_receive(int pid, int port){
+    if (!(udp_sockets[port].status & STATUS_ACTIVE)){
+        log("UDP socket %d not active\n", port);
+        return -1;
+    }
+    if (!(udp_sockets[port].status & STATUS_SERVER)){
+        log("UDP socket not server\n");
+        return -1;
+    }
+    udp_sockets[port].status |= STATUS_RECEIVING;
+    return 0;
+}
+
 static void handle_udp_packet (int fd, Ipv4Packet* ipv4_packet){
 
     log("\t\tUDP packet:\n");
     log("\t\tSource port: %d\n", htons2(ipv4_packet->udp.header.source_port));
     log("\t\tTarget port: %d\n", htons2(ipv4_packet->udp.header.target_port));
+    log("\t\tPacket length: %d\n", htons2(ipv4_packet->udp.header.length));
 
     uint16_t target_port = htons2(ipv4_packet->udp.header.target_port);
 
@@ -146,26 +160,48 @@ static void handle_udp_packet (int fd, Ipv4Packet* ipv4_packet){
 
         if (udp_sockets[target_port].status & STATUS_RECEIVING){
 
-            memcpy(
-                udp_sockets[target_port].rx_buffer, 
-                ipv4_packet->udp.payload, 
-                ipv4_packet->udp.header.length
-            );
+            uint16_t total_length = htons2(ipv4_packet->udp.header.length);
+            uint16_t to_send = total_length;
 
-            udp_sockets[target_port].rx_index += ipv4_packet->udp.header.length;
+            uint16_t status = SEND_STATUS_START;
 
-            if (!ipv4_packet->ipv4.more_fragments){
+            while (to_send > 0){
+                
+                uint16_t chunk_size = min(BUFFER_SIZE, to_send);
+
+                memcpy(
+                    udp_sockets[target_port].rx_buffer + udp_sockets[target_port].rx_index, 
+                    ipv4_packet->udp.payload, 
+                    chunk_size
+                );
+
+                udp_sockets[target_port].rx_index += chunk_size;
+
+                to_send -= chunk_size;
+
+                if (to_send == 0){
+                    status = SEND_STATUS_END;
+                }
+
                 udp_received(
                     udp_sockets[target_port].pid,
                     SOCKET_TYPE_UDP | SOCKET_TYPE_SERVER,
                     target_port,
                     ip_caddr_to_l(ipv4_packet->ipv4.source_address),
                     ipv4_packet->udp.header.source_port,
-                    udp_sockets[target_port].rx_index,
+                    chunk_size,
+                    status,
                     udp_sockets[target_port].rx_buffer
                 );
+
+                udp_sockets[target_port].rx_index = 0;
+                //if (!ipv4_packet->ipv4.more_fragments){
+                //}
             }
+        } else {
+            log("\t\tUDP socket NOT receiving\n");
         }
+
     } else {
         log("\t\tSocket %d not active\n", target_port);
     }

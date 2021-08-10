@@ -3,7 +3,8 @@
 #include "unistd.h"
 #include "stdlib.h"
 
-char buffer[4096];
+#define BUF_SIZE    16384
+char buffer[BUF_SIZE];
 
 int main(int argc, char**argv){
     uint32_t remote_address;
@@ -27,8 +28,8 @@ int main(int argc, char**argv){
     }
     printf("Opened socket %x\n", socket);
 
-    socket_server_udp_recv(socket, &remote_address, &remote_port, buffer, &size);
-    printf("Received data \"%s\"\n",buffer);
+    size = socket_server_udp_recv(socket, &remote_address, &remote_port, buffer, BUF_SIZE);
+    printf("Received %d bytes of data: \"%s\"\n",size, buffer);
 
     socket_close(socket);
     printf("Socket closed\n");

@@ -7,6 +7,8 @@
  * Message passing
  **/
 
+#define MSG_MESSAGE_SIZE    1024
+
 typedef struct {
     uint32_t source;        // source tid, filled by api
     uint32_t target;        // target tid
@@ -17,7 +19,7 @@ typedef struct {
 
 typedef struct {
     MessageHeader header;
-    char body[1024 - sizeof(MessageHeader)];        // the message body, up to 1024 bytes
+    char body[MSG_MESSAGE_SIZE - sizeof(MessageHeader)];        // the message body, up to 1024 bytes
 } Message;
 
 #define MESSAGE(m)          ((Message*)m)

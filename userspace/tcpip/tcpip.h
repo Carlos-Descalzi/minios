@@ -24,6 +24,9 @@
                                 c[2] = (l >> 16) & 0xFF;\
                                 c[2] = (l >> 24) & 0xFF;}
 
+#define SEND_STATUS_START       1
+#define SEND_STATUS_END         2
+
 typedef union {
     uint32_t l_address;
     uint8_t c_address[4];
@@ -71,7 +74,8 @@ int  handle_user_message    (void);
 void udp_received           (int pid, int socket_type, uint16_t port,
                             uint32_t remote_address,
                             uint16_t remote_port,
-                            uint16_t length,
+                            uint16_t chunk_size,
+                            uint16_t status,
                             uint8_t* payload);
 
 

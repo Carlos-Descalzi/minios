@@ -9,8 +9,15 @@ typedef struct {
     int fd;
 } WaitCondition;
 
-
+/**
+ * Moves the current process out of execution, leaving the place
+ * for another process
+ **/
 int sched_yield             (void);
+/**
+ * Puts process into wait state, until any of a list of conditions applies.
+ * Conditions can be, data available in a file descriptor, or an incoming message available
+ **/
 int sched_wait_conditions   (int n_conditions, WaitCondition* conditions);
 
 

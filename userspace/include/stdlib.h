@@ -3,6 +3,9 @@
 
 #include "stddef.h"
 
+#define min(a,b) (a<b ? a : b)
+#define max(a,b) (a>b ? a : b)
+
 typedef void (*ListEnvFunc)(const char*, void*);
 
 void    exit        (int status) __attribute__ ((noreturn));

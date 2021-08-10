@@ -90,14 +90,12 @@ void socket_close (int sockd){
     msg_send(MESSAGE(&message));
 }
 
-int socket_server_udp_recv (int sockd, uint32_t* address, uint16_t* port, void* data, size_t* size){
+int socket_server_udp_recv (int sockd, uint32_t* address, uint16_t* port, void* data, size_t size){
 
     if (sockd <= 0){
-        debug("1\n");
         return -1;
     }
     if (!service_pid){
-        debug("2\n");
         return -1;
     }
 
@@ -110,7 +108,7 @@ int socket_server_udp_recv (int sockd, uint32_t* address, uint16_t* port, void* 
         debug("recv failed\n");
         return -1;
     }
-    debug("**** Received response \n");
+    printf("**** Received response \n");
     int pos = 0;
 
     *address = message.recv_header_response.remote_address;
@@ -119,15 +117,17 @@ int socket_server_udp_recv (int sockd, uint32_t* address, uint16_t* port, void* 
     memcpy(data, message.recv_header_response.payload, message.recv_header_response.size);
     pos+=message.recv_header_response.size;
 
-    while(message.header.has_more){
+    while(message.header.has_more && pos < size){
+        printf("Response - more parts %d %d\n",pos,size);
         msg_recv_wait(MESSAGE(&message));
-        memcpy(data + pos, message.recv_response.payload, message.recv_response.size);
-        pos+= message.recv_response.size;
+
+        int to_copy = min(message.recv_response.size, size - pos);
+        memcpy(data + pos, message.recv_response.payload, to_copy);
+        pos+= to_copy;
+        printf("Response - more parts 2 - %d %d\n",pos,size);
     }
 
-    *size = pos;
-
-    return 0;
+    return pos;
 }
 
 static pid_t get_tcpipd_pid(){

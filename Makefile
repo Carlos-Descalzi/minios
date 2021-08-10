@@ -48,9 +48,6 @@ run:
 	$(QEMU) $(QEMU_ARGS) $(QEMU_RUN_ARGS) -hda ./$(IMAGE)
 
 test:
-	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) -hda ./$(IMAGE)
-
-testnet:
 	$(QEMU) $(QEMU_ARGS) $(QEMU_TEST_ARGS) $(QEMU_NET_ARGS) -hda ./$(IMAGE)
 
 debug:
