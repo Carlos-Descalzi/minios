@@ -87,7 +87,8 @@ Task*       tasks_get_task_by_tid           (uint32_t task_id);
 /**
  * Creates a new task by loading elf binary from a stream
  **/
-uint32_t    tasks_new                       (Stream* exec_stream,
+uint32_t    tasks_new                       (uint32_t parent_task_id,
+                                            Stream* exec_stream,
                                             TaskParams* args,
                                             TaskParams* env);
 /**

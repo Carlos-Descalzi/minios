@@ -25,7 +25,8 @@
                                 c[2] = (l >> 24) & 0xFF;}
 
 #define SEND_STATUS_START       1
-#define SEND_STATUS_END         2
+#define SEND_STATUS_CONT        2
+#define SEND_STATUS_END         3
 
 typedef union {
     uint32_t l_address;

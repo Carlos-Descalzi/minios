@@ -195,7 +195,7 @@ static void print_str(const char*str, Format* tformat, int* written, Writer* wri
 }
 
 static int do_vfprintf(Writer* writer, const char* format, va_list parameters){ 
-    static char buffer[30];
+    char buffer[30];
     int written = 0;
     int i = 0;
 

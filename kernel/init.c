@@ -24,7 +24,7 @@
 
 static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
-static void     load_program        (FileSystem* fs, const char* path);
+static void     load_program        (FileSystem* fs, const char* path, const char* name);
 
 extern void     ide_register        (void);     // FIXME
 
@@ -71,18 +71,17 @@ static void bsod(InterruptFrame* frame, void* data){
     asm volatile("hlt");
 }
 
-static void load_program(FileSystem* fs, const char* path){
+static void load_program(FileSystem* fs, const char* path, const char* name){
     console_print("Loading ");
     console_print(path);
     console_print("\n");
     
     Stream* stream = fs_open_stream_path(fs, path, O_RDONLY);
 
-    char* args[]  = {
-        "init"
-    };
+    char* args[]  = { (char*) name };
     
     uint32_t task_id = tasks_new(
+        0,
         stream,
         task_params_from_char_array(1,args),
         NULL
@@ -94,21 +93,20 @@ static void load_program(FileSystem* fs, const char* path){
 }
 
 static void start_init(void){
-    FileSystem* fs;
-    Device* device;
 
-    device = device_find(DISK, 0);
+    Device* device = device_find(DISK, 0);
+
     if (!device){
         console_print("Device not found\n");
         return;
     }
-    fs = fs_get_filesystem(BLOCK_DEVICE(device));
-    load_program(fs, "/bin/init.elf");
+
+    FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
+
+    load_program(fs, "/bin/init.elf", "init");
+
     sti();
-    //pic_eoi1();
-    //pic_eoi2();
     while (1){
-        //debug("INIT - Task loop\n");
         if (!tasks_loop()){
             asm volatile("hlt");
         }

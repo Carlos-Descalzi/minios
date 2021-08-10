@@ -120,7 +120,7 @@ void udp_received (int pid, int socket_type, uint16_t port,
         memcpy(message.recv_header_response.payload, payload + sent, sending);
 
         msg_send(MESSAGE(&message));
-        debug("udp sent package 1\n");
+        debug("udp sent package %d\n",sending);
 
         sent+=sending;
         total_to_send -= sending;

@@ -28,8 +28,11 @@ int main(int argc, char**argv){
     }
     printf("Opened socket %x\n", socket);
 
+    memset(buffer,0,BUF_SIZE);
+
     size = socket_server_udp_recv(socket, &remote_address, &remote_port, buffer, BUF_SIZE);
-    printf("Received %d bytes of data: \"%s\"\n",size, buffer);
+    printf("Received %d bytes of data: %d\n",size,strlen(buffer));
+    printf("%s\n",buffer);
 
     socket_close(socket);
     printf("Socket closed\n");

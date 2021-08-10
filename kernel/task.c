@@ -109,7 +109,9 @@ static Task* get_next_free_task(){
     return &(task_node->task);
 }
 
-uint32_t tasks_new(Stream* exec_stream,
+uint32_t tasks_new(
+    uint32_t parent_task_id,
+    Stream* exec_stream,
     TaskParams* args,
     TaskParams* env){
     
@@ -124,6 +126,7 @@ uint32_t tasks_new(Stream* exec_stream,
     memset(task,0,sizeof(Task));
 
     task->tid = next_tid++;
+    task->parent_tid = parent_task_id;
     task->status = TASK_STATUS_IDLE;
     task->page_directory = paging_new_task_space();
 

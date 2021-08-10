@@ -66,18 +66,20 @@ void syscall_spawn(InterruptFrame* f){
         f->ebx = ((uint32_t)-3);
         return;
     }
+
+    Task* current_task = tasks_current_task();
+
     TaskParams* new_args = copy_str_array(nargs, argv);
     TaskParams* new_env = copy_str_array(nenvs, envs);
 
     if (!new_env){
-        Task* current_task = tasks_current_task();
         new_env = task_params_copy(current_task->env);
     }
 
     Stream* stream = fs_open_stream_path(fs, filepath, O_RDONLY);
 
     if (stream){
-        f->ebx = tasks_new(stream, new_args, new_env);
+        f->ebx = tasks_new(current_task->tid, stream, new_args, new_env);
     } else {
         debug("spawn - Not found\n");
         f->ebx = ((uint32_t)-4);

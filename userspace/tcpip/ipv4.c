@@ -164,10 +164,13 @@ static void handle_udp_packet (int fd, Ipv4Packet* ipv4_packet){
             uint16_t to_send = total_length;
 
             uint16_t status = SEND_STATUS_START;
+            int l=0;
 
             while (to_send > 0){
                 
                 uint16_t chunk_size = min(BUFFER_SIZE, to_send);
+
+                debug("\t\t\tChunk size: %d",chunk_size);
 
                 memcpy(
                     udp_sockets[target_port].rx_buffer + udp_sockets[target_port].rx_index, 
@@ -179,7 +182,7 @@ static void handle_udp_packet (int fd, Ipv4Packet* ipv4_packet){
 
                 to_send -= chunk_size;
 
-                if (to_send == 0){
+                if (to_send == 0 && l > 0){
                     status = SEND_STATUS_END;
                 }
 
@@ -197,6 +200,7 @@ static void handle_udp_packet (int fd, Ipv4Packet* ipv4_packet){
                 udp_sockets[target_port].rx_index = 0;
                 //if (!ipv4_packet->ipv4.more_fragments){
                 //}
+                l++;
             }
         } else {
             log("\t\tUDP socket NOT receiving\n");
