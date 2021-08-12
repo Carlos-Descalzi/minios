@@ -9,6 +9,42 @@
  * Minimal shell interface, good enough for running other programs
  **/
 
+static const char* signal_names[] = {
+	"UNKNOWN", 
+	"SIGHUP",
+	"SIGINT",
+	"SIGQUIT",
+	"SIGILL",
+	"SIGTRAP",
+	"SIGABRT",
+	"SIGBUS",
+	"SIGFPE", 
+	"SIGKILL",
+	"SIGUSR1",
+	"SIGEGV",
+	"SIGUSR2",
+	"SIGPIPE",
+	"SIGALRM",
+	"SIGTERM",
+	"SIGSTKFLT",
+	"SIGCHLD",
+	"SIGCONT",
+	"SIGSTOP",
+	"SIGTSTP",
+	"SIGTTIN",
+	"SIGTTOU",
+	"SIGURG",
+	"SIGXCPU",
+	"SIGXFSZ",
+	"SIGVTALRM",
+	"SIGPROF",
+	"SIGWINCH",
+	"SIGIO",
+	"SIGPOLL", 
+	"SIGPWR",
+	"SIGSYS"
+};
+
 static char     parambuffer[256];
 static char     envbuffer[2048];    // used to setup environment for child processes
 
@@ -105,7 +141,15 @@ static void execute(char* file){
         debug("Spawning new task\n");
         int pid = spawn(path, nargs, argv, env_count, (char**) envbuffer);
         if (!background){
-            waitpid(pid);
+            int exit_code = waitpid(pid);
+            
+            if (exit_code >= 128 && exit_code <= 159){
+                printf("Task exited with by signal %d (%s), exit code %d\n", 
+                    exit_code - 128,
+                    signal_names[exit_code - 128],
+                    exit_code);
+            }
+
         } else {
             printf("Running task %d in background\n", pid);
         }

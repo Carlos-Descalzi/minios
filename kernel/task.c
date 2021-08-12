@@ -47,6 +47,8 @@ static int      cnd_wait_msg_answer         (Task* task);
 static int      cnd_wait_cnd_list           (Task* task);
 static void     answer_message              (Message* source_message, Message* target_message);
 static void     do_send_message             (Message* message);
+static void     handle_task_wait_condition  (uint32_t task_id, uint32_t exit_code);
+static void     move_to_idle_list           (TaskNode* task_node);
 
 void tasks_init(){
     next_tid = 1;
@@ -195,10 +197,11 @@ static void check_io_wait_list(){
         }
 
         if (activate){
-            io_wait_list = list_remove(io_wait_list, node);
-            TASK_NODE(node)->task.status = TASK_STATUS_IDLE;
-            task_list = list_add(task_list, node);
+
+            move_to_idle_list(node);
+
             node = io_wait_list;
+
             if (!node){
                 break;
             }
@@ -281,8 +284,9 @@ void tasks_finish(uint32_t task_id, uint32_t exit_code){
             task->status = TASK_STATUS_NONE;
             debug("TASK - Task finished\n");
             break;
-        }
+        } 
     }
+    handle_task_wait_condition(task_id, exit_code);
 }
 
 void tasks_update_current(InterruptFrame* frame){
@@ -469,10 +473,9 @@ void tasks_iter_tasks(TaskVisitor visitor, void* data){
  * Wait a given task to finish
  **/
 static int cnd_wait_tid(Task* task){
-    if (!tasks_get_task_by_tid(task->cond_data.int_data)){
-        debug("Condition finished for ");debug_i(task->tid,10);debug("\n");
-        return 1;
-    }
+    /**
+     * This is handled by process exit, not really a condition function
+     **/
     return 0;
 }
 
@@ -556,4 +559,31 @@ static int cnd_wait_msg_answer(Task* task){
         }
     }
     return 0;
+}
+static void handle_task_wait_condition  (uint32_t task_id, uint32_t exit_code){
+    for (ListNode* node = io_wait_list; node; node = node->next){
+
+        if (TASK_NODE(node)->task.status == TASK_STATUS_WAITCND
+            && TASK_NODE(node)->task.waitcond == cnd_wait_tid
+            && TASK_NODE(node)->task.cond_data.int_data == task_id){
+
+            Task* task = &(TASK_NODE(node)->task);
+            task->cpu_state.ebx = exit_code;
+
+            move_to_idle_list(node);
+
+            node = io_wait_list;
+
+            if (!node){
+                break;
+            }
+        }
+    }
+
+}
+
+static void move_to_idle_list(TaskNode* task_node){
+    task_node->task.status = TASK_STATUS_IDLE;
+    io_wait_list = list_remove(io_wait_list, task_node);
+    task_list = list_add(task_list, task_node);
 }
