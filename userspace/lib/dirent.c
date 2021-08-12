@@ -93,6 +93,7 @@ struct dirent* readdir(DIR* dirp){
     } else {
         dirp->last_entry_offset = entry.offset_next;
     }
+    memset(&dir_entry,0,sizeof(struct dirent));
     dir_entry.d_ino = entry.inode;
     dir_entry.d_off = entry.offset_next;
     dir_entry.d_reclen = entry.rec_len;

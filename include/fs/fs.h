@@ -38,7 +38,7 @@ typedef struct DirEntry {
     uint16_t rec_len;
     uint8_t name_len;
     uint8_t file_type;
-    char name[1];
+    char name[];
 } DirEntry;
 
 typedef struct FileSystemType FileSystemType;
