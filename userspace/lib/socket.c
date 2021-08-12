@@ -142,7 +142,6 @@ static int socket_open(uint16_t type, uint16_t port){
     debug("Opening socket at port %d\n",port);
 
     if (!service_pid){
-        debug("12\n");
         return -1;
     }
 
@@ -159,4 +158,52 @@ static int socket_open(uint16_t type, uint16_t port){
     }
 
     return -1;
+}
+int socket_client_udp_send (int sockd, uint32_t address, uint16_t port, void* data, size_t size){
+
+    if (!service_pid){
+        return -1;
+    }
+
+    uint32_t number = 0;
+
+    uint8_t socket_type = sockd >> 16;
+    uint16_t local_port = sockd & 0xFFFF;
+
+    prepare_message();
+    message.type = MSG_SEND;
+    message.send_header_request.socket_type = socket_type;
+    message.send_header_request.port = local_port;
+    message.send_header_request.remote_address = address;
+    message.send_header_request.remote_port = port;
+    message.send_header_request.size = size;
+
+    int16_t to_send = min(size, SEND_HEADER_REQUEST_SIZE);
+    memcpy(message.send_header_request.payload, data, to_send);
+
+    uint16_t sent = to_send;
+    size-=to_send;
+    message.header.number = number;
+    message.header.has_more = size > 0;
+
+    msg_send(MESSAGE(&message));
+
+    number++;
+
+    while (size > 0){
+        to_send = min(size, SEND_REQUEST_SIZE);
+        message.send_request.socket_type = socket_type;
+        message.send_request.port = local_port;
+        message.send_request.size = to_send;
+        memcpy(message.send_request.payload, data + sent, to_send);
+
+        sent += to_send;
+        size -= to_send;
+        message.header.number = number++;
+        message.header.has_more = size > 0;
+
+        msg_send(MESSAGE(&message));
+    }
+
+    return 0;
 }

@@ -1,7 +1,7 @@
 include ./Make.defs
 
 TOPTARGETS=all clean
-SUBDIRS=bootstrap lib bin tcpip
+SUBDIRS=bootstrap lib bin 
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
