@@ -77,9 +77,7 @@ e2fs.img: userspace modules
 	@sudo mount e2fs.img tmp
 	@sudo mkdir tmp/bin
 	@sudo cp userspace/bin/*.elf tmp/bin
-	@sudo cp userspace/tcpip/*.elf tmp/bin
 	@sudo mkdir tmp/modules
-	@sudo mkdir tmp/etc
 	@echo "holaaaa !!!!"|sudo tee tmp/test.txt > /dev/null
 	@sudo cp modules/drivers/serial/*.elf tmp/modules
 	@sudo cp modules/drivers/console/*.elf tmp/modules
@@ -89,7 +87,7 @@ e2fs.img: userspace modules
 	@sudo cp modules/drivers/sys/*.elf tmp/modules
 	@sudo cp modules/drivers/mouse/*.elf tmp/modules
 	@sudo cp modules/filesystems/sys/*.elf tmp/modules
-	@sudo cp conf/* tmp/etc
+	@sudo cp -r userspace/etc tmp
 	@sudo umount tmp
 	@rm -rf tmp
 
