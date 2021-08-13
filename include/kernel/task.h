@@ -109,12 +109,8 @@ int         tasks_loop                      (void);
  * Converts an address from current tasks's address space
  * to kernel space by mapping it to a well known kernel page
  **/
-void*       tasks_to_kernel_address         (void* address);
-/**
- * Converts an address from task's address space
- * to kernel space by mapping it to a well known kernel page
- **/
-void*       tasks_task_to_kernel_adddress   (uint32_t tid, void* address);
+void*       tasks_to_kernel_address         (void* address, uint16_t length);
+
 /**
  * Adds a IO request to current task and puts task in wait state.
  **/

@@ -8,12 +8,14 @@
 #include "kernel/device.h"
 #include "fs/fs.h"
 
+typedef struct {
+    uint16_t device_id;
+    uint32_t offset_next;
+    DirEntry direntry;
+} GetDentData;
+
 void syscall_getdents(InterruptFrame* f){
-    struct {
-        uint16_t device_id;
-        uint32_t offset_next;
-        DirEntry direntry;
-    } * getdent_data = tasks_to_kernel_address((void*)f->ebx);
+    GetDentData* getdent_data = tasks_to_kernel_address((void*)f->ebx, sizeof(GetDentData));
 
     Device* device = device_find_by_id(getdent_data->device_id);
 
@@ -40,4 +42,5 @@ void syscall_getdents(InterruptFrame* f){
 
     fs_free_inode(fs, inode);
     fs_release_filesystem(fs);
+
 }

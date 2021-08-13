@@ -1,5 +1,6 @@
-//#define NODEBUG
+#define NODEBUG
 #include "kernel/syscall.h"
+#include "kernel/common.h"
 #include "lib/stdint.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
@@ -19,17 +20,17 @@ typedef struct {
 static int next_stream_pos(Task *task);
 
 void syscall_open(InterruptFrame* f){
-    char path[256];
+    char path[PATH_SIZE];
+    uint16_t device_id;
 
     debug("Syscall open");
 
-    Task* task = tasks_current_task();
-    OpenData* open_data = tasks_to_kernel_address((void*)f->ebx);
+    OpenData* open_data = tasks_to_kernel_address((void*)f->ebx, sizeof(OpenData));
+
     uint32_t flags = open_data->flags;
-    char* full_path = tasks_to_kernel_address(open_data->path);
+    char* full_path = open_data->path;
 
-    debug("\tpath:");debug(full_path);debug(", flags:");debug_i(flags,16);debug("\n");
-
+    Task* task = tasks_current_task();
     int pos = next_stream_pos(task);
 
     if (pos < 0){
@@ -37,9 +38,11 @@ void syscall_open(InterruptFrame* f){
         return;
     }
 
-    uint16_t device_id;
+    full_path = tasks_to_kernel_address(full_path, PATH_SIZE);
+    debug("\tpath:");debug(full_path);debug(", flags:");debug_i(flags,16);debug("\n");
+    int parse_result = path_parse(full_path, &device_id, path);
 
-    if (path_parse(full_path, &device_id, path)){
+    if (parse_result){
         f->ebx = ((uint32_t)-2);
         return;
     }
@@ -83,6 +86,7 @@ void syscall_open(InterruptFrame* f){
         }
         debug("File opened:");debug_i(pos,10);debug("\n");
     }
+    debug("Stream openes\n");
 
     task->streams[pos] = stream;
     f->ebx = pos;

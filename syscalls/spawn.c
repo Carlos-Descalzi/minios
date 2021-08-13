@@ -1,5 +1,6 @@
 //#define NODEBUG
 #include "kernel/syscalls.h"
+#include "kernel/common.h"
 #include "kernel/task.h"
 #include "lib/path.h"
 #include "kernel/device.h"
@@ -12,25 +13,29 @@ static TaskParams* copy_str_array(int len, char** str_array){
 
     if (len > 0){
         // these addresses are relative to the begining of the array, make them absolute
-        str_array = tasks_to_kernel_address(str_array);
+        str_array = tasks_to_kernel_address(str_array, 2048);
         for (int i=0;i<len;i++){
             str_array[i] += ((uint32_t)str_array);
         }
-        return task_params_from_char_array(len, str_array);
+        TaskParams* result = task_params_from_char_array(len, str_array);
+        return result;
     } 
     return NULL;
 }
 
+typedef struct {
+    char* path;
+    uint8_t nargs;
+    char** argv;
+    uint8_t nenvs;
+    char** env;
+} SpawnData;
+
 void syscall_spawn(InterruptFrame* f){
     uint16_t device_id;
-    char filepath[256];
-    struct {
-        char* path;
-        uint8_t nargs;
-        char** argv;
-        uint8_t nenvs;
-        char** env;
-    } *spawn_params = tasks_to_kernel_address((void*)f->ebx);
+    char filepath[PATH_SIZE];
+
+    SpawnData* spawn_params = tasks_to_kernel_address((void*)f->ebx, sizeof(SpawnData));
 
     // need to save to other variables
     // since spawn_params won't be valid after next time
@@ -41,11 +46,13 @@ void syscall_spawn(InterruptFrame* f){
     uint8_t nenvs = spawn_params->nenvs;
     char** envs = spawn_params->env;
 
-    path = tasks_to_kernel_address(path);
+    path = tasks_to_kernel_address(path, PATH_SIZE);
 
     debug("Spawning new task:");debug(path);debug("\n");
 
-    if (path_parse(path, &device_id, filepath)){
+    int parse_result = path_parse(path, &device_id, filepath);
+
+    if (parse_result){
         debug("spawn - Bad path\n");
         f->ebx = ((uint32_t)-1);
         return;

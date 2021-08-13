@@ -9,6 +9,7 @@
  * List available devices
  **/
 void syscall_devs(InterruptFrame* f){
+    /*
     char buff[10];
     uint8_t kind;
     uint8_t instance;
@@ -41,4 +42,7 @@ void syscall_devs(InterruptFrame* f){
     } else {
         f->ebx = 0;
     }
+    TODO: Remove this syscall, replace by sysfs
+
+    */
 }

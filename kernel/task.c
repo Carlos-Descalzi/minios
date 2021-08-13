@@ -296,24 +296,18 @@ void tasks_update_current(InterruptFrame* frame){
     }
 }
 
-void* tasks_to_kernel_address (void* address){
+void* tasks_to_kernel_address (void* address, uint16_t length){
 
     uint32_t physical_address = paging_physical_address(
         current_task->page_directory,
         address);
 
-    return paging_to_kernel_space(physical_address);
+    return paging_to_kernel_space(physical_address, length);
 }
 
-void* tasks_task_to_kernel_adddress(uint32_t tid, void* address){
-    Task* task = tasks_get_task_by_tid(tid);
-
-    uint32_t physical_address = paging_physical_address(
-        task->page_directory,
-        address);
-
-    return paging_to_kernel_space(physical_address);
-}
+//void tasks_release_mapped_address (void* kernel_address, uint16_t length){
+//    paging_free_mapped_kernel_pages( (uint32_t) kernel_address, length);
+//}
 
 void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, uint32_t size){
 
@@ -326,8 +320,8 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
             task->io_requests[i].tid = current_task->tid;
             task->io_requests[i].type = type;
             task->io_requests[i].stream = stream_num;
-            task->io_requests[i].target_buffer = (uint8_t*) paging_physical_address(
-                current_task->page_directory, buffer);
+            task->io_requests[i].target_buffer = buffer;//(uint8_t*) paging_physical_address(
+                //current_task->page_directory, buffer);
             task->io_requests[i].size = size;
             task->status = TASK_STATUS_IOWAIT;
             stream_read_async(
@@ -412,9 +406,11 @@ static void do_send_message(Message* message){
     MessageNode* message_node = heap_alloc(sizeof(MessageNode));
     message = (void*)paging_physical_address(task->page_directory, message);
 
-    message = paging_to_kernel_space( (uint32_t) message);
+    message = paging_to_kernel_space( (uint32_t) message, sizeof(Message));
 
     memcpy(&(message_node->message), message, sizeof(Message));
+
+    //paging_free_mapped_kernel_pages( (uint32_t) message, sizeof(Message));
 
     debug("TASKS - send message to ");debug_i(message->target,10);debug("\n");
 
@@ -431,8 +427,9 @@ static void do_send_message(Message* message){
 }
 
 static void answer_message(Message* source_message, Message* target_message){
-    target_message = paging_to_kernel_space( (uint32_t) target_message);
+    target_message = paging_to_kernel_space( (uint32_t) target_message, sizeof(Message));
     memcpydw(target_message, source_message, sizeof(Message) / 4);
+    //paging_free_mapped_kernel_pages( (uint32_t) target_message, sizeof(Message));
 }
 
 static void setup_console(Task* task){
@@ -528,9 +525,10 @@ static int cnd_wait_msg_answer(Task* task){
 
     for (ListNode* node = task->incoming_messages; node; node = node->next){
         Message* waiting_msg = task->cond_data.ptr_data;
-        Message* local_waiting_msg = paging_to_kernel_space((uint32_t)waiting_msg);
+        Message* local_waiting_msg = paging_to_kernel_space((uint32_t)waiting_msg, sizeof(Message));
         uint32_t source = local_waiting_msg->source;
         uint32_t target = local_waiting_msg->target;
+        //paging_free_mapped_kernel_pages( (uint32_t) local_waiting_msg, sizeof(Message));
 
         if (source == 0 
             && target == 0){
@@ -546,8 +544,6 @@ static int cnd_wait_msg_answer(Task* task){
             if (target == MSG_NODE(node)->message.source 
                 && source == MSG_NODE(node)->message.target){
                 task->cpu_state.ebx = 0;
-                //debug("ANSWER!!! ");debug_i(waiting_msg,16);debug(",");
-                //debug_i(local_waiting_msg,16);debug("\n");
                 answer_message(&(MSG_NODE(node)->message), waiting_msg);
             } else {
                 debug("Wrong source - target: ");

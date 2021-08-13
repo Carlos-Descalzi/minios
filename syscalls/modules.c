@@ -1,4 +1,5 @@
 #include "kernel/syscall.h"
+#include "kernel/common.h"
 #include "kernel/modules.h"
 #include "kernel/task.h"
 #include "lib/string.h"
@@ -8,13 +9,15 @@
 #include "misc/debug.h"
 
 void syscall_modload(InterruptFrame* f){
-    char path[256];
+    char path[PATH_SIZE];
 
-    char* full_path = tasks_to_kernel_address((void*)f->ebx);
+    char* full_path = tasks_to_kernel_address((void*)f->ebx, PATH_SIZE);
 
     uint16_t device_id;
 
-    if (path_parse(full_path, &device_id, path)){
+    int parse_result = path_parse(full_path, &device_id, path);
+
+    if (parse_result){
         debug("modload - bad path\n");
         f->ebx = (uint32_t)-1;
         return;

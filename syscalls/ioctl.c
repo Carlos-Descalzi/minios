@@ -7,15 +7,15 @@ typedef struct {
     uint32_t fd;
     uint32_t request;
     void* data;
-} IoctlOp;
+} IoctlData;
 
 void syscall_ioctl(InterruptFrame* f){
 
-    IoctlOp* op = tasks_to_kernel_address((void*) f->ebx);
+    IoctlData* op = tasks_to_kernel_address((void*) f->ebx, sizeof(IoctlData));
 
     uint32_t fd = op->fd;
     uint32_t request = op->request;
-    void* data = tasks_to_kernel_address(op->data);
+    void* data = op->data;
 
     Task* task = tasks_current_task();
 
@@ -36,6 +36,8 @@ void syscall_ioctl(InterruptFrame* f){
     }
 
     Device* device = DEVICE_STREAM(stream)->device;
+
+    data = tasks_to_kernel_address(data, 4096);
 
     f->ebx = device_setopt(device, request, data);
 

@@ -97,9 +97,10 @@ uint32_t            paging_kernel_load_code     (Stream* stream);
  **/
 uint32_t            paging_alloc_kernel_page    (int rw);
 /**
- * Releases a kernel page
+ * Releases a kernel page, releasing the associated space.
  **/
 void                paging_free_kernel_page     (uint32_t virtual_address);
+
 /**
  * Returns a page directory configured for a new task
  **/
@@ -116,7 +117,15 @@ uint32_t            paging_physical_address     (PageDirectoryEntry* page_dir, v
 /**
  * Maps a given physical address into a kernel page
  **/
-void*               paging_to_kernel_space      (uint32_t physical_address);
+void*               paging_to_kernel_space      (uint32_t physical_address, uint16_t size);
+
+/** 
+ * Releases kernel pages which were referencing 
+ * a physical address in use, in other words, it doesn't
+ * release the associated memory.
+ **/
+//void                paging_free_mapped_kernel_pages
+//                                                (uint32_t physical_address, uint16_t size);
 /**
  * Writes arguments and enviroment in a page
  **/

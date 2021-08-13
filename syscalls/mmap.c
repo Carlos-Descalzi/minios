@@ -16,7 +16,7 @@ typedef struct {
 void syscall_mmap(InterruptFrame* f){
     // TODO: Incomplete
 
-    MmapOp* map = tasks_to_kernel_address((void*) f->ebx);
+    MmapOp* map = tasks_to_kernel_address((void*) f->ebx, sizeof(MmapOp));
 
     uint32_t length = map->length;
     uint32_t fd = map->fd;
