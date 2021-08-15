@@ -44,7 +44,7 @@ void syscall_read(InterruptFrame* f){
         debug("Task send to IO wait\n");
         asm volatile("jmp do_task_exit");
     } else {
-        debug("SYSCALL - read sync\n");
+        debug("SYSCALL - read sync: ");debug_i(size,10);debug("\n");
 
         buffer = tasks_to_kernel_address(buffer, size);
 

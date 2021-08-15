@@ -17,8 +17,6 @@ typedef struct {
 
 #define block_stream_device(s)      (BLOCK_DEVICE(DEVICE_STREAM(s)->device))
 
-static int16_t read_byte(Stream* stream);
-static int16_t write_byte(Stream* stream, uint8_t buffer);
 static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size);
 static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size);
 static int16_t read_async(Stream* stream, IORequest* request);
@@ -39,10 +37,8 @@ Stream* block_device_stream_open(BlockDevice* device, int flags){
     STREAM(stream)->readable = (flags & O_RDONLY) != 0;
     STREAM(stream)->writeable = (flags & O_WRONLY) != 0;
     STREAM(stream)->nonblocking = (flags & O_NONBLOCK) != 0;
-    STREAM(stream)->read_byte = read_byte;
     STREAM(stream)->read_bytes = read_bytes;
     STREAM(stream)->read_async = read_async;
-    STREAM(stream)->write_byte = write_byte;
     STREAM(stream)->write_bytes = write_bytes;
     STREAM(stream)->pos = pos;
     STREAM(stream)->seek = seek;
@@ -54,34 +50,6 @@ Stream* block_device_stream_open(BlockDevice* device, int flags){
     stream->buffer_index = 0;
 
     return STREAM(stream);
-}
-
-static int16_t read_byte(Stream* stream){
-    // FIXME
-    if (stream_readable(stream)){
-        if (BLOCK_STREAM(stream)->buffer_index == 0
-            || BLOCK_STREAM(stream)->buffer_index == BUFFER_SIZE){
-            if (block_device_read(
-                block_stream_device(stream), 
-                BLOCK_STREAM(stream)->buffer,
-                BUFFER_SIZE
-            ) < 0){
-                return -1;
-            }
-        }
-        return BLOCK_STREAM(stream)->buffer[BLOCK_STREAM(stream)->buffer_index++];
-    }
-    return -1;
-}
-
-static int16_t write_byte(Stream* stream, uint8_t buffer){
-    if (stream_writeable(stream)){
-        return block_device_write(
-            block_stream_device(stream),
-            &buffer,
-            1);
-    }
-    return -1;
 }
 
 static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size){

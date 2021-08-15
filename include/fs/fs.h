@@ -41,17 +41,15 @@ typedef struct DirEntry {
     char name[];
 } DirEntry;
 
-typedef struct FileSystemType FileSystemType;
-typedef struct FileSystem FileSystem;
-
-typedef int8_t (*InodeVisitor)(FileSystem*,uint32_t,Inode* inode, void*);
+typedef struct FileSystemType   FileSystemType;
+typedef struct FileSystem       FileSystem;
 
 /**
  * This structure represents a file system type
  **/
 struct FileSystemType {
     const char* type_name;
-    FileSystem* (*create)       (struct FileSystemType*, BlockDevice*);
+    FileSystem* (*create)               (struct FileSystemType*, BlockDevice*);
 };
 
 /**
@@ -64,21 +62,20 @@ struct FileSystem {
     uint32_t    inode_size;
     uint32_t    block_size;
 
-    void        (*list_inodes)          (struct FileSystem*, InodeVisitor, void*);
     void        (*close)                (struct FileSystem*);
     uint32_t    (*find_inode)           (struct FileSystem*, const char*);
     int32_t     (*load_inode)           (struct FileSystem*, uint32_t, Inode*);
-    int32_t     (*load)                 (struct FileSystem*, Inode*, void*);
     uint32_t    (*read_block)           (struct FileSystem*, Inode*, uint32_t, void*, uint32_t);
     int32_t     (*get_direntry)         (struct FileSystem*, Inode*, uint32_t*, DirEntry*);
     Inode*      (*alloc_inode)          (struct FileSystem*);
     void        (*free_inode)           (struct FileSystem*, Inode*);
     Stream*     (*open_stream)          (struct FileSystem*, uint32_t, uint32_t);
-    //Stream*     (*stream_open)          (struct FileSystem*, const char*, uint32_t);
     void        (*release_resources)    (struct FileSystem*);
     uint32_t    (*add_entry)            (struct FileSystem*, Inode*, const char*, uint32_t);
 
 };
+
+#define         FILE_SYSTEM(f)              ((FileSystem*)(f))
 
 /**
  * Inits VFS
@@ -96,16 +93,15 @@ FileSystem*     fs_get_filesystem           (BlockDevice* device);
  * Releases a file system, closing all descriptors an freeing memory
  **/
 void            fs_release_filesystem       (FileSystem* fs);
-
+/**
+ * Opens a stream for a path
+ **/
 Stream*         fs_open_stream_path         (FileSystem* fs, const char* path, uint32_t flags);
-#define         FILE_SYSTEM(f)              ((FileSystem*)(f))
 
 #define         fs_type_create(fst,d)       ((fst)->create(fst, d))
-#define         fs_list_inodes(fs,v)        ((fs)->list_inodes(fs, v))
 #define         fs_close(fs)                ((fs)->close(fs))
 #define         fs_find_inode(fs,p)         ((fs)->find_inode(fs,p))
 #define         fs_load_inode(fs,n,i)       ((fs)->load_inode(fs,n,i))
-#define         fs_load(fs,i,b)             ((fs)->load(fs,i,b))
 #define         fs_read_block(fs,i,n,b,s)   ((fs)->read_block(fs,i,n,b,s))
 #define         fs_get_direntry(fs,i,o,d)   ((fs)->get_direntry(fs,i,o,d))
 #define         fs_add_entry(fs,i,p,t)      ((fs)->add_entry(fs,i,p,t))

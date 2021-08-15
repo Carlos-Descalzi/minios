@@ -6,7 +6,7 @@
 
 typedef struct __attribute__((__packed__)) {
     uint32_t entry_count;
-    MemoryRegion regions[1];
+    MemoryRegion regions[];
 } MemoryInfo;
 
 void minfo_iterate_regions(MemRegionVisitor visitor, void *user_data){

@@ -34,8 +34,13 @@ typedef struct {
     uint32_t        numblocks;
     uint32_t        current_block;
     uint8_t*        block_buffer;
-    //char            path[1];
 } FileStream;
+
+typedef struct {
+    const char* dirent_name;
+    uint16_t namelen;
+    uint32_t inode;
+} DirentFindData;
 
 #define     FILE_STREAM(fs)  ((FileStream*)fs)
 
@@ -50,12 +55,14 @@ static FileSystemType FS_TYPE;
 
 #define OFFSET          (KIMAGESIZE)   // boot sector + kernel
 
+#define to_blocks(s,bs)     ((s / bs) + (s % bs ? 1 : 0))
+#define swap(a,b,t)         { t = a; a = b; b = t;}
+#define to_disk_pos(fs,bn)  ((bn*fs->block_size)+OFFSET)
+
 static FileSystem*      create_fs               (FileSystemType* fs_type, BlockDevice* device);
-static void             list_inodes             (FileSystem* fs, InodeVisitor visitor, void*data);
 static void             close                   (FileSystem* fs);
 static int32_t          load_inode              (FileSystem* fs, uint32_t inodenum, Inode* inode);
 static uint32_t         find_inode              (FileSystem* fs, const char* path);
-static int32_t          load                    (FileSystem* fs, Inode* inode, void* dest);
 static uint32_t         read_block              (FileSystem* fs, Inode* inode, 
                                                 uint32_t b_index, void* dest, uint32_t length);
 static int32_t          get_direntry            (FileSystem* fs, Inode* inode, 
@@ -64,9 +71,6 @@ static Inode*           alloc_inode             (FileSystem* fs);
 static void             free_inode              (FileSystem* fs, Inode* inode);
 static void             release_resources       (FileSystem* fs);
 static Stream*          ext2_open_stream        (FileSystem* fs, uint32_t inodenum, uint32_t flags);
-//static Stream*          ext2_stream_open        (FileSystem* fs, const char* path, uint32_t flags);
-int16_t                 ext2_stream_read_byte   (Stream*);
-int16_t                 ext2_stream_write_byte  (Stream*,uint8_t);
 int16_t                 ext2_stream_read_bytes  (Stream*,uint8_t*,int16_t);
 int16_t                 ext2_stream_write_bytes (Stream*,uint8_t*,int16_t);
 uint32_t                ext2_stream_pos         (Stream*);
@@ -141,17 +145,14 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
 
     FILE_SYSTEM(fs)->type = fs_type;
     FILE_SYSTEM(fs)->device = device;
-    FILE_SYSTEM(fs)->list_inodes = list_inodes;
     FILE_SYSTEM(fs)->close = close;
     FILE_SYSTEM(fs)->find_inode = find_inode;
     FILE_SYSTEM(fs)->load_inode = load_inode;
-    FILE_SYSTEM(fs)->load = load;
     FILE_SYSTEM(fs)->read_block = read_block;
     FILE_SYSTEM(fs)->get_direntry = get_direntry;
     FILE_SYSTEM(fs)->alloc_inode = alloc_inode;
     FILE_SYSTEM(fs)->free_inode = free_inode;
     FILE_SYSTEM(fs)->open_stream = ext2_open_stream;
-    //FILE_SYSTEM(fs)->stream_open = ext2_stream_open;
     FILE_SYSTEM(fs)->release_resources = release_resources;
     FILE_SYSTEM(fs)->inode_size = sizeof(Ext2Inode);
     FILE_SYSTEM(fs)->block_size = 1024 << fs->super_block.log_block_size;
@@ -178,7 +179,6 @@ FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     return FILE_SYSTEM(fs);
 }
 
-#define swap(a,b,t) { t = a; a = b; b = t;}
 
 static uint8_t* cache_find(Ext2FileSystem* fs, uint32_t disk_pos){
     int i;
@@ -196,7 +196,6 @@ static uint8_t* cache_find(Ext2FileSystem* fs, uint32_t disk_pos){
     }
     return NULL;
 }
-#define to_disk_pos(fs,bn)  ((bn*fs->block_size)+OFFSET)
 
 static uint8_t* cache_take(Ext2FileSystem* fs, uint32_t disk_pos){
     int i;
@@ -240,74 +239,6 @@ static void ext2_device_read_block_b(Ext2FileSystem* fs, void* buffer, uint32_t 
         block_device_read(FILE_SYSTEM(fs)->device, block_buffer, FILE_SYSTEM(fs)->block_size); 
     }
     memcpy(buffer, block_buffer, length);
-}
-
-
-static void do_list_inodes(Ext2FileSystem* fs, InodeVisitor visitor, void*data,
-                            Ext2BlockGroupDescriptor* descriptors,
-                            Ext2Inode* inode_table, 
-                            uint32_t *ngroups,
-                            uint32_t *inodenum){
-    int i, j;
-    uint32_t pos;
-    uint32_t ninodetableblocks;
-
-    ninodetableblocks = fs->super_block.blocks_per_group / fs->inodes_per_block;
-
-    for (i=0;i< fs->group_descritors_per_block && *ngroups > 0;i++,(*ngroups)--){
-
-        if (descriptors[i].inode_table == 0){
-            return;
-        }
-
-        ext2_device_gotoblock(fs, descriptors[i].inode_table);
-
-        for(; ninodetableblocks > 0;ninodetableblocks--){
-
-            ext2_device_read_block_b(fs,inode_table,0);
-            pos = ext2_device_pos(fs);
-
-            for (j=0;j<fs->inodes_per_block;j++,(*inodenum)++){
-                if (visitor(FILE_SYSTEM(fs), *inodenum, INODE(&(inode_table[j])),data)){
-                    return;
-                }
-            }
-            ext2_device_seek(fs, pos);
-        }
-    }
-}
-
-static void list_inodes(FileSystem* fs, InodeVisitor visitor, void*data){
-
-    Ext2BlockGroupDescriptor* descriptors;
-    Ext2Inode* inode_table;
-    uint32_t pos;
-    uint32_t ngroups;
-    uint32_t inodenum = 1;
-
-    descriptors = heap_alloc(fs->block_size);
-    inode_table = heap_alloc(fs->block_size);
-    ngroups = E2FS(fs)->block_group_count;
-    pos = E2FS(fs)->first_block_group_pos;
-
-    while(ngroups > 0){
-
-        ext2_device_seek(E2FS(fs), pos);
-        ext2_device_read_block_b(E2FS(fs), descriptors,0);
-        pos = ext2_device_pos(E2FS(fs));
-        do_list_inodes(
-            E2FS(fs), 
-            visitor, 
-            data, 
-            descriptors, 
-            inode_table, 
-            &ngroups, 
-            &inodenum
-        );
-    }
-
-    heap_free(inode_table);
-    heap_free(descriptors);
 }
 
 static void close(FileSystem* fs){
@@ -370,33 +301,8 @@ static uint32_t find_inode(FileSystem* fs, const char* path){
     return current_inode;
 }
 
-typedef struct {
-    const char* dirent_name;
-    uint16_t namelen;
-    uint32_t inode;
-} DirentFindData;
-
-static int32_t load(FileSystem* fs, Inode* inode, void* dest){
-    uint32_t size = inode->size;
-    uint32_t offset = 0;
-    uint32_t to_read;
-    uint32_t block_index = 0;
-    uint32_t block_num;
-
-    while(size){
-        to_read = min(size, fs->block_size);
-        block_num = get_block_by_index(E2FS(fs), E2INODE(inode), block_index);
-        ext2_device_gotoblock(E2FS(fs), block_num);
-        ext2_device_read_block_b(E2FS(fs), dest + offset, to_read);
-        offset+=to_read;
-        size-=to_read;
-        block_index++;
-    }
-    
-    return offset;
-}
-
 static uint32_t get_block_by_index(Ext2FileSystem* fs, Ext2Inode* inode, uint32_t block_index){
+
     uint32_t entries_per_block = FILE_SYSTEM(fs)->block_size / sizeof(uint32_t);
 
     debug("EXT2 - get_block_by_index:");debug_i(block_index,10);debug("\n");
@@ -418,17 +324,19 @@ static uint32_t get_block_by_index(Ext2FileSystem* fs, Ext2Inode* inode, uint32_
 }
 
 static uint32_t read_block(FileSystem* fs, Inode* inode, 
-                         uint32_t b_index, void* dest, uint32_t length){
-    uint32_t block;
+     uint32_t b_index, void* dest, uint32_t length){
 
-    block = get_block_by_index(E2FS(fs), E2INODE(inode), b_index);
+    uint32_t block = get_block_by_index(E2FS(fs), E2INODE(inode), b_index);
+
     ext2_device_gotoblock(E2FS(fs), block);
+
     ext2_device_read_block_b(E2FS(fs), dest, length);
 
     return 0;
 }
 
 static int8_t find_dirent(Ext2FileSystem*fs, DirEntry* dirent, void* data){
+
     DirentFindData* find_data = data;
 
     if (dirent->name_len == find_data->namelen 
@@ -440,11 +348,7 @@ static int8_t find_dirent(Ext2FileSystem*fs, DirEntry* dirent, void* data){
 }
 
 static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const char* dirent_name){
-    DirentFindData dirent_find_data = {
-        .dirent_name = dirent_name, 
-        .namelen = strlen(dirent_name),
-        .inode=0 
-    };
+
     Ext2Inode inode;
 
     if(load_inode(FILE_SYSTEM(fs), inodenum, INODE(&inode))){
@@ -455,6 +359,12 @@ static uint32_t find_next_inode(Ext2FileSystem* fs, uint32_t inodenum, const cha
         return 0;
     } else {
     }
+
+    DirentFindData dirent_find_data = {
+        .dirent_name = dirent_name, 
+        .namelen = strlen(dirent_name),
+        .inode=0 
+    };
 
     ext2_list_dir_inode(fs, &inode, find_dirent, &dirent_find_data);
 
@@ -498,6 +408,7 @@ static int ext2_list_dir_blocks(Ext2FileSystem* fs, uint32_t* blocks, uint32_t n
 
     return 0;
 }
+
 static int32_t get_direntry(FileSystem* fs, Inode* inode, uint32_t* offset, DirEntry* direntry){
 
     if (inode->type != EXT2_INODE_TYPE_DIRECTORY){
@@ -625,15 +536,13 @@ static int16_t ext2_iter_dir_block(Ext2FileSystem* fs, uint32_t block_num, DirVi
     return 0;
 }
 
-//Stream* ext2_stream_open(FileSystem* fs, const char* path, uint32_t flags){
 static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t flags){
-    //uint32_t inodenum;
     FileStream* stream;
 
-    debug("EXT2 - Inode: ");debug_i(inodenum,10);debug("\n");
+    debug("ext2_open_stream: ");debug_i(inodenum,10);debug("\n");
 
     if (inodenum){
-        stream = heap_alloc(sizeof(FileStream));// + strlen(path));
+        stream = heap_alloc(sizeof(FileStream));
         if (!stream){
             debug("EXT2 - No memory for creating stream\n");
             return NULL;
@@ -642,7 +551,6 @@ static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t fla
         stream->fs = E2FS(fs);
         stream->block_buffer = heap_alloc(fs->block_size);
         load_inode(fs, inodenum, INODE(&(stream->inode)));
-        //strcpy(stream->path, path);
         stream->numblocks = stream->inode.inode.size / fs->block_size;
         if (stream->inode.inode.size % fs->block_size){
             stream->numblocks++;
@@ -652,8 +560,6 @@ static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t fla
         STREAM(stream)->nonblocking = (flags & O_NONBLOCK) != 0;
         STREAM(stream)->readable = (flags & O_RDONLY) != 0;
         STREAM(stream)->writeable = (flags & O_WRONLY) != 0;
-        STREAM(stream)->read_byte = ext2_stream_read_byte;
-        STREAM(stream)->write_byte = ext2_stream_write_byte;
         STREAM(stream)->read_bytes = ext2_stream_read_bytes;
         STREAM(stream)->write_bytes = ext2_stream_write_bytes;
         STREAM(stream)->flush = ext2_stream_flush;
@@ -667,47 +573,11 @@ static Stream* ext2_open_stream (FileSystem* fs, uint32_t inodenum, uint32_t fla
     }
     return NULL;
 }
+
 void ext2_stream_close(Stream* stream){
     heap_free(stream);
 }
 
-int16_t ext2_stream_read_byte(Stream* stream){
-    uint32_t rel_pos;
-    uint32_t block_size;
-    uint8_t val;
-
-    if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.inode.size){
-        return -1;
-    }
-
-    FileSystem* fs = FILE_SYSTEM(FILE_STREAM(stream)->fs);
-
-    block_size = fs->block_size;
-    rel_pos = FILE_STREAM(stream)->pos % block_size;
-    val = FILE_STREAM(stream)->block_buffer[rel_pos];
-
-    FILE_STREAM(stream)->pos++;
-
-    if (!(FILE_STREAM(stream)->pos % fs->block_size)){
-        FILE_STREAM(stream)->current_block++;
-        read_block(
-            FILE_SYSTEM(FILE_STREAM(stream)->fs),  
-            INODE(&(FILE_STREAM(stream)->inode)),
-            FILE_STREAM(stream)->current_block,
-            FILE_STREAM(stream)->block_buffer,
-            0
-        );
-    }
-
-    return val;
-}
-int16_t ext2_stream_write_byte(Stream* stream,uint8_t byte){
-    if (stream_writeable(stream)){
-        // TODO finish
-        return 0;
-    }
-    return -1;
-}
 int16_t ext2_stream_write_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     if (stream_writeable(stream)){
         // TODO finish
@@ -715,39 +585,53 @@ int16_t ext2_stream_write_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     }
     return -1;
 }
+
 int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
 
     if (stream_readable(stream)){
-        uint32_t block_size;
-        uint32_t offset;
-        uint32_t block;
-        uint16_t nblocks;
         uint32_t to_read;
-        uint16_t i;
-        uint32_t bytes_read;
 
-        if (FILE_STREAM(stream)->pos >= FILE_STREAM(stream)->inode.inode.size){
+        uint32_t file_size = FILE_STREAM(stream)->inode.inode.size;
+
+        if (FILE_STREAM(stream)->pos >= file_size){
             return 0;
         }
-        block_size = FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size;
-        offset = FILE_STREAM(stream)->pos % block_size;
-        block = FILE_STREAM(stream)->pos / block_size;
-        nblocks = size / block_size + (size % block_size ? 1 : 0);
-        bytes_read = 0;
+        uint32_t block_size = FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size;
+        uint32_t file_nblocks = to_blocks(file_size, block_size);
 
-        for (i=0;i<nblocks;i++){
+        uint32_t current_block = FILE_STREAM(stream)->pos / block_size;
+        //uint32_t block = FILE_STREAM(stream)->pos / block_size;
+        uint32_t offset = FILE_STREAM(stream)->pos % block_size;
+        uint32_t nblocks = to_blocks(size, block_size);
+
+        debug("N blocks: "); debug_i(nblocks,10);debug("\n");
+        debug("F size: "); debug_i(FILE_STREAM(stream)->inode.inode.size,10);debug("\n");
+
+        uint32_t bytes_read = 0;
+
+        //for (int i=0;i<nblocks;i++){
+        for (
+            uint32_t block = current_block, i=0; 
+            block < file_nblocks && i < nblocks; 
+            block++, i++ ){
+
+            debug("Read block ");debug_i(block,10);debug("\n");
+
             read_block(
                 FILE_SYSTEM(FILE_STREAM(stream)->fs),
                 INODE(&(FILE_STREAM(stream)->inode)),
-                block + i,
+                block, //block + i,
                 FILE_STREAM(stream)->block_buffer,
-                FILE_SYSTEM(FILE_STREAM(stream)->fs)->block_size
+                block_size
             );
+
             to_read = min(size, block_size - offset);
             memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer + offset, to_read);
             offset = 0;
             size -= to_read;
+            debug("SIZE:");debug_i(size,10);debug("\n");
             bytes_read += to_read;
+            debug("BYTES READ:");debug_i(bytes_read,10);debug("\n");
         }
         FILE_STREAM(stream)->pos += bytes_read;
 
@@ -755,9 +639,11 @@ int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
     }
     return -1;
 }
+
 uint32_t ext2_stream_pos(Stream* stream){
     return FILE_STREAM(stream)->pos;
 }
+
 int16_t ext2_stream_seek(Stream* stream,uint32_t pos){
     if (pos > FILE_STREAM(stream)->inode.inode.size -1){
         return -1;
@@ -765,6 +651,7 @@ int16_t ext2_stream_seek(Stream* stream,uint32_t pos){
     FILE_STREAM(stream)->pos = pos;
     return 0;
 }
+
 uint32_t ext2_stream_size(Stream* stream){
     return FILE_STREAM(stream)->inode.inode.size;
 }
@@ -778,6 +665,7 @@ static Inode* alloc_inode(FileSystem* fs){
     }
     return NULL;
 }
+
 static void free_inode(FileSystem* fs, Inode* inode){
     for (int i=0;i<5;i++){
         if (&(E2FS(fs)->work_inodes[i].inode) == E2INODE(inode)){
@@ -786,6 +674,7 @@ static void free_inode(FileSystem* fs, Inode* inode){
         }
     }
 }
+
 static void release_resources(FileSystem* fs){
     for (int i=0;i<5;i++){
         if (E2FS(fs)->work_inodes[i].in_use){
@@ -793,5 +682,6 @@ static void release_resources(FileSystem* fs){
         }
     }
 }
+
 void ext2_stream_flush(Stream* stream){
 }

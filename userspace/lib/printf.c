@@ -150,10 +150,19 @@ static void print_num(char* buffer, Format* tformat, int radix, int* written, Wr
     int l = strlen(buffer);
     int printable = tformat->digits ? min(tformat->digits,l) : l;
     int n;
-    if (tformat->padding){
-        for (n=printable;n<tformat->digits;n++){
-            writer_putc(writer, '0');
-            (*written)++;
+    if (tformat->digits > 0){
+        if (tformat->padding){
+            for (n=printable;n<tformat->digits;n++){
+                writer_putc(writer, '0');
+                (*written)++;
+            }
+        } else {
+            int padding = tformat->digits - l;
+            for (int i=0;i<padding;i++){
+                writer_putc(writer,' ');
+            }
+
+            (*written) += padding;
         }
     }
     if (l > printable){
@@ -246,6 +255,13 @@ static int do_vfprintf(Writer* writer, const char* format, va_list parameters){
                         print_num(
                             utoa(d,buffer,16),
                             &tformat, 16, &written, writer);
+                        break;
+                    }
+                case 'o':{
+                        unsigned int d = va_arg(parameters, unsigned int);
+                        print_num(
+                            utoa(d,buffer,8),
+                            &tformat, 8, &written, writer);
                         break;
                     }
 

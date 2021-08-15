@@ -4,8 +4,6 @@
 #include "misc/debug.h"
 
 
-static int16_t   read_byte     (Stream*);
-static int16_t   write_byte    (Stream*,uint8_t);
 static int16_t   read_bytes    (Stream*,uint8_t*,int16_t);
 static int16_t   write_bytes   (Stream*,uint8_t*,int16_t);
 static uint32_t  pos           (Stream*);
@@ -26,9 +24,7 @@ Stream* char_array_stream_open (size_t buffer_size, int mode){
     STREAM(stream)->async = 0;
     STREAM(stream)->writeable = mode & O_WRONLY;
     STREAM(stream)->readable = mode & O_RDONLY;
-    STREAM(stream)->read_byte = read_byte;
     STREAM(stream)->read_bytes = read_bytes;
-    STREAM(stream)->write_byte = write_byte;
     STREAM(stream)->write_bytes = write_bytes;
     STREAM(stream)->pos = pos;
     STREAM(stream)->size = size;
@@ -40,26 +36,6 @@ Stream* char_array_stream_open (size_t buffer_size, int mode){
     return STREAM(stream);
 }
 
-static int16_t read_byte (Stream* stream){
-    if (stream->readable){
-        if (CHAR_ARRAY_STREAM(stream)->pos < CHAR_ARRAY_STREAM(stream)->buffer_size-1){
-            return CHAR_ARRAY_STREAM(stream)->buffer[CHAR_ARRAY_STREAM(stream)->pos++];
-        }
-        
-        return -1;
-    }
-    return 0;
-}
-static int16_t write_byte (Stream* stream,uint8_t data){
-    if (stream->writeable){
-        if (CHAR_ARRAY_STREAM(stream)->pos < CHAR_ARRAY_STREAM(stream)->buffer_size-1){
-            CHAR_ARRAY_STREAM(stream)->buffer[CHAR_ARRAY_STREAM(stream)->pos++] = data;
-            return 1;
-        }
-        return -1;
-    }
-    return 0;
-}
 static int16_t read_bytes (Stream* stream,uint8_t* buffer,int16_t len){
     if (stream->readable){
         int16_t available = CHAR_ARRAY_STREAM(stream)->buffer_size 

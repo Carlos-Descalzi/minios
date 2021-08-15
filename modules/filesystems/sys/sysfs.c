@@ -85,11 +85,9 @@ static const char       DIRENT_KERNEL[]             = "kernel";
 static const char       DIRENT_USER[]               = "user";
 
 static FileSystem*      create_fs                   (FileSystemType* fs_type, BlockDevice* device);
-static void             list_inodes                 (FileSystem* fs, InodeVisitor visitor, void*data);
 static void             close                       (FileSystem* fs);
 static int32_t          load_inode                  (FileSystem* fs, uint32_t inodenum, Inode* inode);
 static uint32_t         find_inode                  (FileSystem* fs, const char* path);
-static int32_t          load                        (FileSystem* fs, Inode* inode, void* dest);
 static uint32_t         read_block                  (FileSystem* fs, Inode* inode, 
                                                     uint32_t b_index, void* dest, 
                                                     uint32_t length);
@@ -164,11 +162,9 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
 
     FILE_SYSTEM(fs)->type = fs_type;
     FILE_SYSTEM(fs)->device = device;
-    FILE_SYSTEM(fs)->list_inodes = list_inodes;
     FILE_SYSTEM(fs)->close = close;
     FILE_SYSTEM(fs)->find_inode = find_inode;
     FILE_SYSTEM(fs)->load_inode= load_inode;
-    FILE_SYSTEM(fs)->load = load;
     FILE_SYSTEM(fs)->read_block = read_block;
     FILE_SYSTEM(fs)->get_direntry = get_direntry;
     FILE_SYSTEM(fs)->alloc_inode = alloc_inode;
@@ -180,9 +176,6 @@ static FileSystem* create_fs(FileSystemType* fs_type, BlockDevice* device){
     FILE_SYSTEM(fs)->add_entry = add_entry;
 
     return FILE_SYSTEM(fs);
-}
-
-static void list_inodes(FileSystem* fs, InodeVisitor visitor, void*data){
 }
 
 static void close(FileSystem* fs){
@@ -220,10 +213,6 @@ static uint32_t find_inode(FileSystem* fs, const char* path){
         return SYSFS_INODE_PROCESSES;
     }
             
-    return 0;
-}
-
-static int32_t load(FileSystem* fs, Inode* inode, void* dest){
     return 0;
 }
 
