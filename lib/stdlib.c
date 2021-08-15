@@ -44,7 +44,7 @@ char* itoa(int value, char* string,int radix){
         string[1] = string[0];
         string[0] = d;
     } else {
-        m = i/2;
+        m = i/2-1;
         i--;
         for(;m>=0;m--){
             d = string[m];
