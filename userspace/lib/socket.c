@@ -6,7 +6,6 @@
 #include "string.h"
 
 static pid_t        service_pid = 0;
-static UserMessage  message;
 
 static pid_t    get_tcpipd_pid  (void);
 static int      socket_open     (uint16_t type, uint16_t port);
@@ -29,10 +28,10 @@ int socket_server_udp_open (uint16_t port){
     return socket_open(SOCKET_TYPE_UDP |SOCKET_TYPE_SERVER, port);
 }
 
-static void prepare_message (void){
+static void prepare_message (UserMessage* message){
     memset(&message,0,sizeof(UserMessage));
-    message.header.source = getpid();
-    message.header.target = service_pid;
+    message->header.source = getpid();
+    message->header.target = service_pid;
 }
 
 int socket_server_tcp_accept (int sockd, uint32_t* address, uint16_t* port){
@@ -44,8 +43,8 @@ int socket_server_tcp_accept (int sockd, uint32_t* address, uint16_t* port){
     if (!service_pid){
         return -1;
     }
-
-    prepare_message();
+    UserMessage  message;
+    prepare_message(&message);
     message.type = MSG_ACCEPT;
     message.accept_request.socket_type = sockd >> 16;
     message.accept_request.port = sockd & 0xFFFF;
@@ -78,7 +77,9 @@ void socket_close (int sockd){
     uint16_t socket_type = sockd >> 16;
     uint16_t port = sockd & 0xFFFF;
 
-    prepare_message();
+    UserMessage  message;
+
+    prepare_message(&message);
     message.type = MSG_CLOSE;
     message.close_request.socket_type = socket_type;
     message.close_request.port = port;
@@ -95,7 +96,9 @@ int socket_server_udp_recv (int sockd, uint32_t* address, uint16_t* port, void* 
         return -1;
     }
 
-    prepare_message();
+    UserMessage  message;
+
+    prepare_message(&message);
     message.type = MSG_RECV;
     message.recv_request.socket_type = sockd >> 16;
     message.recv_request.port = sockd & 0xFFFF;
@@ -145,7 +148,9 @@ static int socket_open(uint16_t type, uint16_t port){
         return -1;
     }
 
-    prepare_message();
+    UserMessage  message;
+
+    prepare_message(&message);
     message.type = MSG_OPEN;
     message.open_request.socket_type = type;
     message.open_request.port = port;
@@ -170,7 +175,9 @@ int socket_client_udp_send (int sockd, uint32_t address, uint16_t port, void* da
     uint8_t socket_type = sockd >> 16;
     uint16_t local_port = sockd & 0xFFFF;
 
-    prepare_message();
+    UserMessage  message;
+
+    prepare_message(&message);
     message.type = MSG_SEND;
     message.send_header_request.socket_type = socket_type;
     message.send_header_request.port = local_port;

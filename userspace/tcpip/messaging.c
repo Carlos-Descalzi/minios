@@ -12,11 +12,9 @@ static void handle_recv         (UserMessage* message);
 static void handle_send         (UserMessage* message);
 
 
-static UserMessage message;
-static UserMessage answer;
-
 int handle_user_message(){
 
+    UserMessage message;
     memset(&message, 0, sizeof(UserMessage));
 
     if (!msg_recv(MESSAGE(&message))){
@@ -123,6 +121,9 @@ void udp_received (int pid, int socket_type, uint16_t port,
     uint8_t* payload){
 
     debug("udp received: %d, %d\n", chunk_size, status);
+
+    UserMessage message;
+    memset(&message, 0, sizeof(UserMessage));
 
     message.header.source = getpid();
     message.header.target = pid;

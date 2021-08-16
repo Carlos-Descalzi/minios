@@ -3,9 +3,6 @@
 #include "sched.h"
 #include "minios.h"
 
-static WaitCondition conditions[2];
-
-
 int main(int argc, char** argv){
 
     if (read_config() < 0){
@@ -15,6 +12,8 @@ int main(int argc, char** argv){
     if (stack_init() < 0){
         return 1;
     }
+
+    WaitCondition conditions[2];
 
     conditions[0].cond_type = COND_TYPE_FD;
     conditions[0].fd = eth_fd;
