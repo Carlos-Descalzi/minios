@@ -15,7 +15,7 @@ BINS=init.elf 		\
 	 pipeclient.elf \
 	 udpserver.elf	\
 	 udpclient.elf  \
-	 testsignal.elf
+	 testsignal.elf	
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/socket.a

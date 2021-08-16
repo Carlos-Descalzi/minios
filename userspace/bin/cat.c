@@ -16,6 +16,8 @@ int main(int argc, char**argv){
         return -1;
     }
 
+    memset(buff,0,1024);
+
     while (fread(buff,1024,1,fp) > 0){
         printf("%s",buff);
     }
