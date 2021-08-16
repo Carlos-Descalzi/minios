@@ -44,14 +44,17 @@
 // TODO look for a better vaddress
 #define KERNEL_FREE_ADDR_SPACE_START mkvaddr(100,0,0)
 
+static PageDirectoryEntry* last_mapped_page_directory = NULL;
 static uint32_t last_mapped_physical_space_addr = 0;
 static uint16_t last_mapped_physical_space_size = 0;
 static uint32_t last_mapped_physical_space_vaddr = 0;
 
-static void     handle_page_fault           (InterruptFrame *frame, void* data);
-static void     setup_isr_page              (PageTableEntry* page_table,uint8_t us);
-static uint32_t paging_kernel_alloc_pages   (uint32_t nblocks, uint8_t rw);
-static void     free_mapped_kernel_pages    (uint32_t physical_address, uint16_t size);
+static void             handle_page_fault               (InterruptFrame *frame, void* data);
+static void             setup_isr_page                  (PageTableEntry* page_table,uint8_t us);
+static uint32_t         paging_kernel_alloc_pages       (uint32_t nblocks, uint8_t rw);
+static void             free_mapped_kernel_pages        (uint32_t kernel_virtual_address, uint16_t size);
+static int              calculate_page_count            (uint32_t base_address, uint16_t length);
+static VirtualAddress   get_free_virtual_address_space  (uint16_t n_pages);
 
 
 void paging_init(){
@@ -622,50 +625,36 @@ void paging_free_kernel_page (uint32_t virtual_address){
     }
 }
 
+static int calculate_page_count(uint32_t physical_address, uint16_t length){
 
+    VirtualAddress address_start = { .address = physical_address };
+    VirtualAddress address_end = { .address = physical_address + length - 1};
 
-void free_mapped_kernel_pages (uint32_t physical_address, uint16_t size){
-    
-    uint32_t page_aligned_start= physical_address & ~0xFFF;
-    uint32_t page_aligned_end = (physical_address + size) & ~0xFFF;
+    return 1 + (address_end.addressh - address_start.addressh);
+}
 
-    for (uint32_t i = page_aligned_start; i <= page_aligned_end; i+= PAGE_SIZE) {
+static void free_mapped_kernel_pages (uint32_t kernel_virtual_address, uint16_t size){
 
-        VirtualAddress addr = {.address = i };
+    int n_pages = calculate_page_count(kernel_virtual_address, size);
 
-        if (KERNEL_PAGE_DIR[addr.page_dir_index].present){
-            set_exchange_page(KERNEL_PAGE_DIR[addr.page_dir_index].page_table_address << 12);
-            local_table[addr.page_index].present = 0;
+    VirtualAddress address = { .address = kernel_virtual_address };
+
+    for (int i=0;i < n_pages; i++, address.addressh++){
+
+        if (KERNEL_PAGE_DIR[address.page_dir_index].present){
+            set_exchange_page(KERNEL_PAGE_DIR[address.page_dir_index].page_table_address << 12);
+            local_table[address.page_index].present = 0;
         }
     }
 }
 
-void* paging_to_kernel_space(uint32_t physical_address, uint16_t length){
-
-    if (last_mapped_physical_space_addr != 0){
-        if (last_mapped_physical_space_addr == physical_address
-            && last_mapped_physical_space_size >= length){
-
-            // Just reuse last mapping if it is for the same physical address
-            return (void*) last_mapped_physical_space_vaddr;
-        }
-        // otherwise recycle
-        free_mapped_kernel_pages(
-            last_mapped_physical_space_vaddr,
-            last_mapped_physical_space_size
-        );
-    }
-
-    uint32_t address_end = physical_address + length;
-    
-    int n_pages = max(1, (address_end >> 12) -  (physical_address >> 12)); 
-
+static VirtualAddress get_free_virtual_address_space(uint16_t n_pages) {
     VirtualAddress addr = {.address = KERNEL_FREE_ADDR_SPACE_START };
     VirtualAddress addr_start = { .address = 0 };
 
     int count = 0;
 
-    for (;count < n_pages && addr.address < 0xFFFFD000; addr.address += PAGE_SIZE){
+    for (;count < n_pages && addr.addressh < 0xFFFFD; addr.addressh++){
         if (!KERNEL_PAGE_DIR[addr.page_dir_index].present){
             KERNEL_PAGE_DIR[addr.page_dir_index].present = 1;
             KERNEL_PAGE_DIR[addr.page_dir_index].read_write = 1;
@@ -679,13 +668,10 @@ void* paging_to_kernel_space(uint32_t physical_address, uint16_t length){
         if (!local_table[addr.page_index].present){
             if (addr_start.address == 0){
                 addr_start = addr;
-            } else {
-                count++;
             }
-            if (count == n_pages){
-                break;
-            }
+            count++;
         } else {
+            addr_start.address = 0;
             count = 0;
         }
     }
@@ -693,26 +679,125 @@ void* paging_to_kernel_space(uint32_t physical_address, uint16_t length){
     if (addr_start.address == 0 || count < n_pages){
         debug("No free address space!!! ");debug_i(addr_start.address,16);
         debug(",");debug_i(count,10);debug("\n");
+    }
+    return addr_start;
+}
+
+void* paging_physical_to_kernel_space(uint32_t physical_address, uint16_t length){
+
+    if (last_mapped_physical_space_addr != 0){
+        if (last_mapped_page_directory == NULL
+            && last_mapped_physical_space_addr == physical_address
+            && last_mapped_physical_space_size >= length){
+
+            // Just reuse last mapping if it is for the same physical address
+            return (void*) last_mapped_physical_space_vaddr;
+        }
+        // otherwise recycle
+        free_mapped_kernel_pages(
+            last_mapped_physical_space_vaddr,
+            last_mapped_physical_space_size
+        );
+    }
+
+    int n_pages = calculate_page_count(physical_address, length);
+
+    debug("N pages:");debug_i(n_pages,10);debug("\n");
+
+    VirtualAddress addr_start = get_free_virtual_address_space(n_pages);
+
+    if (addr_start.address == 0){
         return NULL;
     }
 
-    addr = addr_start;
-    uint32_t physical_page = physical_address >> 12;
+    VirtualAddress addr = addr_start;
 
-    for (int i=0;i<n_pages;i++, physical_page++, addr.address += PAGE_SIZE){
+    uint32_t physical_page = physical_address >> 12;
+    debug("Map ");debug_i(physical_page,16);debug("->");debug_i(physical_page+n_pages-1,16);debug("\n");
+
+    for (int i=0;i<n_pages;i++, physical_page++, addr.addressh++){
         set_exchange_page(KERNEL_PAGE_DIR[addr.page_dir_index].page_table_address << 12);
 
         local_table[addr.page_index].present = 1;
         local_table[addr.page_index].read_write = 1;
         local_table[addr.page_index].user_supervisor = 0;
+        local_table[addr.page_index].accessed = 1;
         local_table[addr.page_index].physical_page_address = physical_page;
+        debug("Map ");debug_i(physical_page,16);debug(" to ");debug_i(addr.addressh ,16);debug("\n");
     }
 
-    set_exchange_page(physical_address);
+    paging_invalidate_cache();
 
     addr_start.offset = physical_address & 0xFFF;
 
+    last_mapped_page_directory = NULL;
     last_mapped_physical_space_addr = physical_address;
+    last_mapped_physical_space_size = length;
+    last_mapped_physical_space_vaddr = addr_start.address;
+
+    return addr_start.paddress;
+}
+
+
+void* paging_task_to_kernel_space(PageDirectoryEntry* page_directory, uint32_t virtual_address, uint16_t length){
+
+    if (last_mapped_physical_space_addr != 0){
+        if (last_mapped_page_directory == page_directory
+            && last_mapped_physical_space_addr == virtual_address
+            && last_mapped_physical_space_size >= length){
+
+            // Just reuse last mapping if it is for the same physical address
+            return (void*) last_mapped_physical_space_vaddr;
+        }
+        // otherwise recycle
+        free_mapped_kernel_pages(
+            last_mapped_physical_space_vaddr,
+            last_mapped_physical_space_size
+        );
+    }
+
+    int n_pages = calculate_page_count(virtual_address, length);
+
+    debug("N pages:");debug_i(n_pages,10);debug("\n");
+
+    VirtualAddress addr_start = get_free_virtual_address_space(n_pages);
+
+    if (addr_start.address == 0){
+        return NULL;
+    }
+    VirtualAddress addr = addr_start;
+
+    VirtualAddress task_address = { .address = virtual_address };
+
+    debug("Map ");debug_i(task_address.addressh,16);
+    debug("->");debug_i(task_address.addressh+n_pages-1,16);debug("\n");
+
+    for (int i=0;i<n_pages;i++, task_address.addressh++, addr.addressh++){
+
+        set_exchange_page(page_directory);
+
+        uint32_t task_page_table = local_page_dir[task_address.page_dir_index].page_table_address;
+
+        set_exchange_page(task_page_table << 12);
+
+        uint32_t physical_page = local_table[task_address.page_index].physical_page_address;
+
+        set_exchange_page(KERNEL_PAGE_DIR[addr.page_dir_index].page_table_address << 12);
+
+        local_table[addr.page_index].present = 1;
+        local_table[addr.page_index].read_write = 1;
+        local_table[addr.page_index].user_supervisor = 0;
+        local_table[addr.page_index].accessed = 1;
+        local_table[addr.page_index].physical_page_address = physical_page;
+        debug("Map ");debug_i(physical_page,16);debug(" to ");debug_i(addr.addressh ,16);debug("\n");
+    }
+
+    paging_invalidate_cache();
+
+    addr_start.offset = task_address.offset;
+
+    last_mapped_page_directory = page_directory;
+    last_mapped_physical_space_addr = virtual_address;
     last_mapped_physical_space_size = length;
     last_mapped_physical_space_vaddr = addr_start.address;
 

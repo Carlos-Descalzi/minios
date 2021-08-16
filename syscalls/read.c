@@ -32,8 +32,6 @@ void syscall_read(InterruptFrame* f){
     } else if (stream->async){
         debug("SYSCALL - read async\n");
 
-        buffer = paging_physical_address(task->page_directory, buffer);
-
         tasks_add_io_request(
             TASK_IO_REQUEST_READ | (stream->nonblocking ? TASK_IO_NOBLOCK : 0), 
             stream_num, 
@@ -46,7 +44,9 @@ void syscall_read(InterruptFrame* f){
     } else {
         debug("SYSCALL - read sync: ");debug_i(size,10);debug("\n");
 
+        debug("task address:");debug_i(buffer,16);debug("\n");
         buffer = tasks_to_kernel_address(buffer, size);
+        debug(", physical address:");debug_i(buffer,16);debug("\n");
 
         f->ebx = (uint32_t)stream_read_bytes(stream, buffer, size);
     }

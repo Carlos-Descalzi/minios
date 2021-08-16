@@ -68,6 +68,10 @@ typedef struct {
  **/
 typedef union __attribute__((__packed__)){
     struct {
+        uint32_t addresssl: 12,
+                 addressh: 20;
+    };
+    struct {
         uint32_t offset:12,
                  page_index:10,
                  page_dir_index:10;
@@ -115,10 +119,17 @@ void                paging_release_task_space   (PageDirectoryEntry* page_direct
  **/
 uint32_t            paging_physical_address     (PageDirectoryEntry* page_dir, void *address);
 /**
- * Maps a given physical address into a kernel page
+ * Maps a given physical address into a kernel page.
  **/
-void*               paging_to_kernel_space      (uint32_t physical_address, uint16_t size);
+//void*               paging_to_kernel_space      (uint32_t physical_address, uint16_t size);
 
+/**
+ * Maps an address space from a given page directory
+ * to kernel's page address space
+ **/
+void*               paging_task_to_kernel_space (PageDirectoryEntry* page_dir, 
+                                                uint32_t virtual_address,
+                                                uint16_t length);
 /** 
  * Releases kernel pages which were referencing 
  * a physical address in use, in other words, it doesn't

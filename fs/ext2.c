@@ -600,16 +600,13 @@ int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
         uint32_t file_nblocks = to_blocks(file_size, block_size);
 
         uint32_t current_block = FILE_STREAM(stream)->pos / block_size;
-        //uint32_t block = FILE_STREAM(stream)->pos / block_size;
         uint32_t offset = FILE_STREAM(stream)->pos % block_size;
         uint32_t nblocks = to_blocks(size, block_size);
 
         debug("N blocks: "); debug_i(nblocks,10);debug("\n");
-        debug("F size: "); debug_i(FILE_STREAM(stream)->inode.inode.size,10);debug("\n");
 
         uint32_t bytes_read = 0;
 
-        //for (int i=0;i<nblocks;i++){
         for (
             uint32_t block = current_block, i=0; 
             block < file_nblocks && i < nblocks; 
@@ -625,13 +622,14 @@ int16_t ext2_stream_read_bytes(Stream* stream,uint8_t* bytes,int16_t size){
                 block_size
             );
 
-            to_read = min(size, block_size - offset);
+            to_read = min(min(size, file_size - bytes_read), block_size - offset);
+            
+            debug("Copy to:");debug_i(bytes + bytes_read,16);debug(",");debug_i(to_read,10);debug("\n");
             memcpy(bytes + bytes_read, FILE_STREAM(stream)->block_buffer + offset, to_read);
+
             offset = 0;
             size -= to_read;
-            debug("SIZE:");debug_i(size,10);debug("\n");
             bytes_read += to_read;
-            debug("BYTES READ:");debug_i(bytes_read,10);debug("\n");
         }
         FILE_STREAM(stream)->pos += bytes_read;
 
