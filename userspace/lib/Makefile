@@ -20,7 +20,8 @@ COREOBJS=stdlib.o 	\
 	 env.o		\
 	 minios.o	\
 	 signal.o	\
-	 fifo.o
+	 fifo.o		\
+	 libc.o
 
 all: minios.a gfx.a socket.a
 

@@ -10,6 +10,8 @@
  * Minimal shell interface, good enough for running other programs
  **/
 
+#define ENVBUFFERSIZE 2040
+
 static const char* signal_names[] = {
 	"UNKNOWN", 
 	"SIGHUP",

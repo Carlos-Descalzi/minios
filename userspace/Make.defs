@@ -15,9 +15,10 @@ CFLAGS=-march=i386 \
 	-Wall \
     -Wno-address-of-packed-member \
     -mno-tls-direct-seg-refs \
-    -fno-stack-protector \
+    -fstack-protector-all \
     -nolibc \
     -nostartfiles \
     -nostdlib \
+    -mstack-protector-guard=global \
     -lc
 LDFLAGS= -T $(USERSPACEDIR)/linker.ld -nostdlib

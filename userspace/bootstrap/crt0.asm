@@ -1,7 +1,7 @@
 ;
 ; Bootstrap code for user space programs
 ;
-global _start, __stack_chk_fail
+global _start
 extern main
 
 params_ptr: equ 0xFFFFE004
@@ -22,5 +22,3 @@ _start:
     int     0x31
 
 
-__stack_chk_fail:
-    ret
