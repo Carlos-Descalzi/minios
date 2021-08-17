@@ -124,7 +124,6 @@ static char** parse_params(char* param_string, int* nargs, char* parambuffer){
     return param_ptrs;
 }
 
-#define ENVBUFFERSIZE   2040
 
 static void execute(char* file){
     char parambuffer[256];
