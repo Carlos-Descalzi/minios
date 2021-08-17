@@ -72,7 +72,7 @@ int main(int argc, char** argv){
 
     while(1){
         memset(buff,0,256);
-        printf("\e[15;0m$ ");
+        printf("\e[15;0m%s $ ",getenv("PWD"));
         fgets(buff,256,stdin);
 
         if (strlen(buff) > 0){
