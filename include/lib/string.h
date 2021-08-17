@@ -5,8 +5,10 @@
 #include "stdint.h"
 
 void*   memcpy      (void* dest, const void* src, size_t n);
+void*   memcpyw     (void* dest, const void* src, size_t words);
 void*   memcpydw    (void* dest, const void* src, size_t dwords);
 void*   memset      (void* s, int c, size_t size);
+void*   memsetw     (void* s, uint16_t c, size_t words);
 void*   memsetdw    (void* s, uint32_t c, size_t dwords);
 char*   strcpy      (char* dest, const char* src);
 char*   strncpy     (char* dest, const char* src, size_t count);

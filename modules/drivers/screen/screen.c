@@ -7,7 +7,6 @@
 #include "lib/stdlib.h"
 #include "misc/debug.h"
 #include "lib/heap.h"
-#include "font.h"
 #include "kernel/paging.h"
 #include "board/memory.h"
 
@@ -55,36 +54,7 @@
 #define MODE_TEXT                   0
 #define MODE_GRAPHIC                1
 
-#define TEXT_MODE_XRES              640
-#define TEXT_MODE_YRES              400
-#define TEXT_MODE_BPP               8
-#define TEXT_MODE_CHAR_WIDTH        8
-#define TEXT_MODE_CHAR_HEIGHT       16
-#define TEXT_MODE_COLS              (TEXT_MODE_XRES / TEXT_MODE_CHAR_WIDTH)
-#define TEXT_MODE_ROWS              (TEXT_MODE_YRES / TEXT_MODE_CHAR_HEIGHT)
-#define TEXT_MODE_SCREEN_SIZE       (TEXT_MODE_XRES * TEXT_MODE_YRES)
-#define TEXT_ROWSIZE                (TEXT_MODE_XRES * TEXT_MODE_CHAR_HEIGHT)
-#define TEXT_MODE_FRAMEBUFFER       ( (uint8_t*) 0xA0000)
-#define TEXT_MODE_BANK_SIZE         65536
-
-static const uint32_t palette[] = {
-    0x00000000,
-    0x00770000,
-    0x00007700,
-    0x00777700,
-    0x00000077,
-    0x00770077,
-    0x00007777,
-    0x00777777,
-    0x00000000,	
-    0x00FF0000,
-    0x0000FF00,
-    0x00FFFF00,
-    0x000000FF,
-    0x00FF00FF,
-    0x0000FFFF,
-    0x00FFFFFF
-};
+#define TEXT_MODE_FRAMEBUFFER       ( (uint16_t*) 0xB8000)
 
 typedef struct {
     CharDevice device;
@@ -122,11 +92,11 @@ static void     bga_write           (uint16_t index, uint16_t value);
 static void     bga_set_mode        (uint16_t width, uint16_t height, uint8_t bpp, int linear);
 static void     bga_set_text        (void);
 static void     write_char          (ScreenDevice* device, uint8_t chr);
-static void     flip_cursor         (ScreenDevice* device);
+static void     update_cursor         (ScreenDevice* device);
 static void     clear_screen        (ScreenDevice* device);
 static void     do_scroll           (ScreenDevice* device);
 static void     set_mode            (ScreenDevice* device, ModeSetting* mode_setting);
-static void     set_bank            (int bank);
+//static void     set_bank            (int bank);
 
 //static uint16_t bga_read            (uint16_t index);
 
@@ -181,13 +151,6 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     device->buff_index = 0;
     device->pos = 0;
 
-    for (int i=0;i<16;i++){
-        outb(0x3C8, i);
-        for (int j=0;j<3;j++){
-            outb(0x3c9, (palette[i] >> (8 * j)) & 0xFF);
-        }
-    }
-
     bga_set_text();
     clear_screen(device);
 
@@ -202,9 +165,8 @@ static int16_t screen_setopt(Device* device, uint32_t option, void* data){
     switch(option){
 
         case SCREEN_OPT_POS:
-            flip_cursor(SCREEN_DEVICE(device));
-            SCREEN_DEVICE(device)->pos = (uint32_t)data;
-            flip_cursor(SCREEN_DEVICE(device));
+            SCREEN_DEVICE(device)->pos = (uint32_t) data;
+            update_cursor(SCREEN_DEVICE(device));
             return 0;
 
         case SCREEN_OPT_CLEAR:
@@ -251,40 +213,18 @@ static uint32_t screen_base_address (Device* device){
     return SCREEN_DEVICE(device)->frame_buffer_phys_address;
 }
 
-
-static uint32_t get_pos(ScreenDevice* device){
-    uint16_t x_pos = (device->pos % TEXT_MODE_COLS) ;
-    uint16_t y_pos = (device->pos / TEXT_MODE_COLS) ;
-
-    return y_pos * (TEXT_MODE_XRES * TEXT_MODE_CHAR_HEIGHT) + x_pos * TEXT_MODE_CHAR_WIDTH;
-}
-
 static void write_char(ScreenDevice* device, uint8_t val){
 
     device->input_buffer[device->buff_index++] = val;
 
     if (device->buff_index == 2){
-        flip_cursor(device);
 
         uint8_t color = device->input_buffer[0];
         uint8_t chr = device->input_buffer[1];
 
-        const uint8_t* chr_font = VGA_FONT_16 + chr * TEXT_MODE_CHAR_HEIGHT;
+        uint32_t pos = device->pos;
 
-        uint32_t pos = get_pos(device);
-
-        uint32_t fg = color & 0xF;
-        uint32_t bg = color >> 4;
-
-        for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
-            uint32_t p = pos + i * TEXT_MODE_XRES;
-            set_bank(p >> 16);
-            p &= 0xFFFF;
-            uint8_t row = chr_font[i];
-            for (int j=0;j<TEXT_MODE_CHAR_WIDTH;j++){
-                TEXT_MODE_FRAMEBUFFER[p+j] = (row & (1 << (7-j))) ? fg : bg; 
-            }
-        }
+        TEXT_MODE_FRAMEBUFFER[pos] = color << 8 | chr;
 
         device->buff_index = 0;
         device->pos++;
@@ -293,66 +233,32 @@ static void write_char(ScreenDevice* device, uint8_t val){
             device->pos-=80;
         }
 
-        flip_cursor(device);
+        update_cursor(device);
     }
 }
 
-static void flip_cursor(ScreenDevice* device){
-
-    uint32_t pos = get_pos(device);
-
-    for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
-        uint32_t p = pos + i * TEXT_MODE_XRES;
-        set_bank(p >> 16);
-        p &= 0xFFFF;
-        for (int j=0;j<TEXT_MODE_CHAR_WIDTH;j++){
-            TEXT_MODE_FRAMEBUFFER[p+j] ^= 7;
-        }
-    }
-
+static void update_cursor(ScreenDevice* device){
+    outb(0x3d4,0x0F);
+    outb(0x3d5,device->pos & 0xFF);
+    outb(0x3d4,0x0E);
+    outb(0x3d5,(device->pos >> 8) & 0xFF);
 }
 
 static void clear_screen(ScreenDevice* device){
 
-    int banks = (TEXT_MODE_SCREEN_SIZE >> 16) 
-        + (TEXT_MODE_SCREEN_SIZE & 0xFFFF ? 1 : 0);
-
-    for (int i=0;i<banks;i++){
-        set_bank(i);
-        memsetdw(TEXT_MODE_FRAMEBUFFER, 0x00, TEXT_MODE_BANK_SIZE / sizeof(uint32_t));
-    }
+    memsetw(TEXT_MODE_FRAMEBUFFER, 0x0F00, 80 * 25);
 
     device->pos = 0;
 
-    flip_cursor(device);
+    update_cursor(device);
 }
 
 static void do_scroll(ScreenDevice* device){
 
-    flip_cursor(device);
+    memcpyw(TEXT_MODE_FRAMEBUFFER, TEXT_MODE_FRAMEBUFFER + 80, 80 * 24);
+    memsetw(TEXT_MODE_FRAMEBUFFER + 80 * 24, 0x0F00, 80 );
 
-    uint8_t row[TEXT_MODE_XRES];
-
-    for (int i=0;i<24*TEXT_MODE_CHAR_HEIGHT;i++){
-
-        uint32_t rowindext = i * TEXT_MODE_XRES;
-        uint32_t rowindexs = rowindext + TEXT_ROWSIZE;
-
-        set_bank(rowindexs >> 16);
-        memcpydw(row, TEXT_MODE_FRAMEBUFFER + (rowindexs & 0xFFFF), TEXT_MODE_XRES / sizeof(uint32_t));
-
-        set_bank(rowindext >> 16);
-        memcpydw(TEXT_MODE_FRAMEBUFFER + (rowindext & 0xFFFF), row, TEXT_MODE_XRES / sizeof(uint32_t));
-
-    }
-    for (int i=0;i<TEXT_MODE_CHAR_HEIGHT;i++){
-        uint32_t rowindex = (TEXT_MODE_YRES - TEXT_MODE_CHAR_HEIGHT + i ) * TEXT_MODE_XRES;
-
-        set_bank(rowindex >> 16);
-        memsetdw(TEXT_MODE_FRAMEBUFFER + (rowindex & 0xFFFF), 0, TEXT_MODE_XRES / sizeof(uint32_t));
-    }
-
-    flip_cursor(device);
+    update_cursor(device);
 }
 
 static void set_mode(ScreenDevice* device, ModeSetting* mode_setting){
@@ -383,7 +289,7 @@ static uint16_t bga_read(uint16_t index){
 */
 
 static void bga_set_text(){
-    bga_set_mode(TEXT_MODE_XRES, TEXT_MODE_YRES, TEXT_MODE_BPP, 0);
+    bga_write(VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
 }
 
 static void bga_set_mode(uint16_t width, uint16_t height, uint8_t bpp, int linear){
@@ -400,7 +306,7 @@ static void bga_set_mode(uint16_t width, uint16_t height, uint8_t bpp, int linea
             | (linear ? VBE_DISPI_LFB_ENABLE : 0)
     );
 }
-
+/*
 static void set_bank(int bank){
     static int _bank = 0;
     if (_bank != bank){
@@ -408,3 +314,4 @@ static void set_bank(int bank){
         _bank = bank;
     }
 }
+*/
