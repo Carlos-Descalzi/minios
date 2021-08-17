@@ -31,11 +31,11 @@ typedef struct {
     char** env;
 } SpawnData;
 
-void syscall_spawn(InterruptFrame* f){
+uint32_t syscall_spawn(SyscallArg arg){
     uint16_t device_id;
     char filepath[PATH_SIZE];
 
-    SpawnData* spawn_params = tasks_to_kernel_address((void*)f->ebx, sizeof(SpawnData));
+    SpawnData* spawn_params = tasks_to_kernel_address(arg.ptr_arg, sizeof(SpawnData));
 
     // need to save to other variables
     // since spawn_params won't be valid after next time
@@ -54,24 +54,21 @@ void syscall_spawn(InterruptFrame* f){
 
     if (parse_result){
         debug("spawn - Bad path\n");
-        f->ebx = ((uint32_t)-1);
-        return;
+        return (uint32_t) -1;
     }
 
     Device* device = device_find_by_id(device_id);
 
     if (!device){
         debug("spawn - No device\n");
-        f->ebx = ((uint32_t)-2);
-        return;
+        return (uint32_t) -2;
     }
 
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if (!fs){
         debug("spawn - No fs\n");
-        f->ebx = ((uint32_t)-3);
-        return;
+        return (uint32_t) -3;
     }
 
     Task* current_task = tasks_current_task();
@@ -83,15 +80,19 @@ void syscall_spawn(InterruptFrame* f){
         new_env = task_params_copy(current_task->env);
     }
 
+    uint32_t result;
+
     Stream* stream = fs_open_stream_path(fs, filepath, O_RDONLY);
 
     if (stream){
-        f->ebx = tasks_new(current_task->tid, stream, new_args, new_env);
+        result = tasks_new(current_task->tid, stream, new_args, new_env);
     } else {
         debug("spawn - Not found\n");
-        f->ebx = ((uint32_t)-4);
+        result = (uint32_t) -4;
     }
 
     stream_close(stream);
     fs_release_filesystem(fs);
+
+    return result;
 }

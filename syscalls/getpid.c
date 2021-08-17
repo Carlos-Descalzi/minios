@@ -1,6 +1,6 @@
 #include "kernel/syscalls.h"
 #include "kernel/task.h"
 
-void syscall_getpid(InterruptFrame* f){
-    f->ebx = tasks_current_tid();
+uint32_t syscall_getpid(SyscallArg arg){
+    return tasks_current_tid();
 }

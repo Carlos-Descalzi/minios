@@ -13,10 +13,10 @@ typedef struct {
     uint32_t offset;
 } MmapOp;
 
-void syscall_mmap(InterruptFrame* f){
+uint32_t syscall_mmap(SyscallArg arg){
     // TODO: Incomplete
 
-    MmapOp* map = tasks_to_kernel_address((void*) f->ebx, sizeof(MmapOp));
+    MmapOp* map = tasks_to_kernel_address(arg.ptr_arg, sizeof(MmapOp));
 
     uint32_t length = map->length;
     uint32_t fd = map->fd;
@@ -26,8 +26,7 @@ void syscall_mmap(InterruptFrame* f){
     Stream* stream = task->streams[fd];
 
     if (!stream){
-        f->ebx = ((uint32_t)-1);
-        return;
+        return (uint32_t) -1;
     }
 
     if (stream->type != STREAM_TYPE_BLOCKDEV
@@ -35,14 +34,12 @@ void syscall_mmap(InterruptFrame* f){
 
         // TODO: allow other fd types
 
-        f->ebx = ((uint32_t)-2);
-        return;
+        return (uint32_t) -2;
     }
     Device* device = DEVICE_STREAM(stream)->device;
 
     if (!device->mmapped){
-        f->ebx = ((uint32_t)-3);
-        return;
+        return (uint32_t) -3;
     }
 
     uint32_t address = device_base_address(device);
@@ -53,8 +50,8 @@ void syscall_mmap(InterruptFrame* f){
 
     if (!virtual_address){
         debug("Unable to map device\n");
-        f->ebx = ((uint32_t)-4);
+        return (uint32_t) -4;
     }
-    f->ebx = virtual_address;
+    return virtual_address;
 
 }

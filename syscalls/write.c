@@ -1,5 +1,6 @@
 #define NODEBUG
 #include "kernel/syscall.h"
+#include "kernel/syscalls.h"
 #include "lib/stdint.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
@@ -14,10 +15,10 @@ typedef struct {
     uint32_t size;
 } WriteData;
 
-void syscall_write(InterruptFrame* f){
+uint32_t syscall_write(SyscallArg arg){
     debug("SYSCALL - write\n");
     Task* task = tasks_current_task();
-    WriteData* write_data = tasks_to_kernel_address((void*)f->ebx, sizeof(WriteData));
+    WriteData* write_data = tasks_to_kernel_address(arg.ptr_arg, sizeof(WriteData));
 
     uint8_t stream_num = write_data->stream_num;
     uint32_t size = write_data->size;
@@ -28,9 +29,9 @@ void syscall_write(InterruptFrame* f){
     if (stream){
         buff = tasks_to_kernel_address(buff, size);
 
-        f->ebx = (uint32_t)stream_write_bytes(stream, buff, size);
+        return stream_write_bytes(stream, buff, size);
     } else {
         debug("No stream\n");
-        f->ebx = ((uint32_t)-1);
+        return (uint32_t) -1;
     }
 }

@@ -9,9 +9,9 @@ typedef struct {
     void* data;
 } IoctlData;
 
-void syscall_ioctl(InterruptFrame* f){
+uint32_t syscall_ioctl(SyscallArg arg){
 
-    IoctlData* op = tasks_to_kernel_address((void*) f->ebx, sizeof(IoctlData));
+    IoctlData* op = tasks_to_kernel_address(arg.ptr_arg, sizeof(IoctlData));
 
     uint32_t fd = op->fd;
     uint32_t request = op->request;
@@ -22,8 +22,7 @@ void syscall_ioctl(InterruptFrame* f){
     Stream* stream = task->streams[fd];
 
     if (!stream){
-        f->ebx = ((uint32_t)-1);
-        return;
+        return (uint32_t) -1;
     }
 
     if (stream->type != STREAM_TYPE_CHARDEV
@@ -31,14 +30,12 @@ void syscall_ioctl(InterruptFrame* f){
 
         // TODO: allow other fd types
         
-        f->ebx = ((uint32_t)-2);
-        return;
+        return (uint32_t) -2;
     }
 
     Device* device = DEVICE_STREAM(stream)->device;
 
-    data = tasks_to_kernel_address(data, 4096);
+    data = tasks_to_kernel_address(data, PAGE_SIZE);
 
-    f->ebx = device_setopt(device, request, data);
-
+    return device_setopt(device, request, data);
 }

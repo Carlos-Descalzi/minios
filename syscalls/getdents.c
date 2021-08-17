@@ -14,33 +14,31 @@ typedef struct {
     DirEntry direntry;
 } GetDentData;
 
-void syscall_getdents(InterruptFrame* f){
-    GetDentData* getdent_data = tasks_to_kernel_address((void*)f->ebx, sizeof(GetDentData));
+uint32_t syscall_getdents(SyscallArg arg){
+    GetDentData* getdent_data = tasks_to_kernel_address(arg.ptr_arg, sizeof(GetDentData));
 
     Device* device = device_find_by_id(getdent_data->device_id);
 
     if (!device){
-        f->ebx = (uint32_t)-1;
-        return;
+        return (uint32_t) -1;
     }
 
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
     Inode* inode = fs_alloc_inode(fs);
 
     if (!fs){
-        f->ebx = (uint32_t)-2;
-        return;
+        return (uint32_t) -2;
     }
 
     if (fs_load_inode(fs, getdent_data->direntry.inode, inode)){
-        f->ebx = (uint32_t)-3;
-        return;
+        return (uint32_t) -3;
     }
     memset(&(getdent_data->direntry),0,sizeof(DirEntry));
 
-    f->ebx = fs_get_direntry(fs, inode, &(getdent_data->offset_next), &(getdent_data->direntry));
+    uint32_t result = fs_get_direntry(fs, inode, &(getdent_data->offset_next), &(getdent_data->direntry));
 
     fs_free_inode(fs, inode);
     fs_release_filesystem(fs);
 
+    return result;
 }

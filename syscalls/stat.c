@@ -27,13 +27,13 @@ typedef struct {
     struct stat* statbuf;
 } StatData;
 
-void syscall_stat(InterruptFrame* f){
+uint32_t syscall_stat(SyscallArg arg){
     char filepath[PATH_SIZE];
     uint16_t device_id;
     uint32_t inode_num;
     Inode* inode;
 
-    StatData* stat_data = tasks_to_kernel_address((void*)f->ebx, sizeof(StatData));
+    StatData* stat_data = tasks_to_kernel_address(arg.ptr_arg, sizeof(StatData));
 
     char* pathname = stat_data->pathname;
     struct stat* statbuf = stat_data->statbuf;
@@ -48,27 +48,26 @@ void syscall_stat(InterruptFrame* f){
 
     if (parse_result){
         debug("stat - unable to parse path: ");debug(pathname);debug("\n");
-        f->ebx = ((uint32_t)-1);
-        return;
+        return (uint32_t) -1;
     }
 
     Device* device = device_find_by_id(device_id);
 
     if (!device){
         debug("stat - unable to find device ");debug_i(device_id,16);debug("\n");
-        f->ebx = ((uint32_t)-2);
-        return;
+        return (uint32_t) -2;
     }
 
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if(!fs){
         debug("stat - unable to get filesystem for device\n");
-        f->ebx = ((uint32_t)-3);
-        return;
+        return (uint32_t) -3;
     }
 
     inode_num = fs_find_inode(fs, filepath);
+
+    uint32_t result = 0;
 
     if (inode_num){
 
@@ -91,12 +90,14 @@ void syscall_stat(InterruptFrame* f){
 
         fs_free_inode(fs, inode);
 
-        f->ebx = 0;
+        result = 0;
 
     } else {
         debug("stat - inode not found for path\n");
-        f->ebx = ((uint32_t)-4);
+        result = (uint32_t) -4;
     }
 
     fs_release_filesystem(fs);
+
+    return result;
 }

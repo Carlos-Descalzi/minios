@@ -3,30 +3,35 @@
 
 #include "kernel/isr.h"
 
-void syscall_read           (InterruptFrame* f);
-void syscall_write          (InterruptFrame* f);
-void syscall_open           (InterruptFrame* f);
-void syscall_close          (InterruptFrame* f);
-void syscall_exec           (InterruptFrame* f);
-void syscall_yield          (InterruptFrame* f);
-void syscall_exit           (InterruptFrame* f);
-void syscall_stat           (InterruptFrame* f);
-void syscall_getdents       (InterruptFrame* f);
-void syscall_modload        (InterruptFrame* f);
-void syscall_spawn          (InterruptFrame* f);
-void syscall_waitpid        (InterruptFrame* f);
-void syscall_devs           (InterruptFrame* f);
-void syscall_getpid         (InterruptFrame* f);
-void syscall_msg_send_sync  (InterruptFrame* f);
-void syscall_msg_recv_sync  (InterruptFrame* f);
-void syscall_msg_answer     (InterruptFrame* f);
-void syscall_msg_recv_wait  (InterruptFrame* f);
-void syscall_msg_answer     (InterruptFrame* f);
-void syscall_ioctl          (InterruptFrame* f);
-void syscall_mmap           (InterruptFrame* f);
-void syscall_debug          (InterruptFrame* f);
-void syscall_kill           (InterruptFrame* f);
-void syscall_pipe           (InterruptFrame* f);
-void syscall_waitcnd        (InterruptFrame* f);
+typedef union {
+    uint32_t int_arg;
+    void* ptr_arg;
+} SyscallArg;
+
+uint32_t syscall_read           (SyscallArg);
+uint32_t syscall_write          (SyscallArg);
+uint32_t syscall_open           (SyscallArg);
+uint32_t syscall_close          (SyscallArg);
+uint32_t syscall_exec           (SyscallArg);
+uint32_t syscall_yield          (SyscallArg);
+uint32_t syscall_exit           (SyscallArg);
+uint32_t syscall_stat           (SyscallArg);
+uint32_t syscall_getdents       (SyscallArg);
+uint32_t syscall_modload        (SyscallArg);
+uint32_t syscall_spawn          (SyscallArg);
+uint32_t syscall_waitpid        (SyscallArg);
+uint32_t syscall_devs           (SyscallArg);
+uint32_t syscall_getpid         (SyscallArg);
+uint32_t syscall_msg_send_sync  (SyscallArg);
+uint32_t syscall_msg_recv_sync  (SyscallArg);
+uint32_t syscall_msg_answer     (SyscallArg);
+uint32_t syscall_msg_recv_wait  (SyscallArg);
+uint32_t syscall_msg_answer     (SyscallArg);
+uint32_t syscall_ioctl          (SyscallArg);
+uint32_t syscall_mmap           (SyscallArg);
+uint32_t syscall_debug          (SyscallArg);
+uint32_t syscall_kill           (SyscallArg);
+uint32_t syscall_pipe           (SyscallArg);
+uint32_t syscall_waitcnd        (SyscallArg);
 
 #endif

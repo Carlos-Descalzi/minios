@@ -2,7 +2,8 @@
 #include "misc/debug.h"
 #include "kernel/task.h"
 
-void syscall_yield(InterruptFrame* frame){
+uint32_t syscall_yield(SyscallArg arg){
     //asm volatile("pause");
     asm volatile("jmp do_task_exit");
+    return 0;
 }

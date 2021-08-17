@@ -10,10 +10,10 @@ typedef struct {
     WaitConditionItem* conditions;
 } WaitConditionData;
 
-void syscall_waitcnd (InterruptFrame* f){
+uint32_t syscall_waitcnd (SyscallArg arg){
     debug("SYSCALL - waitcnd\n");
 
-    WaitConditionData* cond_data = tasks_to_kernel_address( (void*) f->ebx, sizeof(WaitConditionData));
+    WaitConditionData* cond_data = tasks_to_kernel_address( arg.ptr_arg, sizeof(WaitConditionData));
 
     int n_conditions = cond_data->n_conditions;
     WaitConditionItem* conditions = cond_data->conditions;
@@ -34,4 +34,6 @@ void syscall_waitcnd (InterruptFrame* f){
     tasks_wait_conditions(wait_condition);
 
     asm volatile("jmp do_task_exit");
+
+    return 0;
 }

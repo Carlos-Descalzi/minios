@@ -3,12 +3,13 @@
 #include "kernel/task.h"
 #include "kernel/common.h"
 
-void syscall_debug (InterruptFrame* f){
+uint32_t syscall_debug (SyscallArg arg){
 
-    char* message = (char*) f->ebx;
+    char* message = arg.ptr_arg;
 
     message = tasks_to_kernel_address(message, PAGE_SIZE);
 
     debug(message);
 
+    return 0;
 }

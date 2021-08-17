@@ -8,7 +8,7 @@
 /**
  * List available devices
  **/
-void syscall_devs(InterruptFrame* f){
+uint32_t syscall_devs(SyscallArg arg){
     /*
     char buff[10];
     uint8_t kind;

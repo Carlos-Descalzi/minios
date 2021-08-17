@@ -2,8 +2,8 @@
 #include "kernel/task.h"
 #include "misc/debug.h"
 
-void syscall_msg_send_sync(InterruptFrame* f){
-    Message* message = (Message*)f->ebx;
+uint32_t syscall_msg_send_sync(SyscallArg arg){
+    Message* message = arg.ptr_arg;
 
     debug("syscall_msg_send_sync\n");
 
@@ -11,19 +11,22 @@ void syscall_msg_send_sync(InterruptFrame* f){
 
     asm volatile("jmp do_task_exit");
 }
-void syscall_msg_recv_sync(InterruptFrame* f){
-    Message* message = (Message*)f->ebx;
 
-    f->ebx = tasks_check_for_message(message);
+uint32_t syscall_msg_recv_sync(SyscallArg arg){
+    Message* message = arg.ptr_arg;
+
+    return tasks_check_for_message(message);
 }
-void syscall_msg_answer(InterruptFrame* f){
-    Message* message = (Message*)f->ebx;
+
+uint32_t syscall_msg_answer(SyscallArg arg){
+    Message* message = arg.ptr_arg;
     debug("Answer message\n");
 
     tasks_send_message(message);
 }
-void syscall_msg_recv_wait(InterruptFrame* f){
-    Message* message = (Message*)f->ebx;
+
+uint32_t syscall_msg_recv_wait(SyscallArg arg){
+    Message* message = arg.ptr_arg;
 
     tasks_wait_message(message);
 

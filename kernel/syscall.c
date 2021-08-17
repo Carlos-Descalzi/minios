@@ -10,7 +10,7 @@
 #include "kernel/syscalls.h"
 #include "lib/string.h"
 
-typedef void (*SysCall)(InterruptFrame *f);
+typedef uint32_t (*SysCall)(SyscallArg);
 
 static SysCall syscalls[0x100];
 static void handle_syscall(InterruptFrame* f, void* data);
@@ -68,7 +68,8 @@ static void handle_syscall(InterruptFrame* f, void* data){
     debug("\teip: ");debug_i(f->eip,16);debug("\n");
 
     if (syscalls[f->eax]){
-        syscalls[f->eax](f);
+        SyscallArg arg = { .int_arg = f->ebx };
+        f->ebx = syscalls[f->eax](arg);
     } else {
         debug("\tUnknown system call:");debug_i(f->eax,16);debug("\n");
     }

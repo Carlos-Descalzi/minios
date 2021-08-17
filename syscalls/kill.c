@@ -1,6 +1,6 @@
 #include "kernel/syscalls.h"
 
-void syscall_kill(InterruptFrame* f){
+uint32_t syscall_kill(SyscallArg arg){
     // TODO: finish
 }
 

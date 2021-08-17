@@ -1,5 +1,6 @@
 #define NODEBUG
 #include "kernel/syscall.h"
+#include "kernel/syscalls.h"
 #include "lib/stdint.h"
 #include "kernel/isr.h"
 #include "misc/debug.h"
@@ -14,8 +15,8 @@ typedef struct {
     uint32_t size;
 } ReadData;
 
-void syscall_read(InterruptFrame* f){
-    ReadData* read_data = tasks_to_kernel_address((void*)f->ebx, sizeof(ReadData));
+uint32_t syscall_read(SyscallArg arg){
+    ReadData* read_data = tasks_to_kernel_address(arg.ptr_arg, sizeof(ReadData));
     Task* task = tasks_current_task();
     
     uint8_t stream_num = read_data->stream_num;
@@ -27,8 +28,11 @@ void syscall_read(InterruptFrame* f){
     debug("SYSCALL - read\n");
 
     if (!stream){
+        
         debug("No stream\n");
-        f->ebx = ((uint32_t)-1);
+        
+        return (uint32_t) -1;
+
     } else if (stream->async){
         debug("SYSCALL - read async\n");
 
@@ -48,6 +52,7 @@ void syscall_read(InterruptFrame* f){
         buffer = tasks_to_kernel_address(buffer, size);
         debug(", physical address:");debug_i(buffer,16);debug("\n");
 
-        f->ebx = (uint32_t)stream_read_bytes(stream, buffer, size);
+        return (uint32_t) stream_read_bytes(stream, buffer, size);
     }
+    return 0;
 }

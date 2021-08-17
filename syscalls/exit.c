@@ -5,9 +5,10 @@
 #include "misc/debug.h"
 #include "kernel/task.h"
 
-void syscall_exit(InterruptFrame* f){
-    uint32_t exit_code = f->ebx;
+uint32_t syscall_exit(SyscallArg arg){
+    uint32_t exit_code = arg.int_arg;
     debug("exit process\n");
     tasks_finish(tasks_current_tid(), exit_code);
     asm volatile("jmp do_task_exit");
+    return 0;
 }

@@ -1,4 +1,5 @@
 #include "kernel/syscall.h"
+#include "kernel/syscalls.h"
 #include "kernel/common.h"
 #include "kernel/modules.h"
 #include "kernel/task.h"
@@ -8,10 +9,10 @@
 #include "kernel/device.h"
 #include "misc/debug.h"
 
-void syscall_modload(InterruptFrame* f){
+uint32_t syscall_modload(SyscallArg arg){
     char path[PATH_SIZE];
 
-    char* full_path = tasks_to_kernel_address((void*)f->ebx, PATH_SIZE);
+    char* full_path = tasks_to_kernel_address(arg.ptr_arg, PATH_SIZE);
 
     uint16_t device_id;
 
@@ -19,8 +20,7 @@ void syscall_modload(InterruptFrame* f){
 
     if (parse_result){
         debug("modload - bad path\n");
-        f->ebx = (uint32_t)-1;
-        return;
+        return (uint32_t) -1;
     }
 
     Device* device = device_find_by_id(device_id);
@@ -28,20 +28,19 @@ void syscall_modload(InterruptFrame* f){
     if (!device){
         debug("modload - no device\n");
         // unknown device
-        f->ebx = ((uint32_t)-2);
-        return;
+        return (uint32_t) -2;
     } 
     FileSystem* fs = fs_get_filesystem(BLOCK_DEVICE(device));
 
     if (fs){
         int32_t result = modules_load(fs, path);
 
-        f->ebx = ((uint32_t) 10 * result);
-
         fs_release_filesystem(fs);
+
+        return ((uint32_t) 10 * result);
     } else {
         // no fs
-        f->ebx = ((uint32_t)-3);
+        return (uint32_t) -3;
     }
 
 }
