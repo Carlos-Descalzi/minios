@@ -6,5 +6,8 @@
 #define isxdigit(c)     (   (c >='0' && c <='9')   \
                         || (c >= 'a' && c<='f')    \
                         || (c >= 'A' && c<='F'))
+#define isalpha(c)      ((c >= 'a' && c <= 'z') \
+                        || (c >= 'A' && c<= 'Z'))
+#define isalnum(c)      (isalpha(c) || isdigit(c))
 
 #endif

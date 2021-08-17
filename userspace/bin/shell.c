@@ -5,6 +5,7 @@
 #include "stdlib.h"
 #include "path.h"
 #include "minios.h"
+#include "ctype.h"
 /**
  * Minimal shell interface, good enough for running other programs
  **/
@@ -45,20 +46,27 @@ static const char* signal_names[] = {
 	"SIGSYS"
 };
 
-static char     parambuffer[256];
-static char     envbuffer[2048];    // used to setup environment for child processes
+static const char cmd_cd[] = "cd";
+static const char cmd_clear[] = "clear";
+static const char cmd_pwd[] = "pwd";
+static const char cmd_env[] = "env";
+static const char cmd_help[] = "help";
+static const char cmd_set[] = "set";
 
-static char**   parse_params    (char* param_string, int* nargs);
+
+static char**   parse_params    (char* param_string, int* nargs, char* parambuffer);
 static void     execute         (char* file);
 static void     changedir       (const char* cmd);
 static void     showpwd         (void);
 static void     showenv         (void);
+static void     showhelp        (void);
+static void     setenvvar       (const char* envstring);
+static int      cmdeq           (char* buffer, const char* cmd);
 
 int main(int argc, char** argv){
     char buff[256];
 
     printf("\e[2J\e[4;0mShell v0.1\n\n");
-    //printf("\e[2JShell v0.1\n\n");
 
     while(1){
         memset(buff,0,256);
@@ -66,14 +74,18 @@ int main(int argc, char** argv){
         fgets(buff,256,stdin);
 
         if (strlen(buff) > 0){
-            if (!strncmp(buff,"clear",5)){
+            if (cmdeq(buff,cmd_clear)){
                 printf("\e[2J");
-            } else if (!strncmp(buff,"cd",2)){
+            } else if (cmdeq(buff,cmd_cd)){
                 changedir(buff);
-            } else if (!strncmp(buff,"pwd",3)){
+            } else if (cmdeq(buff,cmd_pwd)){
                 showpwd();
-            } else if (!strncmp(buff,"env",3)){
+            } else if (cmdeq(buff,cmd_env)){
                 showenv();
+            } else if (cmdeq(buff,cmd_help)){
+                showhelp();
+            } else if (cmdeq(buff,cmd_set)){
+                setenvvar(buff + strlen(cmd_set)+1);
             } else {
                 execute(buff);
             }
@@ -82,8 +94,11 @@ int main(int argc, char** argv){
 
     return 0;
 }
+static int cmdeq (char* buffer, const char* cmd){
+    return !strncmp(buffer,cmd,strlen(cmd));
+}
 
-static char** parse_params(char* param_string, int* nargs){
+static char** parse_params(char* param_string, int* nargs, char* parambuffer){
     int nparams = 1;
     for (int i=0;param_string[i];i++){
         if (param_string[i] == ' '){
@@ -109,7 +124,11 @@ static char** parse_params(char* param_string, int* nargs){
     return param_ptrs;
 }
 
+#define ENVBUFFERSIZE   2040
+
 static void execute(char* file){
+    char parambuffer[256];
+    char envbuffer[ENVBUFFERSIZE];    // used to setup environment for child processes
     char path[100];
     struct stat statb;
     int nargs = 0;
@@ -118,7 +137,7 @@ static void execute(char* file){
 
     char* param_start = strchr(file, ' ');
 
-    argv = parse_params(file, &nargs);
+    argv = parse_params(file, &nargs, parambuffer);
     if (param_start){
         *param_start = '\0';
     } 
@@ -134,8 +153,8 @@ static void execute(char* file){
     strcat(path,".elf");
 
     int env_count;
-    memset(envbuffer,0,2048);
-    copy_env(envbuffer, 2048, &env_count);
+    memset(envbuffer,0,ENVBUFFERSIZE);
+    copy_env(envbuffer, ENVBUFFERSIZE, &env_count);
 
     if (!stat(path, &statb)){
         debug("Spawning new task\n");
@@ -198,4 +217,46 @@ static void show(const char* e, void* data){
 
 static void showenv(void){
     listenv(show, NULL);
+}
+static void showhelp(void){
+    printf("HELP\n");
+    printf("====\n");
+    printf("  Built-in commands:\n");
+    printf("    env      : Lists all environment variables\n");
+    printf("    cd [dir] : Changes current directory\n");
+    printf("    clear    : Clears screen\n");
+    printf("    pwd      : Shows current working directory\n");
+    printf("    help     : Shows this help\n");
+    printf("    set k=v  : Sets an environment variable\n");
+    printf("\nAny other input is handled as a program name, and will look at PATH variable to run\n");
+}
+
+static int valid_var_name(const char* var_name, int name_len){
+    if (!isalpha(var_name[0])){
+        return 1;
+    }
+    for (int i=1;i<name_len;i++){
+        if (!isalnum(var_name[i])){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void setenvvar(const char* envstring){
+    char* ptr = strchr(envstring,'=');
+
+    if (!ptr){
+        printf("Invalid syntax\n");
+        return;
+    }
+
+    int var_name_len = ((int)ptr)-((int)envstring);
+
+    if (valid_var_name(envstring, var_name_len)){
+        printf("Invalid variable name\n");
+        return;
+    }
+
+    putenv(envstring);
 }

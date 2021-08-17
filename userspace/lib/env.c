@@ -29,11 +29,13 @@ void listenv(ListEnvFunc func, void* data){
     }
 }
 
+#define ENVBUFFERSIZE   2040
+
 int putenv(const char* var){
-    char buff[2048];
-    Env* target = (Env*) buff;
     int found = 0;
-    memset(buff,0,2048);
+    char buff[ENVBUFFERSIZE];
+
+    memset(buff,0,ENVBUFFERSIZE);
 
     char* ptr = strchr(var,'=');
     if (!ptr){
@@ -57,6 +59,8 @@ int putenv(const char* var){
 
     ptr = buff + sizeof(int) + sizeof(char*) * var_count;
 
+    Env* target = (Env*) buff;
+
     for (int i=0;i<_env->nenv;i++){
         target->vars[i] = ptr;
         if (found && !strncmp(_env->vars[i], var, var_name_len)){
@@ -72,7 +76,7 @@ int putenv(const char* var){
         strcpy(ptr, var);
     }
     target->nenv = var_count;
-    copy_env_from(_env->vars, 2048, target, &(_env->nenv));
+    copy_env_from(_env->vars, ENVBUFFERSIZE, target, &(_env->nenv));
 
     return 0;
 }
