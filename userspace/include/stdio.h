@@ -3,6 +3,10 @@
 #include "stddef.h"
 #include "stdarg.h"
 
+#define EOF (-1)
+
+#define BUFSIZ  1024
+
 typedef struct _FILE FILE;
 
 extern FILE*    stdin;
