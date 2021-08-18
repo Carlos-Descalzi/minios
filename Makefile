@@ -28,7 +28,7 @@ QEMU_RUN_ARGS=
 
 QEMU_TEST_ARGS=    \
 	-d cpu_reset,guest_errors,mmu,pcall,int,in_asm,pcall,guest_errors,nochain \
-	-serial mon:stdio	\
+	-serial stdio \
 	-D trace.log
 
 QEMU_NET_ARGS=	   \

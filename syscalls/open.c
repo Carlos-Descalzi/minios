@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/syscall.h"
 #include "kernel/syscalls.h"
 #include "kernel/common.h"
@@ -81,7 +81,7 @@ uint32_t syscall_open(SyscallArg arg){
         }
         debug("File opened:");debug_i(pos,10);debug("\n");
     }
-    debug("Stream openes\n");
+    debug("Stream open with fd: ");debug_i(pos,10);debug("\n");
 
     task->streams[pos] = stream;
 

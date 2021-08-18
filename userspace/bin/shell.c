@@ -48,14 +48,15 @@ static const char* signal_names[] = {
 	"SIGSYS"
 };
 
-static const char cmd_cd[] = "cd";
-static const char cmd_clear[] = "clear";
-static const char cmd_pwd[] = "pwd";
-static const char cmd_env[] = "env";
-static const char cmd_help[] = "help";
-static const char cmd_set[] = "set";
+static const char cmd_cd[]      = "cd";
+static const char cmd_clear[]   = "clear";
+static const char cmd_pwd[]     = "pwd";
+static const char cmd_env[]     = "env";
+static const char cmd_help[]    = "help";
+static const char cmd_set[]     = "set";
 
 
+static int      setup           (int argc, char** argv);
 static char**   parse_params    (char* param_string, int* nargs, char* parambuffer);
 static void     execute         (char* file);
 static void     changedir       (const char* cmd);
@@ -64,8 +65,20 @@ static void     showenv         (void);
 static void     showhelp        (void);
 static void     setenvvar       (const char* envstring);
 static int      cmdeq           (char* buffer, const char* cmd);
+static void     main_loop       (void);
 
 int main(int argc, char** argv){
+
+    if (setup(argc, argv)){
+        return 1;
+    }
+
+    main_loop();
+
+    return 0;
+}
+
+static void main_loop(){
     char buff[256];
 
     printf("\e[2J\e[4;0mShell v0.1\n\n");
@@ -93,8 +106,6 @@ int main(int argc, char** argv){
             }
         }
     }
-
-    return 0;
 }
 static int cmdeq (char* buffer, const char* cmd){
     return !strncmp(buffer,cmd,strlen(cmd));
@@ -261,3 +272,12 @@ static void setenvvar(const char* envstring){
 
     putenv(envstring);
 }
+
+static int setup (int argc, char** argv){
+    /**
+     * placeholder for future arguments
+     **/
+
+    return 0;
+}
+
