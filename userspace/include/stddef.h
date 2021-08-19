@@ -15,6 +15,7 @@ typedef unsigned int    off_t;
 
 typedef unsigned long   time_t;
 typedef unsigned long   suseconds_t;
+typedef unsigned long   clock_t;
 
 #define offsetof(st,m)  ((unsigned int)&((st*)NULL)->m)
 #endif

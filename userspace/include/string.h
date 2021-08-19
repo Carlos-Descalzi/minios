@@ -19,5 +19,6 @@ int     strncmp     (const char*s1, const char* s2, size_t n);
 char*   strcat      (char* dest, const char* src);
 char*   strstr      (const char*str, const char* search);
 char*   strtok_r    (char* str, const char* delim, char** saveptr);
+size_t  strspn      (const char*, const char*);
 
 #endif

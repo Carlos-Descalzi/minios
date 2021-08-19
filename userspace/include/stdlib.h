@@ -3,6 +3,9 @@
 
 #include "stddef.h"
 
+#define EXIT_SUCCESS    0
+#define EXIT_FAILURE    1
+
 #define min(a,b) (a<b ? a : b)
 #define max(a,b) (a>b ? a : b)
 #define abs(a)   (a>=0 ? a : -a)
@@ -25,5 +28,7 @@ char*   realpath    (const char* path, char* resolved_path);
 void*   malloc      (size_t size);
 void*   calloc      (size_t nmemb, size_t size);
 void    free        (void* ptr);
+void    abort       (void);
+int     system      (const char*);
 
 #endif

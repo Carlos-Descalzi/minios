@@ -97,6 +97,13 @@ void exit(int status){
     syscall(SYS_EXIT, (void*)status);
     while(1);
 }
+void abort (void){
+    /**
+     * TODO: review when signals correctly implemented
+     **/
+    syscall(SYS_EXIT, (void*)133);
+    while(1);
+}
 
 char* realpath(const char* path, char* resolved_path){
     return path_absolute(path, resolved_path);

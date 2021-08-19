@@ -75,7 +75,7 @@ char* fgets(char* buff, int size, FILE* stream){
     return buff;
 }
 
-size_t fwrite(void* ptr, size_t size, size_t nmemb, FILE* stream){
+size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream){
     return write(stream->fd, ptr, size * nmemb);
 }
 

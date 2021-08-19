@@ -3,12 +3,16 @@
 
 #define CHAR_BIT        8
 
-#define UCHAR_MAX       ((unsigned char)0xFF)
-#define SHRT_MAX        ((short)0x7FFF)
-#define USHRT_MAX       ((unsigned short)0xFFFF)
+#define CHAR_MAX        127
+#define CHAR_MIN        -128
+#define UCHAR_MAX       255
+#define SHRT_MAX        32767
+#define SHRT_MIN        -32768
+#define USHRT_MAX       65535
 #define INT_MAX         2147483647
-#define INT_MIN         -4294967295
-#define UINT_MAX        0xFFFFFFFF
+#define INT_MIN         -2147483648
+#define UINT_MAX        4294967295
 #define LONG_MAX        0x7FFFFFFFFFFFFFFF
+
 
 #endif

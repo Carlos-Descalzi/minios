@@ -148,3 +148,22 @@ char* strtok_r (char* str, const char* delim, char** saveptr){
 
     return token;
 }
+
+static int c_in(char c, const char* a){
+    for (int i=0;a[i];i++){
+        if (c == a[i]){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+size_t  strspn (const char* s, const char* accept){
+    int i;
+    for (i=0;s[i];i++){
+        if (!c_in(s[i],accept)){
+            return i;
+        }
+    }
+    return i;
+}
