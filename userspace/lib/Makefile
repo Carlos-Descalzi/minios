@@ -21,7 +21,10 @@ COREOBJS=stdlib.o 	\
 	 minios.o	\
 	 signal.o	\
 	 fifo.o		\
-	 libc.o
+	 libc.o		\
+	 scanf.o	\
+	 longjmp.o	\
+	 sleep.o
 
 all: minios.a gfx.a socket.a
 

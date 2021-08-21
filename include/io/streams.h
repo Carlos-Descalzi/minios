@@ -35,6 +35,10 @@
 #define EISDIR          -15  // is directory
 #define EIO             -16  // io error
 
+#define SEEK_SET        0
+#define SEEK_CUR        1
+#define SEEK_END        2
+
 typedef struct Stream {
 
     uint8_t     type;
@@ -51,7 +55,7 @@ typedef struct Stream {
     int16_t     (*write_async)      (struct Stream*,IORequest* request);
     void        (*flush)            (struct Stream*);
     uint32_t    (*pos)              (struct Stream*);
-    int16_t     (*seek)             (struct Stream*,uint32_t);
+    int16_t     (*seek)             (struct Stream*,uint64_t, int);
     uint32_t    (*size)             (struct Stream*);
     void        (*close)            (struct Stream*);
     uint32_t    (*available)        (struct Stream*);
@@ -70,7 +74,7 @@ typedef struct Stream {
 #define stream_write_async(s,b)     (STREAM(s)->write_async(STREAM(s),b))
 #define stream_flush(s)             (STREAM(s)->flush(STREAM(s)))
 #define stream_pos(s)               (STREAM(s)->pos(STREAM(s)))
-#define stream_seek(s,p)            (STREAM(s)->seek(STREAM(s),p))
+#define stream_seek(s,p,w)          (STREAM(s)->seek(STREAM(s),p,w))
 #define stream_close(s)             (STREAM(s)->close(STREAM(s)))
 #define stream_available(s)         (STREAM(s)->available(STREAM(s)))
 

@@ -1,4 +1,5 @@
 #include "string.h"
+#include "stdlib.h"
 
 
 void*   memcpy  (void* dest, const void* src, size_t n){
@@ -51,6 +52,28 @@ int memcmp(void* s1, void* s2, size_t n){
     }
 
     return 0;
+}
+void* memchr (const void *s, int c, size_t n){
+
+    void* d = (void*)s;
+
+    for (int i=0;i<n;i++){
+        if (((char*)s)[i] == c){
+            return d+i;
+        }
+    }
+    return NULL;
+}
+void* memrchr (const void *s, int c, size_t n){
+
+    void* d = (void*)s;
+
+    for (int i=n;i>=0;i--){
+        if (((char*)s)[i] == c){
+            return d+i;
+        }
+    }
+    return NULL;
 }
 
 char* strcpy(char* dest, const char* src){
@@ -158,7 +181,7 @@ static int c_in(char c, const char* a){
     return 0;
 }
 
-size_t  strspn (const char* s, const char* accept){
+size_t strspn (const char* s, const char* accept){
     int i;
     for (i=0;s[i];i++){
         if (!c_in(s[i],accept)){
@@ -166,4 +189,43 @@ size_t  strspn (const char* s, const char* accept){
         }
     }
     return i;
+}
+size_t strcspn (const char *s, const char *reject){
+    int i;
+    for (i=0;s[i];i++){
+        if (c_in(s[i],reject)){
+            return i;
+        }
+    }
+    return i;
+}
+
+char *strdup (const char *s){
+    char* dest = malloc(strlen(s)+1);
+    return strcpy(dest,s);
+}
+void *memmove (void *dest, const void *src, size_t n){
+    void* buffer = malloc(n);
+    memcpy(buffer,src,n);
+    memcpy(dest,buffer,n);
+    free(buffer);
+    return dest;
+}
+
+static char _strerr_dummy[] = "DUMMY ERR\n";
+
+char    *strerror   (int errnum){
+    return _strerr_dummy;
+}
+
+char* strpbrk (const char *s, const char *accept){
+
+    char* d = (char*)s;
+
+    for (int i=0;s[i];i++){
+        if (!c_in(s[i],accept)){
+            return d + i;
+        }
+    }
+    return NULL;
 }

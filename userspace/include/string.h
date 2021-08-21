@@ -9,6 +9,9 @@ void*   memcpydw    (void* dest, const void* src, size_t n);
 void*   memset      (void* s, int c, size_t size);
 void*   memsetdw    (void* s, uint32_t c, size_t size);
 int     memcmp      (void* s1, void* s2, size_t n);
+void*   memchr      (const void *s, int c, size_t n);
+void*   memrchr     (const void *s, int c, size_t n);
+void    *memmove    (void *dest, const void *src, size_t n);
 char*   strcpy      (char* dest, const char* src);
 char*   strncpy     (char* dest, const char* src, size_t n);
 size_t  strlen      (const char* string);
@@ -20,5 +23,8 @@ char*   strcat      (char* dest, const char* src);
 char*   strstr      (const char*str, const char* search);
 char*   strtok_r    (char* str, const char* delim, char** saveptr);
 size_t  strspn      (const char*, const char*);
-
+size_t  strcspn     (const char *s, const char *);
+char*   strdup     (const char *s);
+char*   strerror   (int errnum);
+char*   strpbrk     (const char *s, const char *accept);
 #endif

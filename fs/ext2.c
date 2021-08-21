@@ -74,7 +74,7 @@ static Stream*          ext2_open_stream        (FileSystem* fs, uint32_t inoden
 int16_t                 ext2_stream_read_bytes  (Stream*,uint8_t*,int16_t);
 int16_t                 ext2_stream_write_bytes (Stream*,uint8_t*,int16_t);
 uint32_t                ext2_stream_pos         (Stream*);
-int16_t                 ext2_stream_seek        (Stream*,uint32_t);
+int16_t                 ext2_stream_seek        (Stream*,uint64_t,int);
 uint32_t                ext2_stream_size        (Stream*);
 void                    ext2_stream_close       (Stream*);
 void                    ext2_stream_flush       (Stream*);
@@ -642,7 +642,8 @@ uint32_t ext2_stream_pos(Stream* stream){
     return FILE_STREAM(stream)->pos;
 }
 
-int16_t ext2_stream_seek(Stream* stream,uint32_t pos){
+int16_t ext2_stream_seek(Stream* stream,uint64_t pos,int whence){
+    // TODO: Fix seek
     if (pos > FILE_STREAM(stream)->inode.inode.size -1){
         return -1;
     }

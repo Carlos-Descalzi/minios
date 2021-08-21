@@ -7,7 +7,7 @@
 static int16_t   read_bytes    (Stream*,uint8_t*,int16_t);
 static int16_t   write_bytes   (Stream*,uint8_t*,int16_t);
 static uint32_t  pos           (Stream*);
-static int16_t   seek          (Stream*,uint32_t);
+static int16_t   seek          (Stream*,uint64_t,int);
 static uint32_t  size          (Stream*);
 static void      close         (Stream*);
 static void      flush         (Stream*);
@@ -65,7 +65,26 @@ static int16_t write_bytes (Stream* stream,uint8_t* buffer,int16_t len){
 static uint32_t pos (Stream* stream){
     return CHAR_ARRAY_STREAM(stream)->pos;
 }
-static int16_t seek (Stream* stream,uint32_t pos){
+static int16_t seek (Stream* stream,uint64_t pos,int whence){
+    // TODO error check
+    switch(whence){
+        case SEEK_SET:
+            if (pos >= CHAR_ARRAY_STREAM(stream)->buffer_size){
+                return -1;
+            }
+            CHAR_ARRAY_STREAM(stream)->pos = pos;
+            break;
+        case SEEK_CUR:
+            if (CHAR_ARRAY_STREAM(stream)->pos + pos 
+                >= CHAR_ARRAY_STREAM(stream)->buffer_size){
+                return -1;
+            }
+            CHAR_ARRAY_STREAM(stream)->pos += pos;
+            break;
+        default:
+            CHAR_ARRAY_STREAM(stream)->pos = CHAR_ARRAY_STREAM(stream)->buffer_size - 1 - pos;
+            break;
+    }
     return 0;
 }
 static uint32_t size (Stream* stream){

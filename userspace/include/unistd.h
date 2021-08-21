@@ -1,8 +1,8 @@
 #ifndef _UNISTD_H_
 #define _UNISTD_H_
 
-#include "stddef.h"
-#include "stdint.h"
+#include <sys/types.h>
+#include <stdint.h>
 
 #define EAGAIN  -10 
 #define EBADF   -11  // invalid descritor or not open for reading
@@ -32,6 +32,13 @@
 #define S_IWOTH     0000002
 #define S_IXOTH     0000001
 
+#define S_ISREG(m)  ((m & S_IFREG) == S_IFREG)
+
+#define F_OK    8
+#define R_OK    4
+#define W_OK    2
+#define X_OK    1
+
 struct stat {
     dev_t       st_dev;
     uint32_t    st_ino;
@@ -48,10 +55,16 @@ struct stat {
     uint32_t    st_ctim;
 };
 
-ssize_t     read    (int fd, void* buf, size_t count);
-ssize_t     write   (int fd, const void *buf, size_t count);
-int         close   (int fd);
-int         stat    (const char* pathname, struct stat* statbuf);
-pid_t       getpid  (void);
+ssize_t         read    (int fd, void* buf, size_t count);
+ssize_t         write   (int fd, const void *buf, size_t count);
+int             close   (int fd);
+int             stat    (const char* pathname, struct stat* statbuf);
+int             fstat   (int fd, struct stat* statbuf);
+pid_t           getpid  (void);
+int             access  (const char *pathname, int mode);
+char*           getcwd  (char *buf, size_t size);
+unsigned int    sleep   (unsigned int seconds);
+int             chdir   (const char *path);
+off_t           lseek   (int fd, off_t offset, int whence);
 
 #endif

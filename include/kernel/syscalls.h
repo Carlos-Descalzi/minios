@@ -12,6 +12,7 @@ uint32_t syscall_read           (SyscallArg);
 uint32_t syscall_write          (SyscallArg);
 uint32_t syscall_open           (SyscallArg);
 uint32_t syscall_close          (SyscallArg);
+uint32_t syscall_lseek          (SyscallArg);
 uint32_t syscall_exec           (SyscallArg);
 uint32_t syscall_yield          (SyscallArg);
 uint32_t syscall_exit           (SyscallArg);

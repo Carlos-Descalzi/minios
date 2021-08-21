@@ -3,7 +3,7 @@
 
 uint32_t syscall_waitpid(SyscallArg arg){
 
-    uint32_t tid = arg.ptr_arg;
+    uint32_t tid = arg.int_arg;
 
     if (tid > 0){
         tasks_wait_tid(tid);

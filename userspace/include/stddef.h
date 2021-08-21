@@ -7,15 +7,9 @@
 
 typedef unsigned int    size_t;
 typedef int             ssize_t;
+typedef unsigned int    ptrdiff_t;
+typedef unsigned short  wchar_t;
 
-typedef unsigned short  dev_t;
-typedef unsigned int    pid_t;
+#define offsetof(st,m)  ((ptrdiff_t)&((st*)NULL)->m)
 
-typedef unsigned int    off_t;
-
-typedef unsigned long   time_t;
-typedef unsigned long   suseconds_t;
-typedef unsigned long   clock_t;
-
-#define offsetof(st,m)  ((unsigned int)&((st*)NULL)->m)
 #endif

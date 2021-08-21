@@ -102,3 +102,21 @@ static void copy_env_from(void* buffer, size_t buffer_size, Env* source, int* en
 
 }
 
+char* getcwd (char *buf, size_t size){
+    const char* pwd = getenv("PWD");
+
+    if (pwd){
+        sprintf(buf, pwd, min(strlen(pwd),size-1));
+        return buf;
+    }
+    return NULL;
+}
+int chdir(const char *path){
+    char env[256];
+    if (path){
+        sprintf(env, "PWD=%s",path);
+        putenv(env);
+        return 0;
+    }
+    return -1;
+}

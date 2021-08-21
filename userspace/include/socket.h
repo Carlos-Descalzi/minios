@@ -1,7 +1,7 @@
 #ifndef _SOCKET_H_
 #define _SOCKET_H_
 
-#include "stddef.h"
+#include "sys/types.h"
 #include "stdint.h"
 
 #define mk_ip_addr(a,b,c,d)         ((uint32_t)((a << 24) | (b << 16) | (c << 8) | d))

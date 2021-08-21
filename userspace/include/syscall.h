@@ -9,6 +9,7 @@
 #define SYS_YIELD   0x05
 #define SYS_GETPID  0x06
 #define SYS_WAITCND 0x07
+#define SYS_LSEEK   0x08
 
 #define SYS_MMAP    0x09
 

@@ -21,7 +21,7 @@ static int16_t read_bytes(Stream* stream, uint8_t* buffer, int16_t size);
 static int16_t write_bytes(Stream* stream, uint8_t* buffer, int16_t size);
 static int16_t read_async(Stream* stream, IORequest* request);
 static uint32_t pos(Stream* stream);
-static int16_t seek(Stream* stream, uint32_t pos);
+static int16_t seek(Stream* stream, uint64_t pos, int whence);
 static uint32_t size(Stream* stream);
 static void close(Stream* stream);
 static uint32_t available(Stream* stream);
@@ -80,7 +80,7 @@ static uint32_t pos(Stream* stream){
     return -1;
 }
 
-static int16_t seek(Stream* stream, uint32_t pos){
+static int16_t seek(Stream* stream, uint64_t pos, int whence){
     if (stream_seekable(stream)){
         block_device_seek(block_stream_device(stream), pos);
         return 0;

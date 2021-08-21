@@ -97,3 +97,16 @@ void* calloc(size_t nmemb, size_t size){
     void* chunk = malloc(total_size);
     return memset(chunk, 0, total_size);
 }
+
+void* realloc (void *ptr, size_t size){
+
+    void* new_block = malloc(size);
+    
+    int old_block_size = ((Block*)(ptr - HEADER_SIZE))->size;
+
+    memcpydw(new_block, ptr, old_block_size >> 2);
+
+    free(ptr);
+
+    return new_block;
+}

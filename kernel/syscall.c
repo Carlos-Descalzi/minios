@@ -26,6 +26,7 @@ void syscall_init(){
     syscalls[0x05] = syscall_yield;
     syscalls[0x06] = syscall_getpid;
     syscalls[0x07] = syscall_waitcnd;
+    syscalls[0x08] = syscall_lseek;
 
     syscalls[0x09] = syscall_mmap;
     syscalls[0x10] = syscall_ioctl;

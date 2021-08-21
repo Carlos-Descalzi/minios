@@ -27,6 +27,7 @@ char*   realpath    (const char* path, char* resolved_path);
 
 void*   malloc      (size_t size);
 void*   calloc      (size_t nmemb, size_t size);
+void*   realloc     (void *ptr, size_t size);
 void    free        (void* ptr);
 void    abort       (void);
 int     system      (const char*);

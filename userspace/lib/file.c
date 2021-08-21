@@ -78,6 +78,13 @@ char* fgets(char* buff, int size, FILE* stream){
 size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream){
     return write(stream->fd, ptr, size * nmemb);
 }
+int fgetc (FILE* stream){
+    char c;
+    if (read(stream->fd,&c,1) > 0){
+        return c;
+    }
+    return EOF;
+}
 
 static int mode_to_flags(const char* mode){
     int flags = 0;
@@ -102,4 +109,29 @@ static int mode_to_flags(const char* mode){
     }
 
     return flags;
+}
+int fseek (FILE* fp, long offset, int whence){
+    lseek(fp->fd, offset, whence);
+}
+void rewind (FILE *stream){
+    fseek(stream,0,SEEK_SET);
+}
+long ftell (FILE* fp){
+    return lseek(fp->fd, 0, SEEK_CUR);
+}
+int fflush (FILE *stream){
+    // TODO implement
+    return 0;
+}
+int remove (const char* path){
+    // TODO implement
+    return 0;
+}
+int ferror (FILE *stream){
+    // TODO implement
+    return 0;
+}
+int ungetc (int c, FILE* fp){
+    // TODO implement
+    return 0;
 }

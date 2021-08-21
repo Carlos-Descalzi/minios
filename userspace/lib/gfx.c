@@ -1,7 +1,7 @@
 #include "gfx.h"
 #include "string.h"
 #include "mman.h"
-#include "ioctl.h"
+#include "sys/ioctl.h"
 #include "fcntl.h"
 #include "stdlib.h"
 #include "string.h"

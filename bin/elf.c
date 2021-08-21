@@ -21,7 +21,7 @@ int32_t elf_read_program_header(Stream* stream, ElfHeader* header,
     pos = header->program_header_table_position
         + header->program_header_table_entry_size * headernum;
 
-    if (stream_seek(stream, pos) < 0){
+    if (stream_seek(stream, pos, SEEK_SET) < 0){
         return -1;
     }
 
@@ -44,7 +44,7 @@ int32_t elf_read_section_header(Stream* stream, ElfHeader* header,
     pos = header->section_header_table_position
         + header->section_header_table_entry_size * headernum;
 
-    if (stream_seek(stream, pos) < 0){
+    if (stream_seek(stream, pos, SEEK_SET) < 0){
         return -1;
     }
 
@@ -61,7 +61,7 @@ int32_t elf_read_section(Stream* stream, ElfSectionHeader* section_header, uint8
         return -1;
     }
 
-    stream_seek(stream, section_header->offset);
+    stream_seek(stream, section_header->offset, SEEK_SET);
     stream_read_bytes(stream, dest, section_header->size);
 
     return 0;
@@ -73,7 +73,7 @@ int32_t elf_read_program(Stream* stream, ElfProgramHeader* prg_header, uint8_t* 
         return -1;
     }
 
-    stream_seek(stream, prg_header->offset);
+    stream_seek(stream, prg_header->offset, SEEK_SET);
     stream_read_bytes(stream, dest, prg_header->segment_file_size);
 
     return 0;
@@ -83,7 +83,7 @@ int32_t elf_read_program_page(Stream* stream, ElfProgramHeader *prg_header,
     if (!stream || !prg_header){
         return -1;
     }
-    stream_seek(stream, prg_header->offset + blocknum * page_size);
+    stream_seek(stream, prg_header->offset + blocknum * page_size, SEEK_SET);
     stream_read_bytes(stream, dest, page_size);
 
     return 0;
@@ -93,7 +93,7 @@ int32_t elf_read_section_page   (Stream* stream, ElfSectionHeader* sec_header,
     if (!stream || !sec_header){
         return -1;
     }
-    stream_seek(stream, sec_header->offset + blocknum * page_size);
+    stream_seek(stream, sec_header->offset + blocknum * page_size, SEEK_SET);
     stream_read_bytes(stream, dest, page_size);
 
     return 0;
