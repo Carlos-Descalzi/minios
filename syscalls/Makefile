@@ -22,6 +22,8 @@ OBJS=exit.o		\
 	kill.o		\
 	pipe.o		\
 	waitcnd.o	\
-	lseek.o
+	lseek.o		\
+	sleep.o		\
+	time.o
 
 all: $(OBJS)

@@ -1,10 +1,11 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/task.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
 #include "lib/heap.h"
 #include "misc/debug.h"
 #include "board/pic.h"
+#include "board/pit.h"
 #include "bin/elf.h"
 #include "kernel/paging.h"
 #include "board/memory.h"
@@ -36,19 +37,21 @@ static uint32_t next_tid;
 static ListNode* task_list;
 static ListNode* current_task_list_node;
 static ListNode* io_wait_list;
+static ListNode* sleep_list;
 
 extern void     task_run                    (void);
 static void     setup_console               (Task* task);
 static void     remove_current_task         (void);
 static void     check_io_wait_list          (void);
 static int      check_pending_io_requests   (Task* task);
-static int      cnd_wait_tid                (Task* task);
-static int      cnd_wait_msg_answer         (Task* task);
-static int      cnd_wait_cnd_list           (Task* task);
 static void     answer_message              (Message* source_message, Message* target_message);
 static void     do_send_message             (Message* message);
 static void     handle_task_wait_condition  (uint32_t task_id, uint32_t exit_code);
 static void     move_to_idle_list           (TaskNode* task_node);
+static int      cnd_wait_tid                (Task* task);
+static int      cnd_wait_msg_answer         (Task* task);
+static int      cnd_wait_cnd_list           (Task* task);
+static void     task_timer_callback         (uint64_t, void*);
 
 void tasks_init(){
     next_tid = 1;
@@ -76,6 +79,9 @@ void tasks_init(){
         "\tmov $0x1b, %eax\n"
         "\tltr %ax\n"
     );
+
+    timer_add(122, task_timer_callback, NULL);
+    //pit_add_callback(10, task_timer_callback, NULL);
 }
 
 uint32_t tasks_current_tid(){
@@ -241,6 +247,13 @@ static void move_to_wait_list(){
     current_task_list_node = next ? next : task_list;
 }
 
+static void move_to_sleep_list(){
+    ListNode* next = current_task_list_node->next;
+    task_list = list_remove(task_list, current_task_list_node);
+    sleep_list = list_add(sleep_list, current_task_list_node);
+    current_task_list_node = next ? next : task_list;
+}
+
 int tasks_loop(){
     check_io_wait_list();
     
@@ -260,6 +273,9 @@ int tasks_loop(){
                     || current_task->status == TASK_STATUS_WAITCND){
                     move_to_wait_list();
                     current_task = NULL;
+                } else if (current_task->status = TASK_STATUS_SLEEP){
+                    move_to_sleep_list();
+                    current_task = NULL;
                 }
             } else {
                 remove_current_task();
@@ -269,7 +285,7 @@ int tasks_loop(){
         }
 
     } else {
-        debug("TASK - No tasks to run\n");
+        //debug("TASK - No tasks to run\n");
     }
     return 0;
 }
@@ -303,10 +319,6 @@ void* tasks_to_kernel_address (void* address, uint16_t length){
     return paging_task_to_kernel_space(task->page_directory, address, length);
 }
 
-//void tasks_release_mapped_address (void* kernel_address, uint16_t length){
-//    paging_free_mapped_kernel_pages( (uint32_t) kernel_address, length);
-//}
-
 void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, uint32_t size){
 
     Task* task = current_task;
@@ -318,8 +330,7 @@ void tasks_add_io_request(uint32_t type, uint32_t stream_num, uint8_t* buffer, u
             task->io_requests[i].tid = current_task->tid;
             task->io_requests[i].type = type;
             task->io_requests[i].stream = stream_num;
-            task->io_requests[i].target_buffer = buffer;//(uint8_t*) paging_physical_address(
-                //current_task->page_directory, buffer);
+            task->io_requests[i].target_buffer = buffer;
             task->io_requests[i].size = size;
             task->status = TASK_STATUS_IOWAIT;
             stream_read_async(
@@ -387,12 +398,17 @@ int tasks_wait_message(Message* message){
     if (tasks_check_for_message(message) < 0){
         task->status = TASK_STATUS_WAITCND;
         task->waitcond = cnd_wait_msg_answer;
-        //task->cond_data.ptr_data = (void*) paging_physical_address(task->page_directory, message);
-        task->cond_data.ptr_data = message;//(void*) paging_physical_address(task->page_directory, message);
+        task->cond_data.ptr_data = message;
     } else {
         debug("Message already present, answered\n");
     }
     return 0;
+}
+
+void tasks_sleep (uint32_t secs, uint64_t nsecs){
+    // TODO: for the moment only handle musec granularity
+    current_task->sleep_nsecs = secs * 1000000000 + nsecs;
+    current_task->status = TASK_STATUS_SLEEP;
 }
 
 static void do_send_message(Message* message){
@@ -407,8 +423,6 @@ static void do_send_message(Message* message){
     message = paging_task_to_kernel_space( task->page_directory, (uint32_t) message, sizeof(Message));
 
     memcpy(&(message_node->message), message, sizeof(Message));
-
-    //paging_free_mapped_kernel_pages( (uint32_t) message, sizeof(Message));
 
     debug("TASKS - send message to ");debug_i(message->target,10);debug("\n");
 
@@ -425,9 +439,7 @@ static void do_send_message(Message* message){
 }
 
 static void answer_message(Message* source_message, Message* target_message){
-    //target_message = paging_to_kernel_space( (uint32_t) target_message, sizeof(Message));
     memcpydw(target_message, source_message, sizeof(Message) / 4);
-    //paging_free_mapped_kernel_pages( (uint32_t) target_message, sizeof(Message));
 }
 
 static void setup_console(Task* task){
@@ -529,7 +541,6 @@ static int cnd_wait_msg_answer(Task* task){
         );
         uint32_t source = waiting_msg->source;
         uint32_t target = waiting_msg->target;
-        //paging_free_mapped_kernel_pages( (uint32_t) local_waiting_msg, sizeof(Message));
 
         if (source == 0 
             && target == 0){
@@ -583,4 +594,27 @@ static void move_to_idle_list(TaskNode* task_node){
     task_node->task.status = TASK_STATUS_IDLE;
     io_wait_list = list_remove(io_wait_list, task_node);
     task_list = list_add(task_list, task_node);
+}
+
+static void task_timer_callback (uint64_t ticks, void* data){
+    // TODO: fix timings
+    if (current_task){
+        current_task->ticks+=10;
+    }
+    //debug("Tick\n");
+    for (ListNode* n = sleep_list; n; n = n->next){
+        //debug("TASK sleep tick\n");
+        TASK_NODE(n)->task.sleeping_nsecs += 300000000;
+        if (TASK_NODE(n)->task.sleeping_nsecs >= TASK_NODE(n)->task.sleep_nsecs){
+
+            TASK_NODE(n)->task.status = TASK_STATUS_IDLE;
+
+            sleep_list = list_remove(sleep_list, n);
+            task_list = list_add(task_list, n);
+            n = sleep_list;
+            if (!n){
+                break;
+            }
+        }
+    }
 }

@@ -15,6 +15,7 @@
 #define TASK_STATUS_RUNNING 3
 #define TASK_STATUS_IOWAIT  4
 #define TASK_STATUS_WAITCND 5
+#define TASK_STATUS_SLEEP   6
 
 typedef struct {
     uint32_t            source;
@@ -58,6 +59,9 @@ struct Task {
     PageDirectoryEntry* page_directory;
     TaskParams*         args;
     TaskParams*         env;
+    uint64_t            ticks;              // how many clock ticks this task has been running
+    uint64_t            sleep_nsecs;
+    uint64_t            sleeping_nsecs;
     Stream*             streams[32];        // max open files
     CharDevice*         console;            // console associated to task.
     IORequest           io_requests[4];     // max active IO requests
@@ -151,4 +155,10 @@ int         tasks_count                     (void);
  * Iterates over tasks
  **/
 void        tasks_iter_tasks                (TaskVisitor visitor, void* data);
+
+/**
+ * Puts active task to sleep
+ **/
+void        tasks_sleep                     (uint32_t secs, uint64_t nsecs);
+
 #endif

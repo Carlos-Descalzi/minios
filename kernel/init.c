@@ -21,6 +21,8 @@
 #include "kernel/syscall.h"
 #include "kernel/modules.h"
 #include "lib/params.h"
+#include "board/rtc.h"
+#include "kernel/timer.h"
 
 static void     bsod                (InterruptFrame* frame, void* data);
 static void     start_init          (void);
@@ -47,6 +49,9 @@ void init(){
 
     pic_init();
     pit_init();
+    rtc_init();
+
+    timer_init();
     
     tasks_init();
     syscall_init();

@@ -17,7 +17,8 @@ BINS=init.elf 		\
 	 udpclient.elf  \
 	 testsignal.elf	\
 	 kill.elf		\
-	 testserial.elf
+	 testserial.elf	\
+	 testsleep.elf
 
 LIBS=../bootstrap/crt0.o
 LIBS+=../lib/socket.a

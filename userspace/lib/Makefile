@@ -24,7 +24,8 @@ COREOBJS=stdlib.o 	\
 	 libc.o		\
 	 scanf.o	\
 	 longjmp.o	\
-	 sleep.o
+	 sleep.o	\
+	 time.o
 
 all: minios.a gfx.a socket.a
 

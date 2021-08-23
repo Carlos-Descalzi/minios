@@ -34,8 +34,11 @@ void syscall_init(){
     syscalls[0x16] = syscall_pipe;
     // ....
     syscalls[0x20] = syscall_debug;
+    syscalls[0x23] = syscall_sleep;
     // ....
     syscalls[0x3e] = syscall_kill;
+    //
+    syscalls[0x40] = syscall_gettime;
     // ....
     syscalls[0x4d] = syscall_stat;
     syscalls[0x4e] = syscall_getdents;

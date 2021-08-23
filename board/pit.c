@@ -1,8 +1,11 @@
+#define NODEBUG
 #include "board/pit.h"
 #include "board/pic.h"
 #include "board/io.h"
 #include "lib/string.h"
 #include "misc/debug.h"
+
+#define PIT_IRQ             0x00
 
 #define PORT_CH0            0x40
 #define PORT_CH1            0x41
@@ -38,54 +41,21 @@ typedef struct {
         output_state: 1;
 } Status;
 
-static uint64_t ticks;
+static Isr timer_handler = NULL;
+void* timer_handler_data = NULL;
 
-static void timer_handler(InterruptFrame* frame, void* data);
-
-typedef struct {
-    uint64_t ticks;
-    uint64_t count;
-    Isr callback;
-} TimerSlot;
-
-#define MAX_SLOTS   32
-
-static TimerSlot slots[MAX_SLOTS];
+static void pit_handle_irq(InterruptFrame* frame, void* data);
 
 void pit_init(){
-    ticks = 0;
-    memset(slots,0,sizeof(slots));
     pit_set_freq(1);// TODO: fix this
-    isr_install(0x20, timer_handler, NULL); 
+    //isr_install(0x20, timer_handler, NULL); 
+    isr_install(PIC_IRQ_BASE + PIT_IRQ, pit_handle_irq, NULL); 
     debug("PIT Initialized\n");
 }
 
-inline uint64_t pit_ticks(void){
-    return ticks;
-}
-
-void pit_add_callback(Isr callback, uint64_t ticks){
-    if (ticks > 0){
-        for (int i=0;i<MAX_SLOTS;i++){
-            if (!slots[i].callback){
-                slots[i].callback = callback;
-                slots[i].ticks = ticks;
-                slots[i].count = 0;
-                break;
-            }
-        }
-    }
-}
-
-void pit_remove_callback(Isr callback){
-    for (int i=0;i<MAX_SLOTS;i++){
-        if (slots[i].callback == callback){
-            slots[i].ticks = 0;
-            slots[i].count = 0;
-            slots[i].callback = NULL;
-            break;
-        }
-    }
+void pit_set_isr_handler(Isr isr, void* data){
+    timer_handler = isr;
+    timer_handler_data = data;
 }
 
 void pit_set_count(uint16_t count){
@@ -103,31 +73,22 @@ uint16_t pit_get_count(){
     return count;
 }
 void pit_set_freq(uint16_t freq){
-    /*
-    uint32_t div = 0xFFFF;// 119180 / freq; 
+    uint32_t div = 119180 / freq; 
 
     outb(PORT_CMD, 0x36);
     outb(PORT_CH0, div & 0xFF);
     outb(PORT_CH0, div >> 8);
+    /*
     */
-    outb(PORT_CMD, 0x31);
+    /*outb(PORT_CMD, 0x31);
     outb(PORT_CH0,  1);
-    outb(PORT_CH0,  0);
+    outb(PORT_CH0,  0);*/
 }
-
-static void timer_handler(InterruptFrame* frame, void* data){
-    debug("Timer interrupt:");debug_i(pic_get_irq_reg(),16);debug("\n");
+static void pit_handle_irq(InterruptFrame* frame, void* data){
     cli();
     pic_eoi1();
-    ticks++;
-    for (int i=0;i<MAX_SLOTS;i++){
-        if (slots[i].ticks && slots[i].callback){
-            if (++slots[i].count == slots[i].ticks){
-                slots[i].count = 0;
-                slots[i].callback(frame, NULL);
-            }
-        }
-    }
-
     sti();
+    if (timer_handler){
+        timer_handler(frame, timer_handler_data);
+    }
 }

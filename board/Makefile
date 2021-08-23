@@ -8,6 +8,7 @@ OBJS=io.o 	 	\
 	 ps2.o   	\
 	 minfo.o 	\
 	 memory.o 	\
-	 console.o
+	 console.o	\
+	 rtc.o
 
 all: $(OBJS)

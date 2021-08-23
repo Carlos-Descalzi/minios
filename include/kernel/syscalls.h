@@ -34,5 +34,7 @@ uint32_t syscall_debug          (SyscallArg);
 uint32_t syscall_kill           (SyscallArg);
 uint32_t syscall_pipe           (SyscallArg);
 uint32_t syscall_waitcnd        (SyscallArg);
+uint32_t syscall_sleep          (SyscallArg);
+uint32_t syscall_gettime        (SyscallArg);
 
 #endif

@@ -18,8 +18,11 @@
 #define SYS_PIPE    0x16
 
 #define SYS_DEBUG   0x20
+#define SYS_SLEEP   0x23
 
 #define SYS_KILL    0x3E
+
+#define SYS_GETTIME 0x40
 
 #define SYS_STAT    0x4D
 #define SYS_GETDENT 0x4E

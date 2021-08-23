@@ -64,6 +64,7 @@ pid_t           getpid  (void);
 int             access  (const char *pathname, int mode);
 char*           getcwd  (char *buf, size_t size);
 unsigned int    sleep   (unsigned int seconds);
+unsigned int    usleep  (unsigned int milliseconds);
 int             chdir   (const char *path);
 off_t           lseek   (int fd, off_t offset, int whence);
 
