@@ -87,6 +87,7 @@ static void     tab                     (ConsoleDevice* screen);
 static void     newline                 (ConsoleDevice* screen);
 static void     clear_buff              (ConsoleDevice* screen);
 static void     clear_screen            (ConsoleDevice* console);
+static void     clear_line              (ConsoleDevice* console);
 static void     fb_write                (ConsoleDevice* screen, uint8_t chr);
 static void     adjust_view_to_pos      (ConsoleDevice* console);
 static void     get_pos                 (ConsoleDevice* device, int *x, int *y);
@@ -342,6 +343,7 @@ uint8_t handle_escape_char(ConsoleDevice* device, uint8_t chr){
             clear_screen(device);
             return 1;
         case 'K':
+            clear_line(device);
             return 1;
         case 'p':
             return 1;
@@ -544,6 +546,18 @@ static inline void clear_buff(ConsoleDevice* screen){
 }
 static void clear_screen (ConsoleDevice* console){
     device_setopt(console->screen,SCREEN_OPT_CLEAR,NULL);
+}
+static void clear_line (ConsoleDevice* console){
+    int x, y;
+    get_pos(console, &x, &y);
+
+    set_pos(console, 0, y);
+    
+    for (int i=0;i<80;i++){
+        fb_write(console, ' ');
+    }
+
+    set_pos(console, x, y);
 }
 void fb_write (ConsoleDevice* console, uint8_t chr){
     char_device_write(console->screen, console->color);

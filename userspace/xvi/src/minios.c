@@ -2,7 +2,6 @@
 
 static int	kb_nchars;
 static long current_timeout = DEF_TIMEOUT;
-//volatile bool_t	win_size_changed = FALSE;
 bool_t can_inschar = FALSE;
 bool_t subshells = FALSE;
 bool_t can_scroll_area = FALSE;
@@ -81,35 +80,11 @@ char * fexpand(char *name, bool_t do_completion)
     return retval;*/
     return NULL;
 }
-/*
-void outchar(int c){
-}
-void outstr(char* str){
-}
-int inch(long timeout) {
-    int		c;
 
-    if (kb_nchars > 0) {
-	return(kbgetc());
-    }
-
-    (void) fflush(stdout);
-
-    if (timeout != 0) {
-	current_timeout = timeout;
-	c = kbgetc();
-	current_timeout = DEF_TIMEOUT;
-	return(c);
-    }
-
-    return(kbgetc());
-}
-*/
 static int kbgetc()
 {
     static unsigned char	kbuf[48];
     static unsigned char	*kbp;
-    printf("kbgetc\n");
 
     if (kbdintr)
 	return EOF;
@@ -153,22 +128,7 @@ static int kbgetc()
     --kb_nchars;
     return(*kbp++);
 }
-/*
-int foutch(int c) {
-    return(putchar(c));
-}*/
-/*
-int tputs(const char *str, int affcnt, int (*putc)(int)){
-    for (int i=0;i<strlen(str);i++){
-        putc(str[i]);
-    }
-}
-
-char *tgoto(const char *cap, int col, int row){
-}*/
-#include <minios.h>
 void tty_goto(int row, int col){
-    //debug("gotoxy %d %d\n",row, col);
     printf("\e[%d;%df",row,col);
 }
 
@@ -190,15 +150,16 @@ void scroll_down(unsigned int start, unsigned int end, unsigned int lines){
 void scroll_up(unsigned int start, unsigned int end, unsigned int lines){
 }
 void erase_display(){
-    printf("\e[2J");
+    puts("\e[2J");
 }
 void erase_line(){
+    puts("\e[2K");
 }
 void outstr(char* str){
-    printf("%s",str);
+    puts(str);
 }
 void outchar(int chr){
-    printf("%c",chr);
+    putc(chr,stdout);
 }
 void call_shell(char* x){
     //printf("call_shell\n");
@@ -216,19 +177,18 @@ void sys_init(){
     //printf("sys_init\n");
 }
 void inschar(int c){
-    //printf("%c",c);
-    //printf("inschar\n");
+    putc(c, stdout);
 }
 int inchar(){
     return getc(stdin);
 }
 void insert_a_line(char* str){
-    printf("%s",str);
-    //printf("insert_a_line\n");
+    puts(str);
 }
 void catch_signals(){
 }
 void delete_a_line(){
+    printf("delete_a_line\n");
 }
 void sys_exit(int val){
     exit(val);
@@ -236,10 +196,5 @@ void sys_exit(int val){
 void Wait200ms(){
 }
 void sys_startv(){
-    //printf("sys_startv\n");
-    //if (curmode == m_SYS) {
-    //tty_startv();
-    set_colour(15);//defscr.pv_colours[VSCcolour]);
-    //curmode = m_VI;
-    //}
+    set_colour(15);
 }
