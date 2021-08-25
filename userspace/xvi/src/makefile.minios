@@ -28,9 +28,9 @@ PHARLAP=	d:\osu\pharlap
 CDEFS=		-DMINIOS -D__STDC__=1
 SYSDEFS=	-DPOSIX 
 CFLAGS+=	$(SYSDEFS)
-TARGET=		xvi
+TARGET=		vi
 
-xvi:		xvi.elf
+xvi:		$(TARGET).elf
 
 MACHOBJ=	defscr.o defmain.o minios.o 
 
@@ -45,7 +45,6 @@ GENOBJ=		alloc.o altstack.o ascii.o buffers.o \
 		version.o vi_cmds.o vi_ops.o virtscr.o \
 		windows.o yankput.o 
 
-LINKFILE=	$(TARGET).lnk
 LIBS=../../bootstrap/crt0.o ../../lib/minios.a
 
 $(TARGET).elf:	$(GENOBJ) $(MACHOBJ)
@@ -58,4 +57,4 @@ $(TARGET).elf:	$(GENOBJ) $(MACHOBJ)
 
 
 clean:
-	rm -rf *.o $(TARGET).elf *.map *.lst
+	rm -rf *.o *.elf *.map *.lst
