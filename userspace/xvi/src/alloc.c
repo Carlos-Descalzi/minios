@@ -64,10 +64,7 @@ static Reusable		*reuselist = NULL;
 /*
  * Recycle a Change object.
  */
-void
-chfree(ch)
-    Change *ch;
-{
+void chfree(Change* ch) {
     RECYCLE(ch);
 }
 
@@ -75,13 +72,7 @@ chfree(ch)
  * Future plan for MS-DOS is to use some EMS memory to store
  * Reusables; this function will be needed for that.
  */
-#ifndef MSDOS
-static
-#endif
-void
-usemem(p, nbytes)
-    void *p;
-    int nbytes;
+static void usemem(void* p, int nbytes)
 {
     if (nbytes >= sizeof(Reusable)) {
 	Reusable * rp1;
@@ -100,10 +91,9 @@ usemem(p, nbytes)
 /*
  * Allocate a single Reusable object.
  */
-static Reusable *
-ralloc()
-{
+static Reusable * ralloc() {
     Reusable *p;
+    debug("ralloc\n");
 
     if (reuselist == NULL) {
 	/*
@@ -125,25 +115,23 @@ ralloc()
     if (reuselist) {
 	p = reuselist;
 	reuselist = p->ru_next;
+    debug("ralloc %x\n",p);
 	return p;
     }
     /*
      * If we get to here, either there isn't much memory left or it's
      * very badly fragmented, so we just try for a single Reusable.
      */
-    return alloc(sizeof(Reusable));
+    p = alloc(sizeof(Reusable));
+    debug("ralloc 2 %x\n",p);
+    return p;
 }
 
-Change *
-challoc()
-{
+Change * challoc() {
     return (Change *) ralloc();
 }
 
-void *
-alloc(size)
-size_t size;
-{
+void * alloc(size_t size) {
     void *p;		/* pointer to new storage space */
 
     if ((p = calloc(size,1)) == NULL) {
@@ -151,14 +139,12 @@ size_t size;
 	    show_error(out_of_memory);
 	}
     }
+
+    debug("alloc %x\n",p);
     return(p);
 }
 
-void *
-re_alloc(ref, size)
-void *ref;
-size_t size;
-{
+void * re_alloc(void* ref, size_t size){
     void *p;		/* pointer to new storage space */
 
     if ((p = realloc(ref, size)) == NULL) {
@@ -166,13 +152,11 @@ size_t size;
 	    show_error(out_of_memory);
 	}
     }
+    debug("re_alloc %x\n",p);
     return(p);
 }
 
-void *
-clr_alloc(num, size)
-size_t num, size;
-{
+void * clr_alloc(size_t num, size_t size) {
     void *p;		/* pointer to new storage space */
 #if 0
     size_t total;	/* total size to allocate */
@@ -200,6 +184,7 @@ size_t num, size;
 	}
     }
 #endif
+    debug("clr_alloc %x\n",p);
     return(p);
 }
 

@@ -742,6 +742,7 @@ extern	Buffer		*curbuf;	/* current buffer */
  * be a function call or have side-effects.
  */
 #define set_curwin(w)	do { \
+                debug("set_curwin %s %d %x\n",__FILE__,__LINE__,w);\
 			    curwin=(w); \
 			    curbuf = curwin != NULL ? curwin->w_buffer : NULL; \
 			} while(0)

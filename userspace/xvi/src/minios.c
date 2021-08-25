@@ -31,6 +31,7 @@ static long readfunc(FILE* fp) {
 
 char * fexpand(char *name, bool_t do_completion)
 {
+    debug("fxexpand\n");
     /*
     static char		meta[] = "*?[]~${}`";
     char		*cp;
@@ -140,9 +141,11 @@ void alert(){
 }
 
 void flush_output(){
+    debug("flush_output\n");
 }
 
 void sys_endv(){
+    debug("sys_endv\n");
 }
 
 void scroll_down(unsigned int start, unsigned int end, unsigned int lines){
@@ -174,6 +177,7 @@ char* tempfname(char* x){
     return NULL;
 }
 void sys_init(){
+    debug("sys_init\n");
     //printf("sys_init\n");
 }
 void inschar(int c){

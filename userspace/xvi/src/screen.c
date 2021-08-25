@@ -32,12 +32,7 @@ static	void	do_sline P((void));
  * with longlines at the end of the screen. In this case, the lines
  * which could not be displayed will have been marked with an '@'.
  */
-static int
-line_to_new(lp, start_row, line)
-Line		*lp;
-int		start_row;
-long		line;
-{
+static int line_to_new(Line *lp, int start_row, long line) {
     Xviwin		*win = curwin;
     unsigned	c;		/* next character from file */
     Sline	*curr_line;	/* output line - used for efficiency */
@@ -192,9 +187,7 @@ long		line;
  * Based on the current value of topline, transfer a screenful
  * of stuff from file to int_lines, and update botline.
  */
-static void
-file_to_new()
-{
+static void file_to_new() {
     Xviwin		*win = curwin;
     int	row;
     Line	*line;
@@ -252,9 +245,7 @@ file_to_new()
  * the output to be generated; since there will be no other changes,
  * only the status line will be changed on the screen.
  */
-void
-update_sline()
-{
+void update_sline() {
     do_sline();
     xvUpdateScr((int) curwin->w_cmdline, 1);
 }
@@ -263,9 +254,7 @@ update_sline()
  * Update the status line of the current window,
  * from the one in curwin->w_statusline.
  */
-static void
-do_sline()
-{
+static void do_sline() {
     Xviwin		*win = curwin;
     VirtScr		*vs = curwin->w_vs;
     char	*from;
@@ -337,9 +326,7 @@ do_sline()
  *
  * Update the status line from the command line buffer.
  */
-void
-update_cline()
-{
+void update_cline() {
     Xviwin	*win = curwin;
     Sline	*clp;
     size_t	cont, width, maxwidth;
@@ -400,10 +387,7 @@ update_cline()
  * If the flag argument is TRUE, all lines below the current line are
  * also updated.
  */
-void
-updateline(flag)
-bool_t	flag;
-{
+void updateline(bool_t flag) {
     Xviwin	*savecurwin;
     Line	*currline;
     int		nlines;
@@ -445,10 +429,7 @@ bool_t	flag;
  * If the flag argument is TRUE, we also update the status line
  * and clear the window beforehand.
  */
-void
-redraw_window(flag)
-bool_t	flag;
-{
+void redraw_window(bool_t flag) {
     if (curwin == NULL || curwin->w_nrows == 0) {
 	return;
     }
@@ -465,10 +446,7 @@ bool_t	flag;
 /*
  * Update all windows.
  */
-void
-redraw_all(clrflag)
-bool_t	clrflag;
-{
+void redraw_all(bool_t clrflag) {
     Xviwin	*savecurwin;
     VirtScr	*vs = curwin->w_vs;
 
@@ -507,11 +485,7 @@ bool_t	clrflag;
 /*
  * s_ins(row, nlines) - insert 'nlines' lines at 'row'
  */
-void
-s_ins(row, nlines)
-int	row;
-int		nlines;
-{
+void s_ins(int row, int nlines) {
     Xviwin		*win = curwin;
     int	from, to;
     int			count;
@@ -618,11 +592,7 @@ int		nlines;
 /*
  * s_del(row, nlines) - delete 'nlines' lines starting at 'row'.
  */
-void
-s_del(row, nlines)
-int			row;
-int			nlines;
-{
+void s_del(int row, int nlines) {
     int	from, to;
     int			count;
     int			bottomline;
@@ -731,10 +701,7 @@ int			nlines;
  * the screen will eventually be correctly updated anyway; it's just
  * here for speed of screen updating.
  */
-void
-s_inschar(newchar)
-int			newchar;
-{
+void s_inschar(int newchar) {
     Sline		*rp;
     Posn		*pp;
     VirtScr		*vs;		/* the VirtScr for this window */
@@ -745,13 +712,19 @@ int			newchar;
     unsigned		curcol;
     unsigned		columns;
 
+    debug("*1 %8x %8x\n",curwin,curwin->w_vs);
     vs = curwin->w_vs;
+
+    debug("*1 2 %8x\n", vs);
     if (vs->v_insert == NOFUNC) {
-	return;
+        debug("*1 3\n");
+        return;
     }
 
+    debug("*2\n");
+
     if (!(echo & e_CHARUPDATE)) {
-	return;
+        return;
     }
 
     pp = curwin->w_cursor;
@@ -762,7 +735,7 @@ int			newchar;
      */
     cp = pp->p_line->l_text + pp->p_index;
     if (*cp == '\0' || *(cp+1) == '\0') {
-	return;
+        return;
     }
 
     curcol = curwin->w_col;
@@ -772,7 +745,7 @@ int			newchar;
      * screen line of that longline, we can't do it.
      */
     if (curwin->w_c_line_size > 1 && curcol != curwin->w_virtcol) {
-	return;
+        return;
     }
 
     nchars = vischar(newchar, &newstr, (int) curcol);
@@ -782,7 +755,7 @@ int			newchar;
      */
     columns = curwin->w_ncols;
     if (curcol + nchars >= columns) {
-	return;
+        return;
     }
 
     /*
@@ -792,7 +765,7 @@ int			newchar;
      * the line as far as the tab anyway.
      */
     if ((!Pb(P_list) && Pb(P_tabs)) && strchr(cp, '\t') != NULL) {
-	return;
+        return;
     }
 
     /*
@@ -807,72 +780,67 @@ int			newchar;
      * Update ext_lines.
      */
     {
-	char	*curp;		/* pointer to cursor's char cell */
-	unsigned char	*colourp;	/* pointer to cursor's colour cell */
-	char	*last_char;	/* pointer to last char cell in line */
-	unsigned char	*last_colour;	/* pointer to last char cell in line */
-	char	*fromcp;
-	unsigned char	*fromcolp;
+        char	*curp;		/* pointer to cursor's char cell */
+        unsigned char	*colourp;	/* pointer to cursor's colour cell */
+        char	*last_char;	/* pointer to last char cell in line */
+        unsigned char	*last_colour;	/* pointer to last char cell in line */
+        char	*fromcp;
+        unsigned char	*fromcolp;
 
-	rp = vs->pv_ext_lines + curwin->w_row;
-	rp->s_used += nchars;
+        rp = vs->pv_ext_lines + curwin->w_row;
+        rp->s_used += nchars;
 
-	curp = &(rp->s_line[curcol]);
-	colourp = &(rp->s_colour[curcol]);
-	if (rp->s_used > columns) {
-	    rp->s_used = columns;
-	}
-	last_char = &rp->s_line[rp->s_used];
-	*last_char-- = '\0';
-	last_colour = &rp->s_colour[rp->s_used - 1];
+        curp = &(rp->s_line[curcol]);
+        colourp = &(rp->s_colour[curcol]);
+        if (rp->s_used > columns) {
+            rp->s_used = columns;
+        }
+        last_char = &rp->s_line[rp->s_used];
+        *last_char-- = '\0';
+        last_colour = &rp->s_colour[rp->s_used - 1];
 
-	/*
-	 * Move existing text to the right of the insertion point the
-	 * appropriate number of characters to the right, but only if
-	 * they are not going to be overwritten by the new stuff.
-	 */
-	if (last_char - curp >= nchars) {
-	    for (fromcp = last_char - nchars, fromcolp = last_colour - nchars; ;
-			    last_char--, last_colour--, fromcp--, fromcolp--) {
-		*last_char = *fromcp;
-		*last_colour = *fromcolp;
-		if (fromcp <= curp) {
-		    break;
-		}
-	    }
-	}
+        /*
+         * Move existing text to the right of the insertion point the
+         * appropriate number of characters to the right, but only if
+         * they are not going to be overwritten by the new stuff.
+         */
+        if (last_char - curp >= nchars) {
+            for (fromcp = last_char - nchars, fromcolp = last_colour - nchars; ;
+                    last_char--, last_colour--, fromcp--, fromcolp--) {
+                *last_char = *fromcp;
+                *last_colour = *fromcolp;
+                if (fromcp <= curp) {
+                    break;
+                }
+            }
+        }
 
-	/*
-	 * This is the string we've just inserted.
-	 */
-	for (cp = newstr; nchars-- > 0; curp++, colourp++, cp++) {
-	    *curp = *cp;
-	    *colourp = VSCcolour;
-	}
+        /*
+         * This is the string we've just inserted.
+         */
+        for (cp = newstr; nchars-- > 0; curp++, colourp++, cp++) {
+            *curp = *cp;
+            *colourp = VSCcolour;
+        }
     }
 }
 
-void
-wind_goto()
-{
+void wind_goto() {
     VirtScr	*vs;
 
     if (echo & e_CHARUPDATE) {
-	vs = curwin->w_vs;
-	VSgoto(vs, (int) curwin->w_winpos + curwin->w_row, curwin->w_col);
+        vs = curwin->w_vs;
+        VSgoto(vs, (int) curwin->w_winpos + curwin->w_row, curwin->w_col);
     }
 }
 
 /*ARGSUSED*/
-void
-gotocmd(clr)
-bool_t	clr;
-{
+void gotocmd(bool_t clr) {
     VirtScr	*vs;
 
     vs = curwin->w_vs;
     if (clr) {
-	VSclear_line(vs, (int) curwin->w_cmdline, 0);
+        VSclear_line(vs, (int) curwin->w_cmdline, 0);
     }
     VSgoto(vs, (int) curwin->w_cmdline, 0);
 }
@@ -880,8 +848,6 @@ bool_t	clr;
 /*
  * Sound the alert.
  */
-void
-beep()
-{
+void beep() {
     VSbeep(curwin->w_vs);
 }

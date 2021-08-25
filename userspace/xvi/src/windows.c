@@ -32,10 +32,8 @@ static	void	delete_window P((Xviwin *));
 /*
  * Initialise the first window. This routine is called only once.
  */
-Xviwin *
-xvInitWindow(vs)
-VirtScr	*vs;
-{
+Xviwin * xvInitWindow( VirtScr	*vs) {
+
     Xviwin	*newwin;
 
     newwin = add_window((Xviwin *) NULL, (Xviwin *) NULL);
@@ -43,6 +41,7 @@ VirtScr	*vs;
 	return(NULL);
     }
 
+    debug("Init window %x\n",vs);
     newwin->w_vs = vs;
     newwin->w_vs->pv_window = newwin;
 
@@ -73,10 +72,8 @@ VirtScr	*vs;
  * If a window cannot be opened, a message is displayed and NULL
  * is returned.
  */
-Xviwin *
-xvOpenWindow(sizehint)
-int	sizehint;
-{
+Xviwin * xvOpenWindow( int	sizehint) {
+
     Xviwin	*oldwin = curwin;
     Xviwin	*newwin;
 
@@ -102,6 +99,7 @@ int	sizehint;
 	show_error("No more windows!");
 	return(NULL);
     }
+    debug("Open window %x %x\n",oldwin,oldwin->w_vs);
 
     newwin->w_vs = oldwin->w_vs;
     newwin->w_vs->pv_window = (genptr *) newwin;
@@ -137,9 +135,8 @@ int	sizehint;
  * Returns a pointer to the new current window or NULL if this was the
  * last window in the current VirstScr..
  */
-Xviwin *
-xvCloseWindow()
-{
+Xviwin * xvCloseWindow() {
+
     Xviwin	*w1, *w2;
     Xviwin	*new;
     Xviwin	*win = curwin;
@@ -150,30 +147,31 @@ xvCloseWindow()
 	new = NULL;
     } else if (w2 == NULL ||
 		(w1 != NULL && w2 != NULL && w1->w_nrows < w2->w_nrows)) {
-	w1->w_nrows += win->w_nrows;
-	w1->w_cmdline = win->w_cmdline;
-	new = w1;
+        w1->w_nrows += win->w_nrows;
+        w1->w_cmdline = win->w_cmdline;
+        new = w1;
     } else {
-	w2->w_nrows += win->w_nrows;
-	w2->w_winpos = win->w_winpos;
-	new = w2;
+        w2->w_nrows += win->w_nrows;
+        w2->w_winpos = win->w_winpos;
+        new = w2;
     }
 
     if (new == NULL) {
 	/*
 	 * Closing last window onto this VirtScr.
 	 */
-	vs_free(win->w_vs);
-	return(NULL);
+        debug("Free win\n");
+        vs_free(win->w_vs);
+        return(NULL);
     } else {
 	/*
 	 * Be careful not to let the window pointer within
 	 * the VirtScr become invalid.
 	 */
-	win->w_vs->pv_window = (genptr *) new;
-	dealloc_window(win);
-	delete_window(win);
-	return(new);
+        win->w_vs->pv_window = (genptr *) new;
+        dealloc_window(win);
+        delete_window(win);
+        return(new);
     }
 }
 
@@ -228,17 +226,14 @@ xvUnMapWindow()
  * of windows to assume will be present; otherwise, we
  * count the actual number.
  */
-void
-xvEqualiseWindows(wincount)
-int	wincount;
-{
+void xvEqualiseWindows(int wincount) {
     Xviwin	*savecurwin;
     Xviwin	*wp;
     int		winsize;
     int		spare;
 
     if (curwin == NULL) {
-	return;
+        return;
     }
 
     /*
@@ -252,7 +247,7 @@ int	wincount;
 	} while (wp != curwin);
     }
     if (wincount == 1) {
-	return;
+        return;
     }
 
     /*
@@ -266,7 +261,7 @@ int	wincount;
      * Find the first window in the list.
      */
     for (wp = curwin; wp->w_last != NULL; ) {
-	wp = wp->w_last;
+        wp = wp->w_last;
     }
 
     /*
@@ -275,11 +270,11 @@ int	wincount;
      */
     savecurwin = curwin;
     for ( ; wp->w_next != NULL; wp = wp->w_next) {
-	set_curwin(wp);
-	xvResizeWindow(winsize + spare - wp->w_nrows);
-	if (spare > 0) {
-	    spare = 0;
-	}
+        set_curwin(wp);
+        xvResizeWindow(winsize + spare - wp->w_nrows);
+        if (spare > 0) {
+            spare = 0;
+        }
     }
     set_curwin(savecurwin);
 }
@@ -290,79 +285,76 @@ int	wincount;
  * move the top when there is no room for manoeuvre below
  * the current one - i.e. any windows are at minimum size.
  */
-void
-xvResizeWindow(nlines)
-int	nlines;
-{
+void xvResizeWindow(int nlines) {
     Xviwin	*window = curwin;
     Xviwin	*savecurwin;
     unsigned	savecho;
 
     if (nlines == 0 || (window->w_last == NULL && window->w_next == NULL)) {
-	/*
-	 * Nothing to do.
-	 */
-	return;
+        /*
+         * Nothing to do.
+         */
+        return;
     }
 
     savecurwin = curwin;
     savecho = echo;
 
     if (nlines < 0) {
-	int	spare;		/* num spare lines in this window */
+        int	spare;		/* num spare lines in this window */
 
-	nlines = - nlines;
+        nlines = - nlines;
 
-	/*
-	 * The current window must always contain 2 rows,
-	 * so that the cursor has somewhere to go.
-	 */
-	spare = window->w_nrows - MINROWS;
+        /*
+         * The current window must always contain 2 rows,
+         * so that the cursor has somewhere to go.
+         */
+        spare = window->w_nrows - MINROWS;
 
-	/*
-	 * If the window is already as small as it
-	 * can get, don't bother to do anything.
-	 */
-	if (spare <= 0)
-	    return;
+        /*
+         * If the window is already as small as it
+         * can get, don't bother to do anything.
+         */
+        if (spare <= 0)
+            return;
 
-	/*
-	 * Don't allow any screen updating until we've
-	 * finished moving things around.
-	 */
-	echo &= ~e_CHARUPDATE;
+        /*
+         * Don't allow any screen updating until we've
+         * finished moving things around.
+         */
+        echo &= ~e_CHARUPDATE;
 
-	/*
-	 * First shrink the current window up from the bottom.
-	 *
-	 * xvMoveStatusLine()'s return value should be negative or 0
-	 * in this case.
-	 */
-	nlines += xvMoveStatusLine(-min(spare, nlines));
+        /*
+         * First shrink the current window up from the bottom.
+         *
+         * xvMoveStatusLine()'s return value should be negative or 0
+         * in this case.
+         */
+        nlines += xvMoveStatusLine(-min(spare, nlines));
 
-	/*
-	 * If that wasn't enough, grow the window above us
-	 * by the appropriate number of lines.
-	 */
-	if (nlines > 0) {
-	    set_curwin(curwin->w_last);
-	    (void) xvMoveStatusLine(nlines);
-	}
+        /*
+         * If that wasn't enough, grow the window above us
+         * by the appropriate number of lines.
+         */
+        if (nlines > 0) {
+            set_curwin(curwin->w_last);
+            (void) xvMoveStatusLine(nlines);
+        }
     } else {
-	/*
-	 * Don't allow any screen updating until we've
-	 * finished moving things around.
-	 */
-	echo &= ~e_CHARUPDATE;
+        /*
+         * Don't allow any screen updating until we've
+         * finished moving things around.
+         */
+        echo &= ~e_CHARUPDATE;
 
-	/*
-	 * Expand window.
-	 */
-	nlines -= xvMoveStatusLine(nlines);
-	if (nlines > 0) {
-	    set_curwin(curwin->w_last);
-	    (void) xvMoveStatusLine(-nlines);
-	}
+        /*
+         * Expand window.
+         */
+        nlines -= xvMoveStatusLine(nlines);
+        if (nlines > 0) {
+            set_curwin(curwin->w_last);
+            (void) xvMoveStatusLine(-nlines);
+        }
     }
     set_curwin(savecurwin);
 
@@ -397,70 +389,70 @@ int	nlines;		/*
     }
 
     if (nlines < 0) {		/* move upwards */
-	int	amount;
-	int	spare;
+        int	amount;
+        int	spare;
 
-	amount = -nlines;
-	spare = wp->w_nrows - Pn(P_minrows);
+        amount = -nlines;
+        spare = wp->w_nrows - Pn(P_minrows);
 
-	if (amount > spare && wp->w_last != NULL) {
-	    /*
-	     * Not enough space: call xvMoveStatusLine() recursively
-	     * for previous line; note that the second parameter
-	     * should be negative.
-	     */
-	    set_curwin(wp->w_last);
-	    (void) xvMoveStatusLine(spare - amount);
-	    set_curwin(wp);	/* restore original value */
+        if (amount > spare && wp->w_last != NULL) {
+            /*
+             * Not enough space: call xvMoveStatusLine() recursively
+             * for previous line; note that the second parameter
+             * should be negative.
+             */
+            set_curwin(wp->w_last);
+            (void) xvMoveStatusLine(spare - amount);
+            set_curwin(wp);	/* restore original value */
 
-	    spare = wp->w_nrows - Pn(P_minrows);
-	}
-	if (amount > spare)
-	    amount = spare;
-	if (amount != 0) {
-	    wp->w_nrows -= amount;
-	    wp->w_cmdline -= amount;
-	    nextwin->w_winpos -= amount;
-	    nextwin->w_nrows += amount;
+            spare = wp->w_nrows - Pn(P_minrows);
+        }
+        if (amount > spare)
+            amount = spare;
+        if (amount != 0) {
+            wp->w_nrows -= amount;
+            wp->w_cmdline -= amount;
+            nextwin->w_winpos -= amount;
+            nextwin->w_nrows += amount;
 
-	    set_curwin(nextwin);
-	    (void) shiftdown((unsigned) amount);
-	    set_curwin(wp);	/* restore original value */
+            set_curwin(nextwin);
+            (void) shiftdown((unsigned) amount);
+            set_curwin(wp);	/* restore original value */
 
-	    if (wp->w_nrows > 0) {
-		show_file_info(TRUE);
-	    }
-	}
-	nlines = -amount;	/* return value */
+            if (wp->w_nrows > 0) {
+                show_file_info(TRUE);
+            }
+        }
+        nlines = -amount;	/* return value */
     } else {			/* move downwards */
-	int	spare;
+        int	spare;
 
-	spare = nextwin->w_nrows - Pn(P_minrows);
+        spare = nextwin->w_nrows - Pn(P_minrows);
 
-	if (nlines > spare) {
-	    /*
-	     * Not enough space: call xvMoveStatusLine()
-	     * recursively for next line.
-	     */
-	    set_curwin(nextwin);
-	    (void) xvMoveStatusLine(nlines - spare);
-	    set_curwin(wp);	/* restore original value */
-	    spare = nextwin->w_nrows - Pn(P_minrows);
-	}
-	if (nlines > spare)
-	    nlines = spare;
-	if (nlines != 0) {
-	    wp->w_nrows += nlines;
-	    wp->w_cmdline += nlines;
-	    nextwin->w_winpos += nlines;
-	    nextwin->w_nrows -= nlines;
-	    set_curwin(nextwin);
-	    (void) shiftup((unsigned) nlines);
-	    set_curwin(wp);	/* restore original value */
-	    if (wp->w_nrows > 0) {
-		show_file_info(TRUE);
-	    }
-	}
+        if (nlines > spare) {
+            /*
+             * Not enough space: call xvMoveStatusLine()
+             * recursively for next line.
+             */
+            set_curwin(nextwin);
+            (void) xvMoveStatusLine(nlines - spare);
+            set_curwin(wp);	/* restore original value */
+            spare = nextwin->w_nrows - Pn(P_minrows);
+        }
+        if (nlines > spare)
+            nlines = spare;
+        if (nlines != 0) {
+            wp->w_nrows += nlines;
+            wp->w_cmdline += nlines;
+            nextwin->w_winpos += nlines;
+            nextwin->w_nrows -= nlines;
+            set_curwin(nextwin);
+            (void) shiftup((unsigned) nlines);
+            set_curwin(wp);	/* restore original value */
+            if (wp->w_nrows > 0) {
+            show_file_info(TRUE);
+            }
+        }
     }
     return(nlines);
 }
@@ -738,12 +730,12 @@ Xviwin	*win;
      */
     win->w_cursor = alloc(sizeof(Posn));
     if (win->w_cursor == NULL) {
-	return(FALSE);
+        return(FALSE);
     }
 
     win->w_cmd = alloc(sizeof(Cmd));
     if (win->w_cmd == NULL) {
-	return(FALSE);
+        return(FALSE);
     }
     xvInitialiseCmd(win->w_cmd);
 
@@ -779,20 +771,21 @@ add_window(last, next)
 Xviwin	*last, *next;
 {
     Xviwin	*newwin;
+    debug("ADD WINDOW\n");
 
     newwin = alloc(sizeof(Xviwin));
     if (newwin == NULL) {
-	return(NULL);
+        return(NULL);
     }
 
     /*
      * Link the window into the list.
      */
     if (last != NULL) {
-	last->w_next = newwin;
+        last->w_next = newwin;
     }
     if (next != NULL) {
-	next->w_last = newwin;
+        next->w_last = newwin;
     }
     newwin->w_last = last;
     newwin->w_next = next;
@@ -830,19 +823,20 @@ Xviwin *
 xvNextWindow(window)
 Xviwin	*window;
 {
+    debug("xvNextWindow\n");
     if (window == NULL) {
-	return(NULL);
+        return(NULL);
     } else if (window->w_next != NULL) {
-	return(window->w_next);
+        return(window->w_next);
     } else {
-	Xviwin	*tmp;
+        Xviwin	*tmp;
 
-	/*
-	 * No next window; go to start of list.
-	 */
-	for (tmp = window; tmp->w_last != NULL; tmp = tmp->w_last)
-	    ;
-	return(tmp);
+        /*
+         * No next window; go to start of list.
+         */
+        for (tmp = window; tmp->w_last != NULL; tmp = tmp->w_last)
+            ;
+        return(tmp);
     }
 }
 

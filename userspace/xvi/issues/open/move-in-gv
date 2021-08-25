@@ -1,3 +1,0 @@
-:g/bla/m$ doesn't work
-
-It says "Invalid command character".  Same for g/bla/t$

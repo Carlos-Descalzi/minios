@@ -618,13 +618,13 @@ bool_t	insert;
 
 	    c = cltp[wspos];
 	    if (is_space(c)) {
-		while (wspos > 0 && (c = cltp[wspos - 1]) != '\0'
-		    && is_space(c)) {
-		    --wspos;
-		}
-		break;
+            while (wspos > 0 && (c = cltp[wspos - 1]) != '\0'
+                && is_space(c)) {
+                --wspos;
+            }
+            break;
 	    } else {
-		nwspos = wspos;
+            nwspos = wspos;
 	    }
 	}
 	if (wspos > 0) {
@@ -635,20 +635,20 @@ bool_t	insert;
 	    target.p_index = wspos;
 	    offset = curpos->p_index - nwspos;
 	    if (openfwd(&target, TRUE) == FALSE) {
-		show_error(out_of_memory);
+            show_error(out_of_memory);
 	    } else {
-		int	newindex = curpos->p_index;
-		Line	*newlp = curpos->p_line;
-		int c;
+            int	newindex = curpos->p_index;
+            Line	*newlp = curpos->p_line;
+            int c;
 
-		/*
-		 * Have split the line - now delete any leading
-		 * non-autoindent whitespace characters on the new
-		 * line.
-		 */
-		while ((c = newlp->l_text[newindex]) != '\0' && is_space(c))
-		    replchars(newlp, newindex, 1, "");
-		move_cursor(newlp, newindex + offset);
+            /*
+             * Have split the line - now delete any leading
+             * non-autoindent whitespace characters on the new
+             * line.
+             */
+            while ((c = newlp->l_text[newindex]) != '\0' && is_space(c))
+                replchars(newlp, newindex, 1, "");
+            move_cursor(newlp, newindex + offset);
 	    }
 	}
     }
@@ -699,12 +699,12 @@ bool_t	insert;
      * of the line if required.
      */
     if (beginline) {
-	begin_line(TRUE);
+        begin_line(TRUE);
     } else {
 	/* If we're showing the ^ for a ^V, leave the cursor on the ^ */
-	if (!literal_next) {
-	    (void) one_right(TRUE);
-	}
+        if (!literal_next) {
+            (void) one_right(TRUE);
+        }
     }
 
     return(TRUE);

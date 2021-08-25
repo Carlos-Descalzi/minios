@@ -241,9 +241,6 @@ char		*extra_str;
 char		*no_file_str;
 {
     FILE	*fp;		/* ptr to open file */
-#ifndef i386
-    register
-#endif
     unsigned long	nchars;		/* number of chars read */
 	     long	nlines;		/* number of lines read */
     unsigned long	nulls;		/* number of null chars */
@@ -640,9 +637,6 @@ FILE	*f;
 Line		*start, *end;
 unsigned long	*ncp, *nlp;
 {
-#ifndef i386
-    register
-#endif
 	     Line		*lp;
     unsigned long	nchars;
     unsigned long		nlines;
