@@ -52,7 +52,7 @@ Notify_arg		na;
 Notify_event_type	type;
 {
     static Pixfont	*deffont = (Pixfont *) 0; /* default font */
-    register int	evtcode;
+    int	evtcode;
     static char		seqbuf[(sizeof (unsigned int) * 12) + 7] =
 						{ PREFIXCHAR };
     int			nchars;

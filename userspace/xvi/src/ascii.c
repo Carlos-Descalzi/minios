@@ -40,9 +40,9 @@
  */
 unsigned
 vischar(c, pp, tabcol)
-    register int	c;
-    register char	**pp;
-    register int	tabcol;
+    int	c;
+    char	**pp;
+    int	tabcol;
 {
     static char		crep[5];
 
@@ -51,8 +51,8 @@ vischar(c, pp, tabcol)
 	 * Tab which we have to display as a string of
 	 * spaces (rather than "^I" or directly).
 	 */
-	register unsigned	nspaces;
-	register int		ts;
+	unsigned	nspaces;
+	int		ts;
 
 	ts = Pn(P_tabstop);
 	while (tabcol >= ts) {

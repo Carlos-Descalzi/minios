@@ -26,7 +26,7 @@ static	void	format_redo P((int, Cmd *));
 
 void
 xvOpShift(cmd)
-register Cmd	*cmd;
+Cmd	*cmd;
 {
     if (!start_command(cmd)) {
 	return;
@@ -62,7 +62,7 @@ register Cmd	*cmd;
  */
 void
 xvOpDelete(cmd)
-register Cmd	*cmd;
+Cmd	*cmd;
 {
     long	nlines;	    /* Number of logical lines the deletion affects */
     long	nplines;    /* If nlines == 1, nplines is the number of
@@ -187,7 +187,7 @@ register Cmd	*cmd;
  */
 void
 xvOpChange(cmd)
-register Cmd	*cmd;
+Cmd	*cmd;
 {
     /*
      * Start the command here so the initial delete gets
@@ -261,9 +261,9 @@ register Cmd	*cmd;
 
 void
 xvOpYank(cmd)
-register Cmd	*cmd;
+Cmd	*cmd;
 {
-    register long	nlines;
+    long	nlines;
 
     if (cmd->cmd_target.p_line == NULL) {
 	return;
@@ -285,7 +285,7 @@ register Cmd	*cmd;
 static void
 format_redo(opchar, cmd)
 int		opchar;
-register Cmd	*cmd;
+Cmd	*cmd;
 {
     flexclear(&Redo.r_fb);
     if (cmd->cmd_prenum != 0) {

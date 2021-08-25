@@ -488,8 +488,8 @@ char	*str;
 bool_t	line_based;
 {
     Yankbuffer		*yp_buf;
-    register Line	*tmp;
-    register char	*cp;
+    Line	*tmp;
+    char	*cp;
 
     yp_buf = yp_get_buffer(name);
     if (yp_buf == NULL) {
@@ -545,8 +545,8 @@ int	name;
 Cmd *	vi_cmd;		/* If vi mode, the cmd; NULL if ex mode */
 {
     Yankbuffer		*yp_buf;
-    register Line	*currline;	/* line we are on now */
-    register Line	*nextline;	/* line after currline */
+    Line	*currline;	/* line we are on now */
+    Line	*nextline;	/* line after currline */
     Buffer		*buffer;
 
     yp_buf = yp_get_buffer(name);
@@ -1069,7 +1069,7 @@ static Line *
 last_line_of(lines)
 Line *lines;
 {
-    register Line *lp;
+    Line *lp;
 
     for (lp = lines; lp->l_next != NULL; lp = lp->l_next)
 	;

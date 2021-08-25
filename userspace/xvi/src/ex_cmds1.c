@@ -814,7 +814,7 @@ char	*filename;
 Line	*l1, *l2;
 bool_t	force;
 {
-    register Buffer	*buffer = curbuf;
+    Buffer	*buffer = curbuf;
 
     if (filename == NULL) {
 	filename = buffer->b_filename;

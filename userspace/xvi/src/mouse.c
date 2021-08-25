@@ -29,20 +29,20 @@
  */
 static Line *
 findline(row, pstartrow)
-register int	row;
+int	row;
 int		*pstartrow;
 {
     Xviwin		*wp = curwin;
-    register int	lposn;
+    int	lposn;
     int			maxrow;
-    register Line	*lp;
+    Line	*lp;
 
     lp = wp->w_topline;
     lposn = wp->w_winpos;
     maxrow = wp->w_cmdline;
 
     for (;;) {
-	register int	newposn;
+	int	newposn;
 
 	newposn = lposn + LONG2INT(plines(lp));
 	if (
@@ -104,9 +104,9 @@ int	col;		/* column where mouse was clicked */
  */
 static Xviwin *
 findwin(row)
-register int	row;
+int	row;
 {
-    register Xviwin	*wp;
+    Xviwin	*wp;
 
     wp = curwin;
     for (;;) {
@@ -174,10 +174,10 @@ int row1, row2, col1, col2;
  */
 void
 mouseclick(row, col)
-register int	row;	/* row the mouse cursor is in */
+int	row;	/* row the mouse cursor is in */
 int		col;	/* column the mouse cursor is in */
 {
-    register Xviwin	*wp;
+    Xviwin	*wp;
 
     if (State != NORMAL) {
 	return;

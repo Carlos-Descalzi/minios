@@ -52,7 +52,7 @@ int	num;
     enum mvtype		(*mvfunc) P((Posn *));
     enum mvtype		(*backfunc) P((Posn *));
     unsigned char	c;			/* as ch but uchar */
-    register int	i;			/* loop counter */
+    int	i;			/* loop counter */
 
     /*
      * Remember details in case we want to repeat the search.
@@ -130,10 +130,10 @@ int	num;
 Posn *
 showmatch()
 {
-    register char	initc;			/* initial char */
-    register enum mvtype
+    char	initc;			/* initial char */
+    enum mvtype
 			(*move) P((Posn *));	/* function to move cursor */
-    register char	findc;			/* terminating char */
+    char	findc;			/* terminating char */
     static Posn		pos;			/* current position */
     char		c;
     int			count = 0;

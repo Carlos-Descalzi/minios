@@ -152,7 +152,7 @@ unstuff()
  */
 void
 map_char(c)
-register int	c;
+int	c;
 {
     (void) flexaddch(kpos.mp_src, c);
 }
@@ -235,11 +235,11 @@ Map	*map;
  */
 static bool_t
 process_map(c, pos)
-register int	c;
-register Mpos	*pos;
+int	c;
+Mpos	*pos;
 {
-    register Map	*tmp;
-    register int	ind;
+    Map	*tmp;
+    int	ind;
 
     ind = pos->mp_index;
     for (tmp = pos->mp_map; tmp != NULL; tmp = tmp->m_next) {
@@ -333,9 +333,9 @@ static void
 map_failed(pos)
 Mpos	*pos;
 {
-    register char	*cp;
-    register Flexbuf	*fbp;
-    register int	i;
+    char	*cp;
+    Flexbuf	*fbp;
+    int	i;
 
     if (pos->mp_map != NULL) {
 
@@ -388,8 +388,8 @@ mapescape(lhsp, rhsp)
 		      **rhsp;
 {
     Flexbuf		f;
-    register int	c;
-    register char      *s;
+    int	c;
+    char      *s;
     char	      **spp;
 
     flexnew(&f);
@@ -397,7 +397,7 @@ mapescape(lhsp, rhsp)
     spp = lhsp;
     *rhsp = (char *) NULL;
     while ((c = *s++) != '\0') {
-	register int	bc;
+	int	bc;
 
 	switch (bc = c) {
 	case '\\':
@@ -475,10 +475,10 @@ mapescape(lhsp, rhsp)
  */
 bool_t
 xvi_map(arg, exclam)
-    register char      *arg;
+    char      *arg;
     bool_t		exclam;
 {
-    register int	c;
+    int	c;
 
     if (arg) {
 	while ((c = *arg) != '\0' && is_space(c)) {
@@ -647,7 +647,7 @@ static void
 calc_same(mptr)
 Map	*mptr;
 {
-    register char	*a, *b;
+    char	*a, *b;
 
     mptr->m_same = 0;
     if (mptr->m_next != NULL) {

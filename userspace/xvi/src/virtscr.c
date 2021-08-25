@@ -45,7 +45,7 @@ VirtScr	*vs;
      * Now assign all the rows ...
      */
     for (count = 0; count < vs->pv_rows; count++) {
-	register Sline	*ip, *ep;
+	Sline	*ip, *ep;
 
 	ip = vs->pv_int_lines + count;
 	ep = vs->pv_ext_lines + count;

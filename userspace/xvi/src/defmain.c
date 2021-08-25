@@ -24,24 +24,17 @@
 
 extern	VirtScr	defscr;
 
-int
-main(argc, argv)
-int	argc;
-char	*argv[];
-{
+int main(int argc, char* argv) {
     defscr_main(argc, argv);
     return(0);
 }
 
-void
-startup_error(str)
-char	*str;
-{
+void startup_error(char* str){
     static int	called = 0;
 
     if (!called) {
-	sys_endv();
-	called = 1;
+        sys_endv();
+        called = 1;
     }
     (void) fputs(str, stderr);
     (void) putc('\n', stderr);

@@ -39,10 +39,10 @@ int		start_row;
 long		line;
 {
     Xviwin		*win = curwin;
-    register unsigned	c;		/* next character from file */
-    register Sline	*curr_line;	/* output line - used for efficiency */
-    register char	*ltext;		/* pointer to text of line */
-    register int	curr_index;	/* current index in line */
+    unsigned	c;		/* next character from file */
+    Sline	*curr_line;	/* output line - used for efficiency */
+    char	*ltext;		/* pointer to text of line */
+    int	curr_index;	/* current index in line */
     bool_t		eoln;		/* true when line is done */
     char		extra[MAX_TABSTOP];
 					/* Stack for extra characters. */
@@ -196,8 +196,8 @@ static void
 file_to_new()
 {
     Xviwin		*win = curwin;
-    register int	row;
-    register Line	*line;
+    int	row;
+    Line	*line;
     long		lnum;
 
     if (win->w_nrows < Pn(P_minrows))
@@ -233,7 +233,7 @@ file_to_new()
      * with '~' characters.
      */
     for ( ; row < win->w_cmdline; row++) {
-	register Sline	*curr_line;
+	Sline	*curr_line;
 
 	curr_line = win->w_vs->pv_int_lines + row;
 
@@ -268,9 +268,9 @@ do_sline()
 {
     Xviwin		*win = curwin;
     VirtScr		*vs = curwin->w_vs;
-    register char	*from;
-    register char	*to;
-    register char	*end;
+    char	*from;
+    char	*to;
+    char	*end;
     int			colindex;
     unsigned		colour;
     Sline		*slp;
@@ -344,7 +344,7 @@ update_cline()
     Sline	*clp;
     size_t	cont, width, maxwidth;
     int		colindex, start, col;
-    char *cbuf = flexgetstr(&curwin->w_statusline);
+    char *cbuf = flexgetstr(&(curwin->w_statusline));
     int		pos = get_pos();	/* Position of cursor within line */
 
     clp = win->w_vs->pv_int_lines + win->w_cmdline;
@@ -509,11 +509,11 @@ bool_t	clrflag;
  */
 void
 s_ins(row, nlines)
-register int	row;
+int	row;
 int		nlines;
 {
     Xviwin		*win = curwin;
-    register int	from, to;
+    int	from, to;
     int			count;
     int			bottomline;
     enum
@@ -590,9 +590,9 @@ int		nlines;
 	 */
 	for (to = win->w_cmdline - 1, from = to - nlines; from >= row;
 						    --from, --to) {
-	    register Sline	*lpfrom;
-	    register Sline	*lpto;
-	    register char	*temp;
+	    Sline	*lpfrom;
+	    Sline	*lpto;
+	    char	*temp;
 
 	    lpfrom = &vs->pv_ext_lines[from];
 	    lpto = &vs->pv_ext_lines[to];
@@ -623,7 +623,7 @@ s_del(row, nlines)
 int			row;
 int			nlines;
 {
-    register int	from, to;
+    int	from, to;
     int			count;
     int			bottomline;
     enum
@@ -699,9 +699,9 @@ int			nlines;
 	 */
 	for (to = row, from = to + nlines; from < curwin->w_cmdline;
 						    from++, to++) {
-	    register Sline	*lpfrom;
-	    register Sline	*lpto;
-	    register char	*temp;
+	    Sline	*lpfrom;
+	    Sline	*lpto;
+	    char	*temp;
 
 	    lpfrom = &vs->pv_ext_lines[from];
 	    lpto = &vs->pv_ext_lines[to];
@@ -739,8 +739,8 @@ int			newchar;
     Posn		*pp;
     VirtScr		*vs;		/* the VirtScr for this window */
     char		*newstr;	/* printable string for newchar */
-    register char	*cp;
-    register unsigned	nchars;		/* number of chars in newstr */
+    char	*cp;
+    unsigned	nchars;		/* number of chars in newstr */
     unsigned		currow;
     unsigned		curcol;
     unsigned		columns;
@@ -807,11 +807,11 @@ int			newchar;
      * Update ext_lines.
      */
     {
-	register char	*curp;		/* pointer to cursor's char cell */
+	char	*curp;		/* pointer to cursor's char cell */
 	unsigned char	*colourp;	/* pointer to cursor's colour cell */
-	register char	*last_char;	/* pointer to last char cell in line */
+	char	*last_char;	/* pointer to last char cell in line */
 	unsigned char	*last_colour;	/* pointer to last char cell in line */
-	register char	*fromcp;
+	char	*fromcp;
 	unsigned char	*fromcolp;
 
 	rp = vs->pv_ext_lines + curwin->w_row;

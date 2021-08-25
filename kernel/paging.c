@@ -1,4 +1,4 @@
-#define NODEBUG
+//#define NODEBUG
 #include "kernel/paging.h"
 #include "kernel/isr.h"
 #include "lib/string.h"
@@ -171,7 +171,6 @@ static uint32_t setup_page(PageDirectoryEntry* dir, VirtualAddress vaddress, uin
 uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
     ElfHeader header;
     ElfProgramHeader prg_header;
-    uint32_t blocks;
     uint32_t i;
     uint32_t j;
 
@@ -185,27 +184,45 @@ uint32_t paging_load_code(Stream* stream, PageDirectoryEntry* dir){
 
         if (prg_header.segment_type == ELF_PH_PT_LOAD){
 
-            blocks = TO_PAGES(prg_header.segment_mem_size);
+            uint32_t pages = TO_PAGES(prg_header.segment_mem_size);
+            uint32_t pages_file = TO_PAGES(prg_header.segment_file_size);
 
-            for (j=0;j<blocks;j++){
+            debug("PAGING - load to n pages:");debug_i(pages ,10);
+            debug(", size:");debug_i(prg_header.segment_mem_size,10);
+            debug(", size:");debug_i(prg_header.segment_file_size,10);
+            debug("\n");
+
+            uint32_t to_read = prg_header.segment_file_size;
+
+            for (j=0;j<pages;j++){
                 uint32_t phys_block = setup_page(
                     dir, 
                     (VirtualAddress)(prg_header.virtual_address + ( j * PAGE_SIZE )), 
                     (prg_header.flags & 0x2) != 0);
 
                 debug("PAGING - Alloc physical block:");debug_i(phys_block,16);debug("\n");
+                debug("PAGING -     Flags: ");debug_i(prg_header.flags,16);debug("\n");
 
                 set_exchange_page(phys_block);
 
-                elf_read_program_page(
-                    stream, 
-                    &prg_header, 
-                    local_ptr,
-                    j, 
-                    PAGE_SIZE);
+                memset(local_ptr,0,PAGE_SIZE);
+
+                if (j < pages_file){
+                    elf_read_program_page(
+                        stream, 
+                        &prg_header, 
+                        local_ptr,
+                        j, 
+                        PAGE_SIZE);
+                    if (to_read < PAGE_SIZE){
+                        memset(local_ptr + to_read,0, (PAGE_SIZE - to_read));
+                    }
+                }
+
+                to_read-=PAGE_SIZE;
             }
         } else {
-            //debug("PAGING - Segment type:");debug_i(prg_header.segment_type,16);debug("\n");
+            debug("PAGING - Segment type:");debug_i(prg_header.segment_type,16);debug("\n");
         }
     }
 
@@ -702,7 +719,7 @@ void* paging_physical_to_kernel_space(uint32_t physical_address, uint16_t length
 
     int n_pages = calculate_page_count(physical_address, length);
 
-    debug("N pages:");debug_i(n_pages,10);debug("\n");
+    //debug("N pages:");debug_i(n_pages,10);debug("\n");
 
     VirtualAddress addr_start = get_free_virtual_address_space(n_pages);
 
@@ -723,7 +740,7 @@ void* paging_physical_to_kernel_space(uint32_t physical_address, uint16_t length
         local_table[addr.page_index].user_supervisor = 0;
         local_table[addr.page_index].accessed = 1;
         local_table[addr.page_index].physical_page_address = physical_page;
-        debug("Map ");debug_i(physical_page,16);debug(" to ");debug_i(addr.addressh ,16);debug("\n");
+        //debug("Map ");debug_i(physical_page,16);debug(" to ");debug_i(addr.addressh ,16);debug("\n");
     }
 
     paging_invalidate_cache();
@@ -758,7 +775,7 @@ void* paging_task_to_kernel_space(PageDirectoryEntry* page_directory, uint32_t v
 
     int n_pages = calculate_page_count(virtual_address, length);
 
-    debug("N pages:");debug_i(n_pages,10);debug("\n");
+    //debug("N pages:");debug_i(n_pages,10);debug("\n");
 
     VirtualAddress addr_start = get_free_virtual_address_space(n_pages);
 
@@ -769,8 +786,8 @@ void* paging_task_to_kernel_space(PageDirectoryEntry* page_directory, uint32_t v
 
     VirtualAddress task_address = { .address = virtual_address };
 
-    debug("Map ");debug_i(task_address.addressh,16);
-    debug("->");debug_i(task_address.addressh+n_pages-1,16);debug("\n");
+    //debug("Map ");debug_i(task_address.addressh,16);
+    //debug("->");debug_i(task_address.addressh+n_pages-1,16);debug("\n");
 
     for (int i=0;i<n_pages;i++, task_address.addressh++, addr.addressh++){
 
@@ -789,7 +806,7 @@ void* paging_task_to_kernel_space(PageDirectoryEntry* page_directory, uint32_t v
         local_table[addr.page_index].user_supervisor = 0;
         local_table[addr.page_index].accessed = 1;
         local_table[addr.page_index].physical_page_address = physical_page;
-        debug("Map ");debug_i(physical_page,16);debug(" to ");debug_i(addr.addressh ,16);debug("\n");
+        //debug("Map ");debug_i(physical_page,16);debug(" to ");debug_i(addr.addressh ,16);debug("\n");
     }
 
     paging_invalidate_cache();

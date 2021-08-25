@@ -169,7 +169,7 @@ static bool_t
 save_position(csp)
 Change **csp;		/* Stack where to save the change */
 {
-    register Change	*change;
+    Change	*change;
 
     change = challoc();
     if (change == NULL) {
@@ -189,7 +189,7 @@ Change **csp;		/* Stack where to save the change */
 void
 end_command()
 {
-    register ChangeData	*cdp = curbuf->b_change;
+    ChangeData	*cdp = curbuf->b_change;
 
     if (cdp->cd_nlevels > 0) {
 	cdp->cd_nlevels -= 1;
@@ -289,11 +289,11 @@ int	start;
 int	nchars;
 char	*newstring;
 {
-    register char	*from;		/* where to copy from */
-    register char	*to;		/* where to copy to */
-    register int	nlen;		/* length of newstring */
-    register int	olen;		/* length of old line */
-    register int	offset;		/* how much to move text by */
+    char	*from;		/* where to copy from */
+    char	*to;		/* where to copy to */
+    int	nlen;		/* length of newstring */
+    int	olen;		/* length of old line */
+    int	offset;		/* how much to move text by */
     Buffer		*buffer = curbuf;
     Change		*change;
 
@@ -335,7 +335,7 @@ char	*newstring;
     change->c_nchars = nlen;
 
     if (offset > 0) {
-	register char	*s;
+	char	*s;
 
 	/*
 	 * Move existing text along by offset to the right.
@@ -406,7 +406,7 @@ Line		*newlines;
 {
     Xviwin		*window = curwin;
     Xviwin		*savecurwin;
-    register Buffer	*buffer;	/* buffer window is mapped onto */
+    Buffer	*buffer;	/* buffer window is mapped onto */
     Line		*firstp;	/* line before first to delete */
     Line		*lastp;		/* line after last to delete */
     Line		*lastline;	/* last line to delete */
@@ -416,9 +416,9 @@ Line		*newlines;
     long		oplines;	/* no. physical lines to be replaced */
     long		nplines;	/* no. new physical lines */
     long		n;		/* lines done so far */
-    register Xviwin	*wp;		/* loop variable */
+    Xviwin	*wp;		/* loop variable */
     Change		*change;
-    register ChangeData	*cdp;
+    ChangeData	*cdp;
 
     buffer = curbuf;
     cdp = buffer->b_change;
@@ -715,7 +715,7 @@ replbuffer(newlines)
 Line		*newlines;
 {
     Xviwin		*savecurwin;
-    register Buffer	*buffer = curbuf; /* buffer window is mapped onto */
+    Buffer	*buffer = curbuf; /* buffer window is mapped onto */
     ChangeData		*cdp = curbuf->b_change;
     Line		*new_end;	/* last line to be inserted */
     Line		*p;
@@ -828,7 +828,7 @@ undoline()
 void
 undo()
 {
-    register Buffer	*buffer;
+    Buffer	*buffer;
     ChangeData		*cdp;
     Change		*chp;
     Change		*change;
@@ -1118,7 +1118,7 @@ Change	*chp;
 static void
 report()
 {
-    register ChangeData	*cdp;
+    ChangeData	*cdp;
 
     cdp = curbuf->b_change;
 

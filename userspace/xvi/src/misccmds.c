@@ -38,8 +38,8 @@ Posn	*oldposn;
 bool_t	split_line;
 {
     Line		*l;		/* pointer to newly allocated line */
-    register Line	*oldline;
-    register char	*otext;
+    Line	*oldline;
+    char	*otext;
 
     oldline = oldposn->p_line;
     otext = oldline->l_text;
@@ -124,8 +124,8 @@ bool_t
 openbwd()
 {
     Line		*l;
-    register Line	*oldline;
-    register char	*otext;
+    Line	*oldline;
+    char	*otext;
 
     oldline = curwin->w_cursor->p_line;
     otext = oldline->l_text;
@@ -175,10 +175,10 @@ openbwd()
 long
 cntllines(pbegin, pend)
 Line		*pbegin;
-register Line	*pend;
+Line	*pend;
 {
-    register Line	*lp;
-    register long	lnum;
+    Line	*lp;
+    long	lnum;
     bool_t		swapped = FALSE;
 
     /*
@@ -208,8 +208,8 @@ long
 plines( lp)
 Line	*lp;
 {
-    register long	col;
-    register char	*s;
+    long	col;
+    char	*s;
 
     s = lp->l_text;
 
@@ -231,8 +231,8 @@ Line	*lp;
     }
 
     {
-	register int	row;
-	register int	columns;
+	int	row;
+	int	columns;
 
 	columns = curwin->w_ncols;
 	for (row = 1; col > columns; ) {
@@ -257,10 +257,10 @@ Line	*lp;
 long
 cntplines(pbegin, pend)
 Line		*pbegin;
-register Line	*pend;
+Line	*pend;
 {
-    register Line	*lp;
-    register long	physlines;
+    Line	*lp;
+    long	physlines;
     unsigned		toomuch;
 
     /*
@@ -292,14 +292,14 @@ register Line	*pend;
 Line *
 gotoline(b, n)
 Buffer			*b;
-register unsigned long	n;
+unsigned long	n;
 {
     if (n == 0) {
 	return(b->b_file);
     } else if (n == MAX_LINENO) {
 	return(b_last_line_of(b));
     } else {
-	register Line	*lp;
+	Line	*lp;
 
 	for (lp = b->b_file; --n > 0 && lp->l_next != b->b_lastline;
 							lp = lp->l_next) {
@@ -311,11 +311,11 @@ register unsigned long	n;
 
 int
 get_indent(lp)
-register Line	*lp;
+Line	*lp;
 {
-    register char   *text;
-    register int    indent;
-    register int    ts = Pn(P_tabstop);	/* synonym for efficiency */
+    char   *text;
+    int    indent;
+    int    ts = Pn(P_tabstop);	/* synonym for efficiency */
 
     if (lp == NULL || (text = lp->l_text) == NULL) {
 	show_error("Internal error: get_indent(NULL)");
@@ -337,10 +337,10 @@ register Line	*lp;
 int
 set_indent(lp, indent)
 Line		*lp;
-register int	indent;
+int	indent;
 {
-    register char	*cp;		/* temp char pointer for loops */
-    register int	ntabs;		/* number of tabs to use */
+    char	*cp;		/* temp char pointer for loops */
+    int	ntabs;		/* number of tabs to use */
     unsigned		nold;		/* no of chars used in new version */
     static Flexbuf	newstr;		/* space for new chars */
     int			tabstop;	/* value of P_tabstop */
@@ -414,7 +414,7 @@ Cmd	*cmd;	/* If vi-mode, the cmd struct; NULL if ex mode */
     finish = finish->l_next;
 
     for (lp = start; lp != finish; lp = lp->l_next) {
-	register char *p;
+	char *p;
 
 	/*
 	 * Find out whether it's a blank line (either
@@ -538,9 +538,9 @@ char	*whites;
  */
 void
 xvConvertWhiteSpace(str)
-register char	*str;
+char	*str;
 {
-    register char	*cp;
+    char	*cp;
 
     while (*str != '\0') {
 	if (str[0] == '\\' && is_space(str[1])) {

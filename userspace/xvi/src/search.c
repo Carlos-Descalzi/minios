@@ -83,15 +83,15 @@ int	delim;		/* delimiter character */
 {
     static Flexbuf	ns;
     int			rxtype;	/* can be rt_TAGS, rt_GREP or rt_EGREP */
-    register enum {
+    enum {
 	m_normal,	/* nothing special */
 	m_startccl,	/* just after [ */
 	m_negccl,	/* just after [^ */
 	m_ccl,		/* between [... or [^... and ] */
 	m_escape	/* just after \ */
     }	state = m_normal;
-    register int	c;
-    register char	*s;
+    int	c;
+    char	*s;
 
     rxtype = Pn(P_regextype);
 
@@ -570,12 +570,12 @@ int	ind;
 static Posn *
 rmatch(line, ind, maxindex)
 Line		*line;
-register int	ind;
+int	ind;
 int		maxindex;
 {
-    register int	lastindex = -1;
+    int	lastindex = -1;
     Posn		*pos;
-    register char	*ltp;
+    char	*ltp;
 
     ltp = line->l_text;
     for (; (pos = match(line, ind)) != NULL; ind++) {
@@ -765,7 +765,7 @@ bool_t		forward;
     Rnode		*globprogp;
     regexp		*prog;		/* compiled pattern */
     long		ndone;		/* number of matches */
-    register char	cmdchar = '\0';	/* what to do with matching lines */
+    char	cmdchar = '\0';	/* what to do with matching lines */
 
     /* Skip blanks between the g and the delimiter */
     while (*cmd != '\0' && is_space(*cmd)) cmd++;
@@ -900,7 +900,7 @@ bool_t		forward;
 	    case '&':
 	    case '~':
 	    {
-		register long	(*func) P((Line *, Line *, char *));
+		long	(*func) P((Line *, Line *, char *));
 		unsigned	savecho;
 
 		switch (cmdchar) {
@@ -1012,14 +1012,14 @@ grep_line()
 
 static void
 regsubst(prog, src, dest, lnum)
-register regexp	*prog;
-register char	*src;
+regexp	*prog;
+char	*src;
 Flexbuf		*dest;
 unsigned long	lnum;
 {
-    register int	c;
-    register char	ul;
-    register int	rxtype;     /* can be rt_TAGS, rt_GREP or rt_EGREP */
+    int	c;
+    char	ul;
+    int	rxtype;     /* can be rt_TAGS, rt_GREP or rt_EGREP */
 
     if (prog == NULL || src == NULL || dest == NULL) {
 	regerror("NULL parameter to regsubst");
@@ -1040,7 +1040,7 @@ unsigned long	lnum;
     rxtype = Pn(P_regextype);
 
     while ((c = *src++) != '\0') {
-	register int	no = -1;
+	int	no = -1;
 
 	/*
 	 * First check for metacharacters. Note that if regextype is "tags", we
@@ -1084,7 +1084,7 @@ unsigned long	lnum;
 	    }
 
 	} else if (prog->startp[no] != NULL && prog->endp[no] != NULL) {
-	    register char	*cp;
+	    char	*cp;
 
 	    /*
 	     * It isn't an ordinary character, but a reference
@@ -1115,9 +1115,9 @@ unsigned long	lnum;
 
 static void
 add_char_to_rhs(dest, c, ulmode)
-register Flexbuf	*dest;
-register int		c;
-register int		ulmode;
+Flexbuf	*dest;
+int		c;
+int		ulmode;
 {
     switch (ulmode) {
     case 'u': case 'U':

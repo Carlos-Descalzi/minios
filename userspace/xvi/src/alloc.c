@@ -81,11 +81,11 @@ static
 void
 usemem(p, nbytes)
     void *p;
-    register int nbytes;
+    int nbytes;
 {
     if (nbytes >= sizeof(Reusable)) {
-	register Reusable * rp1;
-	register Reusable * rp2;
+	Reusable * rp1;
+	Reusable * rp2;
 
 	rp2 = p;
 	do {
@@ -146,7 +146,7 @@ size_t size;
 {
     void *p;		/* pointer to new storage space */
 
-    if ((p = malloc(size)) == NULL) {
+    if ((p = calloc(size,1)) == NULL) {
 	if (echo & e_ALLOCFAIL) {
 	    show_error(out_of_memory);
 	}
@@ -235,7 +235,7 @@ Line *
 newline(nchars)
 int	nchars;
 {
-    register Line	*l;
+    Line	*l;
     char		*ltp;
 
     /*
@@ -269,7 +269,7 @@ Line *
 snewline(str)
 char *str;
 {
-    register Line	*l;
+    Line	*l;
 
     if ((l = (Line *) ralloc()) == NULL) {
 	return NULL;
@@ -303,7 +303,7 @@ bool_t
 endofline(p)
 Posn	*p;
 {
-    register char	*endtext = p->p_line->l_text + p->p_index;
+    char	*endtext = p->p_line->l_text + p->p_index;
 
     return(*endtext == '\0' || *(endtext + 1) == '\0');
 }
@@ -316,11 +316,11 @@ Posn	*p;
 bool_t
 lnresize(lp, newsize)
 Line	*lp;
-register unsigned	newsize;
+unsigned	newsize;
 {
-    register char	*oldtext;
-    register char	*newtext;
-    register unsigned	oldsize;
+    char	*oldtext;
+    char	*newtext;
+    unsigned	oldsize;
 
     oldsize = (unsigned) lp->l_size;
 
@@ -388,10 +388,10 @@ int	n;
  */
 void
 throw(lineptr)
-register Line	*lineptr;
+Line	*lineptr;
 {
     while (lineptr != NULL) {
-	register Line	*nextline;
+	Line	*nextline;
 
 	if (lineptr->l_text != NULL) {
 	    free(lineptr->l_text);

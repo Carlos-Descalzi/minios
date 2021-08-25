@@ -37,9 +37,9 @@ xvUpdateScr(start_row, nlines)
 int			start_row;
 int			nlines;
 {
-    register int	row;		/* current row */
+    int	row;		/* current row */
     int			end_row;	/* row after last one to be updated */
-    register VirtScr	*vs = curwin->w_vs;
+    VirtScr	*vs = curwin->w_vs;
 
     if (!(echo & e_CHARUPDATE)) {
 	return;
@@ -50,8 +50,8 @@ int			nlines;
     VSset_colour(vs, VSCcolour);
 
     for (row = start_row; row < end_row; row++) {
-	register unsigned	nflags;
-	register unsigned	rflags;		/* flags for current lines */
+	unsigned	nflags;
+	unsigned	rflags;		/* flags for current lines */
 
 	nflags = vs->pv_int_lines[row].s_flags;
 	rflags = vs->pv_ext_lines[row].s_flags;
@@ -96,14 +96,14 @@ int		row;
 {
     Sline		*new;		/* pointers to current lines */
     Sline		*real;
-    register char	*ntextp;	/* pointers to line text */
-    register char	*rtextp;
+    char	*ntextp;	/* pointers to line text */
+    char	*rtextp;
     unsigned char	*ncolours;	/* pointers to character colours */
     unsigned char	*rcolours;
     int			n_used;
     int			r_used;
     int			columns;
-    register int	col;		/* current column */
+    int	col;		/* current column */
 
     columns = VScols(vs);
 
@@ -126,7 +126,7 @@ int		row;
      * since it is the core of screen updating.
      */
     for (col = 0; col < n_used && col < r_used; col++) {
-	register int	nc;
+	int	nc;
 
 	nc = ntextp[col];
 	if (nc != rtextp[col] || ncolours[col] != rcolours[col]) {
@@ -178,13 +178,13 @@ int		row;
 static void
 xvWriteMultiString(vs, str, length, colours, row, col)
 VirtScr		*vs;
-register char	*str;
+char	*str;
 int		length;
 unsigned char	*colours;
 int		row;
-register int	col;
+int	col;
 {
-    register int	i;
+    int	i;
     unsigned		last_colour;
 
     VSset_colour(vs, colours[0]);
@@ -254,8 +254,8 @@ void
 xvClear()
 {
     VirtScr		*vs = curwin->w_vs;
-    register unsigned	row;
-    register unsigned	nrows;
+    unsigned	row;
+    unsigned	nrows;
 
     nrows = VSrows(vs);
 

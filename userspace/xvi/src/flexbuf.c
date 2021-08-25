@@ -31,7 +31,7 @@
  */
 static bool_t
 flexready(f)
-register Flexbuf	*f;
+Flexbuf	*f;
 {
     if (flexempty(f))
 	f->fxb_rcnt = f->fxb_wcnt = 0;
@@ -64,7 +64,7 @@ register Flexbuf	*f;
  */
 bool_t
 flexaddch(f, ch)
-register Flexbuf	*f;
+Flexbuf	*f;
 int	ch;
 {
     flexready(f);
@@ -74,7 +74,7 @@ int	ch;
 
 bool_t
 flexrm(f, pos, len)
-register Flexbuf	*f;
+Flexbuf	*f;
 int	pos;
 int	len;
 {
@@ -90,7 +90,7 @@ int	len;
 
 bool_t
 flexinsch(f, pos, ch)
-register Flexbuf	*f;
+Flexbuf	*f;
 int	pos;
 int	ch;
 {
@@ -108,7 +108,7 @@ int	ch;
 
 bool_t
 flexinsstr(f, pos, str)
-register Flexbuf	*f;
+Flexbuf	*f;
 int	pos;
 char	*str;
 {
@@ -145,7 +145,7 @@ char	*str;
  */
 char *
 flexgetstr(f)
-register Flexbuf	*f;
+Flexbuf	*f;
 {
     if (flexaddch(f, '\0')) {
 	--f->fxb_wcnt;
@@ -245,12 +245,12 @@ static	bool_t	    ljust;
 static bool_t
 strformat(f, p)
 Flexbuf *f;
-register char *p;
+char *p;
 {
-    register int c;
+    int c;
 
     if (width != 0 && !ljust) {
-	register unsigned len;
+	unsigned len;
 
 	len = strlen(p);
 	if (prec != 0 && prec < len)
@@ -295,8 +295,8 @@ Flexbuf	*f;
 long	n;
 bool_t	uflag;
 {
-    register char *s;
-    register unsigned len;
+    char *s;
+    unsigned len;
 
     if (n == 0) {
 	/*
@@ -306,7 +306,7 @@ bool_t	uflag;
 	len = 1;
     } else {
 	static char dstr[sizeof (long) * 3 + 2];
-	register unsigned long un;
+	unsigned long un;
 	int neg;
 
 	* (s = &dstr[sizeof dstr - 1]) = '\0';
@@ -354,15 +354,15 @@ bool_t	uflag;
 bool_t
 vformat
 #ifdef __STDC__
-    (Flexbuf *f, register char *format, register va_list argp)
+    (Flexbuf *f, char *format, va_list argp)
 #else
     (f, format, argp)
     Flexbuf		*f;
-    register char	*format;
-    register va_list	argp;
+    char	*format;
+    va_list	argp;
 #endif
 {
-    register int c;
+    int c;
 
     while ((c = *format++) != '\0') {
 	if (c == '%') {

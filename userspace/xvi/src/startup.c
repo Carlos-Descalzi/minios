@@ -33,8 +33,8 @@
  * lot simpler, but we have to be a bit careful to update them
  * whenever necessary.
  */
-Buffer	*curbuf;
-Xviwin	*curwin;
+Buffer	*curbuf = NULL;
+Xviwin	*curwin = NULL;
 
 /*
  * Global variables.
@@ -89,25 +89,25 @@ char	*argv[];
     char	**commands = NULL;	/* Arguments to -c flags */
     int		ncommands = 0;		/* Arguments to -c flags */
 
-    if (getenv("POSIXLY_CORRECT")) {
-	set_param(P_posix, TRUE);
-    }
+    //if (getenv("POSIXLY_CORRECT")) {
+	//set_param(P_posix, TRUE);
+    //}
 
     /*
      * Fetch the startup string.
      */
-    envp = getenv("XVINIT");
-    if (envp == NULL) {
-	envp = getenv("EXINIT");
-    }
+    //envp = getenv("XVINIT");
+    //if (envp == NULL) {
+	//envp = getenv("EXINIT");
+   // }
 
     /*
      * Save a copy of the startup string so that subsequent calls
      * to getenv() do not overwrite it.
      */
-    if (envp != NULL) {
-	env = strsave(envp);
-    }
+    //if (envp != NULL) {
+	//env = strsave(envp);
+    //}
 
 #define add_command(c) { \
 	commands = realloc(commands, sizeof(*commands) * ++ncommands); \
@@ -187,8 +187,8 @@ char	*argv[];
      * because we don't know what the initialisation string might do.
      */
     if (env != NULL) {
-	register char	*ep;
-	register bool_t	escaped = FALSE;
+	char	*ep;
+	bool_t	escaped = FALSE;
 
 	/*
 	 * Commands in the initialization string can be
@@ -197,6 +197,7 @@ char	*argv[];
 	 * to process the string, looking for all three
 	 * characters.
 	 */
+	
 	for (ep = env; *ep;) {
 	    switch (*ep++) {
 	    case '\\':
@@ -205,7 +206,7 @@ char	*argv[];
 	    case '|':
 	    case '\n':
 		if (escaped) {
-		    register char *s, *d;
+		    char *s, *d;
 
 		    for (d = (s = --ep) - 1; (*d++ = *s++) != '\0'; )
 			;

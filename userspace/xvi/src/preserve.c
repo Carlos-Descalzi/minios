@@ -47,7 +47,7 @@ char	*psv_strings[] =
 static FILE *
 psvfile()
 {
-    register Buffer	*buffer = curbuf;
+    Buffer	*buffer = curbuf;
     FILE		*fp;
 
     if (buffer->b_tempfname == NULL) {
@@ -81,7 +81,7 @@ psvfile()
  */
 static bool_t
 putbuf(fp)
-register FILE	*fp;
+FILE	*fp;
 {
     unsigned long	l1, l2;
 

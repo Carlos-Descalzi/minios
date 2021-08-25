@@ -46,7 +46,7 @@ Line	*l2;
      * Ensure that the lines specified are in the right order.
      */
     if (l1 != NULL && l2 != NULL && earlier(l2, l1)) {
-	register Line	*tmp;
+	Line	*tmp;
 
 	tmp = l1;
 	l1 = l2;
@@ -145,7 +145,7 @@ FILE	*fp;
     Line	*lptr = NULL;	/* pointer to list of lines */
     Line	*last = NULL;	/* last complete line read in */
     Line	*lp;		/* line currently being read in */
-    register enum {
+    enum {
 	at_soln,
 	in_line,
 	at_eoln,
@@ -161,7 +161,7 @@ FILE	*fp;
     state = at_soln;
     while (state != at_eof) {
 
-	register int	c;
+	int	c;
 
 	c = getc(fp);
 

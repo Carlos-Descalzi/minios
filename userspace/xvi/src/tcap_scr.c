@@ -282,7 +282,7 @@ tcap_scr_main(argc, argv)
 int	argc;
 char	*argv[];
 {
-    register VirtScr	*vs;
+    VirtScr	*vs;
     xvEvent		event;
     long		timeout = 0;
 
@@ -335,7 +335,7 @@ char	*argv[];
     event.ev_vs = vs;
     while (1) {
 	xvResponse	*resp;
-	register int	r;
+	int	r;
 
 	r = inch(timeout);
 	if (r == EOF) {
@@ -604,7 +604,7 @@ int	end_row;
 int	nlines;
 bool_t	doit;
 {
-    register int	vs_rows;
+    int	vs_rows;
 
     vs_rows = scr->pv_rows;
 
@@ -766,7 +766,7 @@ do_auto_margin_motion()
  */
 void
 outchar(c)
-register int	c;
+int	c;
 {
     xyupdate();
     do_set_colour(new_colour);
@@ -782,7 +782,7 @@ register int	c;
  */
 void
 outstr(s)
-register char	*s;
+char	*s;
 {
     xyupdate();
     do_set_colour(new_colour);
@@ -1662,7 +1662,7 @@ bool_t	doit;
 static void
 xyupdate()
 {
-    register int	hdisp, vdisp;
+    int	hdisp, vdisp;
 
     /*
      * Horizontal and vertical displacements needed

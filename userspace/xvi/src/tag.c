@@ -44,9 +44,9 @@ tagInit()
     char		**tagfiles;
     int			count;
     char		inbuf[LSIZE];
-    register FILE	*fp;
-    register char	*cp;
-    register int	c;
+    FILE	*fp;
+    char	*cp;
+    int	c;
 
     tagfiles = Pl(P_tags);
     if (tagfiles == NULL) {
@@ -75,7 +75,7 @@ tagInit()
 	}
 
 	while (TRUE) {
-	    register int n;
+	    int n;
 	    /*
 	     * Read the whole line into inbuf.
 	     */
@@ -322,11 +322,11 @@ static void
 EnterTag(line)
 char	*line;
 {
-    register TAG	*tp;
-    register TAG	**tpp;
-    register char	*cp;
-    register unsigned	f;
-    register int	max_chars;
+    TAG	*tp;
+    TAG	**tpp;
+    char	*cp;
+    unsigned	f;
+    int	max_chars;
 
     max_chars = Pn(P_taglength);
     if (max_chars == 0) {
@@ -408,10 +408,10 @@ char	*name;
 int	*lenptr;
 int	*offsetptr;
 {
-    register TAG	*tp;
-    register char	*cp;
-    register unsigned	f;
-    register int	length, offset;
+    TAG	*tp;
+    char	*cp;
+    unsigned	f;
+    int	length, offset;
     int			max_chars;
 
     if (name[0] == '\0') {

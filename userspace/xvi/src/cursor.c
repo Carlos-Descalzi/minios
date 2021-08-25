@@ -34,13 +34,13 @@ void
 cursupdate()
 {
     Xviwin		*win = curwin;
-    register int	i;
-    register char	*cltp;
-    register int	ccol;
-    register unsigned	width;
-    register int	index;
-    register int	c;
-    register Posn	*curp;
+    int	i;
+    char	*cltp;
+    int	ccol;
+    unsigned	width;
+    int	index;
+    int	c;
+    Posn	*curp;
 
     /*
      * Calculate physical lines from logical lines.

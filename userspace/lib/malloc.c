@@ -66,7 +66,14 @@ void free(void* chunk){
     if (!chunk){
         return;
     }
+    if (chunk < (void*)&_HEAP_START || chunk > (void*)&_HEAP_END){
+        return;
+    }
     Block* block = (Block*) (chunk - HEADER_SIZE);
+
+    if (!block->used){
+        return;
+    }
     block->used = 0;
 
     for (Block* b = block; b && !b->used; b = b->next){
@@ -101,6 +108,14 @@ void* calloc(size_t nmemb, size_t size){
 void* realloc (void *ptr, size_t size){
 
     void* new_block = malloc(size);
+
+    if (!new_block){
+        return ptr;
+    }
+
+    if (!ptr){
+        return new_block;
+    }
     
     int old_block_size = ((Block*)(ptr - HEADER_SIZE))->size;
 

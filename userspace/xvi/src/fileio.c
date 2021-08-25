@@ -43,7 +43,7 @@ struct tfformat
  * It is essential that these are in the same order as the fmt_...
  * symbolic constants defined in xvi.h.
  */
-char	*fmt_strings[] = {
+const char	*fmt_strings[] = {
 	"cstring",
 	"macintosh",
 	"msdos",
@@ -92,7 +92,7 @@ static struct tfformat curfmt;
 /*
  * Name of current text file format.
  */
-static char *fmtname = "INTERNAL ERROR";
+static const char *fmtname = "INTERNAL ERROR";
 
 /*
  * Copy the tftable entry indexed by tfindex into curfmt & update
@@ -141,7 +141,7 @@ bool_t	interactive;
  */
 static int
 guess_format(fp, guessp)
-register FILE	*fp;
+FILE	*fp;
 int		*guessp;
 {
     for (;;) {
@@ -240,7 +240,7 @@ Line		**tailp;
 char		*extra_str;
 char		*no_file_str;
 {
-    register FILE	*fp;		/* ptr to open file */
+    FILE	*fp;		/* ptr to open file */
 #ifndef i386
     register
 #endif
@@ -251,15 +251,15 @@ char		*no_file_str;
     Line		*lptr = NULL;	/* pointer to list of lines */
     Line		*last = NULL;	/* last complete line read in */
     Line		*lp;		/* line currently being read in */
-    register enum {
+    enum {
 	at_soln,
 	in_line,
 	got_eolnc0,
 	at_eoln,
 	at_eof
     }			state;
-    register char	*buff;		/* text of line being read in */
-    register int	col;		/* current column in line */
+    char	*buff;		/* text of line being read in */
+    int	col;		/* current column in line */
     unsigned		savecho;
 
     if (interactive) {
@@ -314,7 +314,7 @@ char		*no_file_str;
     }
 
     while (state != at_eof) {
-	register int	c;
+	int	c;
 
 	if (kbdintr) {
 	    kbdintr = FALSE;
@@ -636,7 +636,7 @@ bool_t	force;
  */
 bool_t
 put_file(f, start, end, ncp, nlp)
-register FILE	*f;
+FILE	*f;
 Line		*start, *end;
 unsigned long	*ncp, *nlp;
 {
@@ -644,7 +644,7 @@ unsigned long	*ncp, *nlp;
     register
 #endif
 	     Line		*lp;
-    register unsigned long	nchars;
+    unsigned long	nchars;
     unsigned long		nlines;
     Buffer			*buffer = curbuf;
 
@@ -679,8 +679,8 @@ unsigned long	*ncp, *nlp;
     nchars = 0;
     for ( ; lp != buffer->b_lastline; lp = lp->l_next) {
 
-	register char	*cp;
-	register int	c;
+	char	*cp;
+	int	c;
 
 	/*
 	 * Write out the characters which comprise the line.

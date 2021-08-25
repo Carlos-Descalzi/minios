@@ -19,41 +19,20 @@
 #
 # Name of this file.
 #
-THISFILE=	makefile.386
+THISFILE=	makefile.minios
 
 include ../../Make.defs
 
 LIBDIR=		$(LIB)
 PHARLAP=	d:\osu\pharlap
-#OPTFLAGS=	-o+dc -o+li -o+loop
-#DEBUGFLAGS=	-g
 CDEFS=		-DMINIOS -D__STDC__=1
-SYSDEFS=	-DPOSIX #-DUNIX -DTERMIOS -DPOSIX
-CFLAGS+=	$(SYSDEFS) #	-m$(MEMMODEL) -bx $(CDEFS) $(OPTFLAGS)
-#LD=		$(PHARLAP)\386linkp
+SYSDEFS=	-DPOSIX 
+CFLAGS+=	$(SYSDEFS)
 TARGET=		xvi
 
 xvi:		xvi.elf
 
-MACHSRC=	defmain.c defscr.c \
-		minios.c #ibmpc_c.c pc386.c
-MACHOBJ=	defmain.o defscr.o \
-		minios.o #ibmpc_c.o pc386.o
-MACHINC=	minios.h
-
-GENINC=		ascii.h change.h cmd.h param.h ptrfunc.h regexp.h regmagic.h \
-		virtscr.h xvi.h
-
-GENSRC=		alloc.c altstack.c ascii.c buffers.c \
-		cmdline.c cmdmode.c cmdtab.c cursor.c dispmode.c \
-		edit.c ex_cmds1.c ex_cmds2.c events.c \
-		fileio.c find.c flexbuf.c \
-		map.c mark.c misccmds.c mouse.c movement.c \
-		normal.c param.c pipe.c preserve.c ptrfunc.c \
-		regexp.c screen.c search.c startup.c status.c \
-		tag.c targets.c undo.c update.c \
-		version.c vi_cmds.c vi_ops.c virtscr.c \
-		windows.c yankput.c
+MACHOBJ=	defscr.o defmain.o minios.o 
 
 GENOBJ=		alloc.o altstack.o ascii.o buffers.o \
 		cmdline.o cmdmode.o cmdtab.o cursor.o dispmode.o \
@@ -64,103 +43,19 @@ GENOBJ=		alloc.o altstack.o ascii.o buffers.o \
 		regexp.o screen.o search.o startup.o status.o \
 		tag.o targets.o undo.o update.o \
 		version.o vi_cmds.o vi_ops.o virtscr.o \
-		windows.o yankput.o minios.o tcapmain.o tcap_scr.o
+		windows.o yankput.o 
 
 LINKFILE=	$(TARGET).lnk
 LIBS=../../bootstrap/crt0.o ../../lib/minios.a
 
-$(TARGET).elf:	$(GENOBJ)
-		$(LD) $(LDFLAGS) $(GENOBJ) $(LIBS) -o $@ 
+$(TARGET).elf:	$(GENOBJ) $(MACHOBJ)
+		$(LD) $(LDFLAGS) $(GENOBJ) $(MACHOBJ) $(LIBS) -o $@ 
+		objdump -D $@ > $@.lst
 
-$(TARGET).exp:	$(GENOBJ) $(MACHOBJ) $(LINKFILE) version.c
-		$(CC) $(CFLAGS) -c version.c
-		$(LD) @$(LINKFILE)
 
-$(LINKFILE):	$(THISFILE) echonl.com
-		+echo $(LIBDIR)\realmode > $@
-		# +echo $(LIBDIR)\int >> $@
-		+echo defmain >> $@
-		+echo defscr >> $@
-		+echo alloc >> $@
-		+echo altstack >> $@
-		+echo ascii >> $@
-		+echo buffers >> $@
-		+echo cmdline >> $@
-		+echo cmdmode >> $@
-		+echo cmdtab >> $@
-		+echo cursor >> $@
-		+echo dispmode >> $@
-		+echo edit >> $@
-		+echo ex_cmds1 >> $@
-		+echo ex_cmds2 >> $@
-		+echo events >> $@
-		+echo flexbuf >> $@
-		+echo fileio >> $@
-		+echo find >> $@
-		+echo map >> $@
-		+echo mark >> $@
-		+echo misccmds >> $@
-		+echo mouse >> $@
-		+echo movement >> $@
-		+echo normal >> $@
-		+echo param >> $@
-		+echo pipe >> $@
-		+echo preserve >> $@
-		+echo ptrfunc >> $@
-		+echo regexp >> $@
-		+echo screen >> $@
-		+echo search >> $@
-		+echo startup >> $@
-		+echo status >> $@
-		+echo tag >> $@
-		+echo targets >> $@
-		+echo undo >> $@
-		+echo update >> $@
-		+echo version >> $@
-		+echo vi_cmds >> $@
-		+echo vi_ops >> $@
-		+echo virtscr >> $@
-		+echo windows >> $@
-		+echo yankput >> $@
-		+echo msdos_c >> $@
-		+echo ibmpc_c >> $@
-		+echo pc386 >> $@
-		+echonl >> $@
-		+echo -lib $(LIBDIR)\zps.lib -tc -MAXREAL 4096 >> $@
-		+echo -exe $(TARGET).exp >> $@
+%.o: %.c
+	$(CC) $(CFLAGS) -o$@ -c $<
 
-.c.obj:
-		$(CC) $(CFLAGS) -o$@ -c $<
-
-.asm.com:
-		@masm $* ;
-		@link $* ;
-		@del $*.obj
-		@exe2bin $*.exe $*.com
-		@del $*.exe
-
-echonl.com:	echonl.asm
-
-#
-# Generate program to output a single newline. This is needed to
-# generate the link file.
-#
-echonl.asm:	$(THISFILE)
-		+echo cseg segment > $@
-		+echo assume cs:cseg >> $@
-		+echo org 100h >> $@
-		+echo start: >> $@
-		+echo mov dx, offset crnl >> $@
-		+echo mov ah, 9 >> $@
-		+echo int 21h >> $@
-		+echo mov ax, 4c00h >> $@
-		+echo int 21h >> $@
-		+echo crnl db 0dh, 0ah, 024h >> $@
-		+echo cseg ends >> $@
-		+echo end start >> $@
 
 clean:
-		del *.obj
-		del $(LINKFILE)
-		del *.map
-		del echonl.com
+	rm -rf *.o $(TARGET).elf *.map *.lst

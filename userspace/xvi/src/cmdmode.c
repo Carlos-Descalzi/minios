@@ -111,9 +111,9 @@ common_prefix(s)
 
 	for (i = 1; i < argc; i++)
 	{
-	    register char * p0;
-	    register char * p1;
-	    register int c;
+	    char * p0;
+	    char * p1;
+	    int c;
 
 	    p0 = s;
 	    p1 = argv[i];
@@ -363,8 +363,8 @@ int	ch;
 	/*
 	 * Insert a literal character
 	 */
-	register int i;
-	register unsigned short *cp;
+	int i;
+	unsigned short *cp;
 
 	/*
 	 * Get rid of the ^ that we inserted, which is the char before inpos.

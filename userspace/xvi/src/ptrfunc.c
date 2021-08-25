@@ -42,9 +42,9 @@
  */
 enum mvtype
 inc(lp)
-register Posn	*lp;
+Posn	*lp;
 {
-    register char *p;
+    char *p;
 
     p = &(lp->p_line->l_text[lp->p_index]);
 
@@ -71,7 +71,7 @@ register Posn	*lp;
  */
 enum mvtype
 dec(lp)
-register Posn	*lp;
+Posn	*lp;
 {
     if (lp->p_index > 0) {			/* still within line */
 	lp->p_index--;
@@ -92,9 +92,9 @@ register Posn	*lp;
  */
 void
 pswap(a, b)
-register Posn	*a, *b;
+Posn	*a, *b;
 {
-    register Posn	tmp;
+    Posn	tmp;
 
     tmp = *a;
     *a  = *b;
@@ -106,7 +106,7 @@ register Posn	*a, *b;
  */
 bool_t
 lt(a, b)
-register Posn	*a, *b;
+Posn	*a, *b;
 {
     if (a->p_line != b->p_line) {
 	return(earlier(a->p_line, b->p_line));
@@ -117,7 +117,7 @@ register Posn	*a, *b;
 
 bool_t
 eq(a, b)
-register Posn	*a, *b;
+Posn	*a, *b;
 {
     return(
 	    a->p_line == b->p_line

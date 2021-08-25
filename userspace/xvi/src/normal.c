@@ -38,9 +38,9 @@ struct redo	Redo;
  */
 bool_t
 normal(c)
-register int	c;
+int	c;
 {
-    register Cmd	*cmd;
+    Cmd	*cmd;
 
     cmd = curwin->w_cmd;
 

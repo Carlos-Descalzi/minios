@@ -44,9 +44,8 @@ xvi.tgz: all src/xvi.help
 	tar cfz xvi.tgz usr
 
 clean:
-	(cd src && $(MAKE) -f makefile.pos clean)
+	(cd src && $(MAKE) -f makefile.minios clean)
 	(cd doc && $(MAKE) clean)
-	(cd test && $(MAKE) clean)
 	rm -f configure-stamp build-stamp
 
 # Copy all source files into dosemu's C:\xvi folder

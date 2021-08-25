@@ -80,50 +80,50 @@ char	*argv[];
     sys_init();
 
     if (!can_inschar) {
-	defscr.v_insert = NOFUNC;
+        defscr.v_insert = NOFUNC;
     }
     if (!can_scroll_area && !can_ins_line && !can_del_line) {
-	defscr.v_scroll = NOFUNC;
+        defscr.v_scroll = NOFUNC;
     }
     defscr.pv_rows = (unsigned) Rows;
     defscr.pv_cols = (unsigned) Columns;
 
     catch_signals();
     if (xvi_startup(&defscr, argc, argv) == NULL) {
-	sys_endv();
-	exit(1);
+        sys_endv();
+        exit(1);
     }
 
     event.ev_vs = &defscr;
     while (1) {
-	xvResponse	*resp;
-	register int	r;
+        xvResponse	*resp;
+        int	r;
 
-	r = inchar(timeout);
-	if (r == EOF) {
-	    if (kbdintr) {
-		event.ev_type = Ev_breakin;
-	    } else if (SIG_terminate) {
-		event.ev_type = Ev_terminate;
-		SIG_terminate = FALSE;
-	    } else if (SIG_suspend_request) {
-		event.ev_type = Ev_suspend_request;
-		SIG_suspend_request = FALSE;
-	    } else if (SIG_user_disconnected) {
-		event.ev_type = Ev_disconnected;
-		SIG_user_disconnected = FALSE;
-	    } else {
-		event.ev_type = Ev_timeout;
-	    }
-	} else {
-	    event.ev_type = Ev_char;
-	    event.ev_inchar = r;
-	}
-	resp = xvi_handle_event(&event);
-	if (resp->xvr_type == Xvr_exit) {
-	    sys_exit(resp->xvr_status);
-	}
-	timeout = resp->xvr_timeout;
+        r = inchar(timeout);
+        if (r == EOF) {
+            if (kbdintr) {
+                event.ev_type = Ev_breakin;
+            } else if (SIG_terminate) {
+                event.ev_type = Ev_terminate;
+                SIG_terminate = FALSE;
+            } else if (SIG_suspend_request) {
+                event.ev_type = Ev_suspend_request;
+                SIG_suspend_request = FALSE;
+            } else if (SIG_user_disconnected) {
+                event.ev_type = Ev_disconnected;
+                SIG_user_disconnected = FALSE;
+            } else {
+                event.ev_type = Ev_timeout;
+            }
+        } else {
+            event.ev_type = Ev_char;
+            event.ev_inchar = r;
+        }
+        resp = xvi_handle_event(&event);
+        if (resp->xvr_type == Xvr_exit) {
+            sys_exit(resp->xvr_status);
+        }
+        timeout = resp->xvr_timeout;
     }
 }
 

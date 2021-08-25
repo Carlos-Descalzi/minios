@@ -311,7 +311,7 @@ extern	char		*psv_strings[];
 /*
  * Array of names for the P_format enumeration.
  */
-extern	char		*fmt_strings[];
+extern	const char		*fmt_strings[];
 
 /*
  * Integer values for the P_jumpscroll enumerated parameter. Note that

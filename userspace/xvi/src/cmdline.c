@@ -769,7 +769,7 @@ char	*cmdline;			/* optional command string */
     case EX_TILDE:
     {
 	long		nsubs;
-	register long	(*func) P((Line *, Line *, char *));
+	long	(*func) P((Line *, Line *, char *));
 
 	switch (command) {
 	case EX_SUBSTITUTE:
@@ -1192,9 +1192,9 @@ struct	ecmd	**cmdp;
  */
 static bool_t
 get_range(cpp)
-register char	**cpp;
+char	**cpp;
 {
-    register char	*cp;
+    char	*cp;
     char		sepchar;
     Line		*newstartline;
 
@@ -1436,8 +1436,8 @@ expand_percents(str)
 char	*str;
 {
     static Flexbuf	newstr;
-    register char	*from;
-    register bool_t	escaped;
+    char	*from;
+    bool_t	escaped;
 
     if (strpbrk(str, "%#") == (char *) NULL) {
 	return str;

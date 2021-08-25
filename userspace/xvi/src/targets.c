@@ -239,9 +239,9 @@ do_left_right(cmd)
 Cmd	*cmd;
 {
     Posn		pos;
-    register bool_t	(*mvfunc) P((Posn *, bool_t));
-    register long	n;
-    register long	i;
+    bool_t	(*mvfunc) P((Posn *, bool_t));
+    long	n;
+    long	i;
 
     pos = *(curwin->w_cursor);
     mvfunc = (cmd->cmd_ch1 == 'l' || cmd->cmd_ch1 == ' ' || cmd->cmd_ch1 == K_RARROW) ?
@@ -264,10 +264,10 @@ void
 do_word(cmd)
 Cmd	*cmd;
 {
-    register Posn	*(*func) P((Posn *, int, bool_t));
-    register long	n;
-    register int	lc;
-    register int	type;
+    Posn	*(*func) P((Posn *, int, bool_t));
+    long	n;
+    int	lc;
+    int	type;
     Posn		pos;
 
     if (is_upper(cmd->cmd_ch1)) {
@@ -405,9 +405,9 @@ void
 do_HLM(cmd)
 Cmd	*cmd;
 {
-    register Line	*dest;
-    register Line	*top;
-    register Line	*bottom;
+    Line	*dest;
+    Line	*top;
+    Line	*bottom;
     Posn		pos;
 
     /*
@@ -425,7 +425,7 @@ Cmd	*cmd;
     {
 	case 'H':
 	{
-	    register long n;
+	    long n;
 
 	    dest = top;
 	    for (n = cmd->cmd_prenum - 1; n > 0 && dest != bottom; --n)
@@ -434,7 +434,7 @@ Cmd	*cmd;
 	}
 	case 'L':
 	{
-	    register long n;
+	    long n;
 
 	    dest = bottom;
 	    for (n = cmd->cmd_prenum - 1; n > 0 && dest != top; --n)
@@ -443,7 +443,7 @@ Cmd	*cmd;
 	}
 	case 'M':
 	{
-	    register unsigned long middle;
+	    unsigned long middle;
 
 	    middle = (top->l_number + bottom->l_number) / 2;
 	    for (dest = top; dest->l_number < middle

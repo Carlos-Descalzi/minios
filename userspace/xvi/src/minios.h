@@ -1,7 +1,9 @@
-
+#ifndef _MINIOS_H_
+#define _MINIOS_H_
 #include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 #define MAXPATHLEN  256
 
 #define DEF_COLOUR  "7"
@@ -30,6 +32,10 @@ extern unsigned	Rows,
 //typedef unsigned char bool_t;
 
 extern	bool_t		subshells;
+extern	bool_t		can_inschar;
+extern	bool_t		can_scroll_area;
+extern  bool_t      can_ins_line;
+extern  bool_t      can_del_line;
 
 extern void erase_display();
 extern void sys_startv();
@@ -39,3 +45,9 @@ extern void Wait200ms();
 extern void outchar(int c);
 extern void outstr(char* str);
 extern void sys_init();
+extern void tty_goto(int row, int col);
+extern int foutch(int c);
+extern void alert();
+extern void flush_output();
+extern char * fexpand(char *name, bool_t do_completion);
+#endif

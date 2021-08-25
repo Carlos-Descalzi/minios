@@ -401,8 +401,8 @@ int
 xv_strtoi(sp)
 char	**sp;
 {
-    register char	*s;
-    register int	i, c;
+    char	*s;
+    int	i, c;
     bool_t		neg;
 
     i = 0;
@@ -466,13 +466,13 @@ char	**sp;
  */
 static match_t
 matchname(name, argp, delim)
-    register char *name;
+    char *name;
     char	**argp;
     int		delim;
 {
-    register char *arg;
-    register int nc;
-    register int ac;
+    char *arg;
+    int nc;
+    int ac;
 
     arg = *argp;
     while ((nc = *name++) == (ac = *arg++) && nc != '\0') {
@@ -508,12 +508,12 @@ static matchinfo_t *
 findparam(arg)
     char	      *arg;
 {
-    register Param	*pp;
+    Param	*pp;
     int			nfull;		/* number of full matches */
     int			npartial;	/* number of partial matches */
     static matchinfo_t	lastfull;
     static matchinfo_t	lastpartial;
-    register int	c0;
+    int	c0;
 
     c0 = arg[0];
     nfull = npartial = 0;
@@ -524,8 +524,8 @@ findparam(arg)
 	char		*shortname;
 	char		*arg1;
 	char		*arg2;
-	register bool_t	gotfull;
-	register bool_t	gotpartial;
+	bool_t	gotfull;
+	bool_t	gotpartial;
 	bool_t		isquery;
 
 	fullname = pp->p_fullname;
@@ -943,7 +943,7 @@ int	leading;		/* number of leading spaces in string */
 
     case P_LIST:
 	{
-	    register char	**cpp;
+	    char	**cpp;
 
 	    (void) lformat(&b, "%s=%s", pp->p_fullname, pp->p_list[0]);
 	    for (cpp = pp->p_list + 1; *cpp != NULL; cpp++) {

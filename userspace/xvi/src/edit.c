@@ -102,7 +102,7 @@ ir_proc(c, insert)
 int	c;
 bool_t	insert;
 {
-    register Posn	*curpos;
+    Posn	*curpos;
     static bool_t	wait_buffer = FALSE;
 
     /* These are used in insert mode only */
@@ -594,9 +594,9 @@ bool_t	insert;
     beginline = FALSE;
     if (!literal_next && Pn(P_wrapmargin) != 0 &&
 		curwin->w_virtcol >= curwin->w_ncols - Pn(P_wrapmargin)) {
-	register int	wspos;
-	register int	nwspos;
-	register char	*cltp;
+	int	wspos;
+	int	nwspos;
+	char	*cltp;
 
 	/*
 	 * If we're trying inserting a space character, it's going to
@@ -614,7 +614,7 @@ bool_t	insert;
 	 */
 	cltp = curpos->p_line->l_text;
 	for (wspos = nwspos = curpos->p_index; wspos > 0; --wspos) {
-	    register int c;
+	    int c;
 
 	    c = cltp[wspos];
 	    if (is_space(c)) {
@@ -639,7 +639,7 @@ bool_t	insert;
 	    } else {
 		int	newindex = curpos->p_index;
 		Line	*newlp = curpos->p_line;
-		register int c;
+		int c;
 
 		/*
 		 * Have split the line - now delete any leading

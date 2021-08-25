@@ -31,12 +31,12 @@ int
 shiftdown(nlines)
 unsigned	nlines;
 {
-    register unsigned	k;		/* loop counter */
+    unsigned	k;		/* loop counter */
     int			done = 0;	/* # of physical lines done */
 
     for (k = 0; k < nlines; k++) {
-	register Line	*p;
-	register long	physlines;
+	Line	*p;
+	long	physlines;
 
 	/*
 	 * Set the top screen line to the previous one.
@@ -64,12 +64,12 @@ int
 shiftup(nlines)
 unsigned	nlines;
 {
-    register unsigned	k;		/* loop counter */
+    unsigned	k;		/* loop counter */
     int			done = 0;	/* # of physical lines done */
 
     for (k = 0; k < nlines; k++) {
-	register Line	*p;
-	register long	physlines;
+	Line	*p;
+	long	physlines;
 
 	/*
 	 * Set the top screen line to the next one.
@@ -130,8 +130,8 @@ Posn	*pp;
 long	nlines;
 bool_t	too_many_is_OK;
 {
-    register Line	*l;
-    register long	k;
+    Line	*l;
+    long	k;
 
     for (k = 0, l = pp->p_line; k < nlines && !is_line0(l->l_prev); k++) {
 	l = l->l_prev;
@@ -155,8 +155,8 @@ Posn	*pp;
 long	nlines;
 bool_t	too_many_is_OK;
 {
-    register Line	*l;
-    register long	k;
+    Line	*l;
+    long	k;
 
     for (k = 0, l = pp->p_line; k < nlines && !is_lastline(l->l_next); k++) {
 	l = l->l_next;
@@ -211,7 +211,7 @@ xvMoveRight(posn, move_past_end)
 Posn	*posn;
 bool_t	move_past_end;
 {
-    register char	*txtp;
+    char	*txtp;
 
     txtp = &(posn->p_line->l_text[posn->p_index]);
 
@@ -240,11 +240,11 @@ xvSetPosnToStartOfLine(pos, flag)
 Posn	*pos;
 bool_t	flag;
 {
-    register int	c;
+    int	c;
 
     if (flag) {
 	char		*startp;
-	register char	*p;
+	char	*p;
 
 	startp = p = pos->p_line->l_text;
 	while ((c = *p) != '\0' && p[1] != '\0' && is_space(c)) {
@@ -258,11 +258,11 @@ bool_t	flag;
 
 void
 xvMoveToColumn(posn, col)
-register Posn	*posn;
-register int	col;
+Posn	*posn;
+int	col;
 {
-    register int	c;
-    register char	*tstart, *tp;
+    int	c;
+    char	*tstart, *tp;
 
     tp = tstart = posn->p_line->l_text;
     /*
@@ -337,10 +337,10 @@ jump(currline, halfwinsize)
 Line		*currline;
 int		halfwinsize;
 {
-    register int	count;
-    register int	spare;
-    register Line	*topline;
-    register Line	*filestart = curbuf->b_file;
+    int	count;
+    int	spare;
+    Line	*topline;
+    Line	*filestart = curbuf->b_file;
 
     spare = curwin->w_nrows - (unsigned int) plines(topline = currline) - 1;
     for (count = 0; count < halfwinsize && topline != filestart;) {
@@ -381,7 +381,7 @@ int		halfwinsize;
 void
 move_window_to_cursor()
 {
-    register Line	*currline;
+    Line	*currline;
     int			halfwinsize;
     long		distance;
     VirtScr		*vsp;
