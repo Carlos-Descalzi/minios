@@ -57,125 +57,125 @@ static int line_to_new(Line *lp, int start_row, long line) {
     eoln = FALSE;
 
     if (Pb(P_number)) {
-	static Flexbuf	ftmp;
+        static Flexbuf	ftmp;
 
-	flexclear(&ftmp);
-	(void) lformat(&ftmp, NUM_FMT, line);
-	(void) strcpy(curr_line->s_line, flexgetstr(&ftmp));
-	for (scol = 0; scol < NUM_SIZE; scol++) {
-	    curr_line->s_colour[scol] = VSCcolour;
-	}
-	/* assert: scol == NUM_SIZE */
+        flexclear(&ftmp);
+        (void) lformat(&ftmp, NUM_FMT, line);
+        (void) strcpy(curr_line->s_line, flexgetstr(&ftmp));
+        for (scol = 0; scol < NUM_SIZE; scol++) {
+            curr_line->s_colour[scol] = VSCcolour;
+        }
+        /* assert: scol == NUM_SIZE */
     }
 
     while (!eoln) {
-	/*
-	 * Get the next character to put on the screen.
-	 */
+        /*
+         * Get the next character to put on the screen.
+         */
 
-	/*
-	 * "extra" is a stack containing any extra characters
-	 * we have to put on the screen - this is for chars
-	 * which have a multi-character representation, and
-	 * for the $ at end-of-line in list mode.
-	 */
+        /*
+         * "extra" is a stack containing any extra characters
+         * we have to put on the screen - this is for chars
+         * which have a multi-character representation, and
+         * for the $ at end-of-line in list mode.
+         */
 
-	if (nextra > 0) {
-	    c = extra[--nextra];
-	} else {
-	    unsigned	n;
+        if (nextra > 0) {
+            c = extra[--nextra];
+        } else {
+            unsigned	n;
 
-	    if (curr_index == norm_colour_pos) {
-		colour = VSCcolour;
-	    }
+            if (curr_index == norm_colour_pos) {
+            colour = VSCcolour;
+            }
 
-	    c = (unsigned char) (ltext[curr_index++]);
+            c = (unsigned char) (ltext[curr_index++]);
 
-	    /*
-	     * Deal with situations where it is not
-	     * appropriate just to copy characters
-	     * straight onto the screen.
-	     */
-	    if (c == '\0') {
+            /*
+             * Deal with situations where it is not
+             * appropriate just to copy characters
+             * straight onto the screen.
+             */
+            if (c == '\0') {
 
-		if (Pb(P_list)) {
-		    /*
-		     * Have to show a '$' sign in list mode.
-		     */
-		    extra[nextra++] = '\0';
-		    c = '$';
-		}
+            if (Pb(P_list)) {
+                /*
+                 * Have to show a '$' sign in list mode.
+                 */
+                extra[nextra++] = '\0';
+                c = '$';
+            }
 
-	    } else {
-		char	*p;
+            } else {
+                char	*p;
 
-		n = vischar((int) c, &p, vcol);
-		/*
-		 * This is a bit paranoid assuming
-		 * that Pn(P_tabstop) can never be
-		 * greater than sizeof (extra), but
-		 * so what.
-		 */
-		if (nextra + n > sizeof extra) {
-		    n = sizeof(extra) - nextra;
-		}
-		/*
-		 * Stack the extra characters so that
-		 * they appear in the right order.
-		 */
-		while (n > 1) {
-		    extra[nextra++] = p[--n];
-		}
-		c = p[0];
-	    }
-	}
+                n = vischar((int) c, &p, vcol);
+                /*
+                 * This is a bit paranoid assuming
+                 * that Pn(P_tabstop) can never be
+                 * greater than sizeof (extra), but
+                 * so what.
+                 */
+                if (nextra + n > sizeof extra) {
+                    n = sizeof(extra) - nextra;
+                }
+                /*
+                 * Stack the extra characters so that
+                 * they appear in the right order.
+                 */
+                while (n > 1) {
+                    extra[nextra++] = p[--n];
+                }
+                c = p[0];
+            }
+        }
 
-	if (c == '\0') {
-	    /*
-	     * End of line. Terminate it and finish.
-	     */
-	    eoln = TRUE;
-	    curr_line->s_flags = S_TEXT;
-	    curr_line->s_used = scol;
-	    curr_line->s_line[scol] = '\0';
-	    xvMarkDirty(srow);
-	    break;
-	} else {
-	    /*
-	     * Sline folding.
-	     */
-	    if (scol >= win->w_ncols) {
-		curr_line->s_flags = S_TEXT;
-		curr_line->s_used = scol;
-		curr_line->s_line[scol] = '\0';
-		xvMarkDirty(srow);
-		srow += 1;
-		scol = 0;
-		curr_line = win->w_vs->pv_int_lines + srow;
-	    }
+        if (c == '\0') {
+            /*
+             * End of line. Terminate it and finish.
+             */
+            eoln = TRUE;
+            curr_line->s_flags = S_TEXT;
+            curr_line->s_used = scol;
+            curr_line->s_line[scol] = '\0';
+            xvMarkDirty(srow);
+            break;
+        } else {
+            /*
+             * Sline folding.
+             */
+            if (scol >= win->w_ncols) {
+            curr_line->s_flags = S_TEXT;
+            curr_line->s_used = scol;
+            curr_line->s_line[scol] = '\0';
+            xvMarkDirty(srow);
+            srow += 1;
+            scol = 0;
+            curr_line = win->w_vs->pv_int_lines + srow;
+            }
 
-	    if (srow >= win->w_cmdline) {
-		for (srow = start_row; srow < win->w_cmdline; srow++) {
-		    curr_line = win->w_vs->pv_int_lines + srow;
+            if (srow >= win->w_cmdline) {
+                for (srow = start_row; srow < win->w_cmdline; srow++) {
+                    curr_line = win->w_vs->pv_int_lines + srow;
 
-		    curr_line->s_flags = S_MARKER;
-		    curr_line->s_used = 1;
-		    curr_line->s_line[0] = '@';
-		    curr_line->s_line[1] = '\0';
-		    curr_line->s_colour[0] = VSCcolour;
-		    xvMarkDirty(srow);
-		}
-		return(0);
-	    }
+                    curr_line->s_flags = S_MARKER;
+                    curr_line->s_used = 1;
+                    curr_line->s_line[0] = '@';
+                    curr_line->s_line[1] = '\0';
+                    curr_line->s_colour[0] = VSCcolour;
+                    xvMarkDirty(srow);
+                }
+                return(0);
+            }
 
-	    /*
-	     * Store the character in int_lines.
-	     */
-	    curr_line->s_line[scol] = c;
-	    curr_line->s_colour[scol] = colour;
-	    scol++;
-	    vcol++;
-	}
+            /*
+             * Store the character in int_lines.
+             */
+            curr_line->s_line[scol] = c;
+            curr_line->s_colour[scol] = colour;
+            scol++;
+            vcol++;
+        }
     }
 
     return((srow - start_row) + 1);
@@ -201,22 +201,22 @@ static void file_to_new() {
     lnum = lineno(line);
 
     while (row < win->w_cmdline && line != curbuf->b_lastline) {
-	int nlines;
+        int nlines;
 
-	nlines = line_to_new(line, row, lnum);
-	if (nlines == 0) {
-	    /*
-	     * Make it look like we have updated
-	     * all the screen lines, since they
-	     * have '@' signs on them.
-	     */
-	    row = win->w_cmdline;
-	    break;
-	} else {
-	    row += nlines;
-	    line = line->l_next;
-	    lnum++;
-	}
+        nlines = line_to_new(line, row, lnum);
+        if (nlines == 0) {
+            /*
+             * Make it look like we have updated
+             * all the screen lines, since they
+             * have '@' signs on them.
+             */
+            row = win->w_cmdline;
+            break;
+        } else {
+            row += nlines;
+            line = line->l_next;
+            lnum++;
+        }
     }
 
     win->w_botline = line;
@@ -226,16 +226,16 @@ static void file_to_new() {
      * with '~' characters.
      */
     for ( ; row < win->w_cmdline; row++) {
-	Sline	*curr_line;
+        Sline	*curr_line;
 
-	curr_line = win->w_vs->pv_int_lines + row;
+        curr_line = win->w_vs->pv_int_lines + row;
 
-	curr_line->s_flags = S_MARKER;
-	curr_line->s_used = 1;
-	curr_line->s_line[0] = '~';
-	curr_line->s_line[1] = '\0';
-	curr_line->s_colour[0] = VSCcolour;
-	xvMarkDirty(row);
+        curr_line->s_flags = S_MARKER;
+        curr_line->s_used = 1;
+        curr_line->s_line[0] = '~';
+        curr_line->s_line[1] = '\0';
+        curr_line->s_colour[0] = VSCcolour;
+        xvMarkDirty(row);
     }
 }
 
@@ -257,17 +257,17 @@ void update_sline() {
 static void do_sline() {
     Xviwin		*win = curwin;
     VirtScr		*vs = curwin->w_vs;
-    char	*from;
-    char	*to;
-    char	*end;
+    char	    *from;
+    char	    *to;
+    char	    *end;
     int			colindex;
-    unsigned		colour;
+    unsigned    colour;
     Sline		*slp;
 
     if ((win->w_nrows == 0) ||
-	(VSrows(vs)  == 0) ||
-	(VScols(vs) == 0)) {
-	return;
+        (VSrows(vs)  == 0) ||
+        (VScols(vs) == 0)) {
+        return;
     }
 
     from = sline_text(win);
@@ -276,31 +276,31 @@ static void do_sline() {
     end = to + win->w_ncols - SPARE_COLS;
 
     while (*from != '\0' && to < end) {
-	*to++ = *from++;
+        *to++ = *from++;
     }
 
     /*
      * Fill with spaces, and null-terminate.
      */
     while (to < end) {
-	*to++ = ' ';
+        *to++ = ' ';
     }
     *to = '\0';
 
     if(Pb(P_showmode)) {
-	char *s;
-	switch (State) {
-	case INSERT:
-	    s = "INSERT MODE";
-	    break;
-	case REPLACE:
-	    s = "REPLACE MODE";
-	    break;
-	default:
-	    s = NULL;
-	}
-	if (s && win->w_ncols > 20) {
-	    strncpy(slp->s_line + win->w_ncols - 20, s, strlen(s));
+        char *s;
+        switch (State) {
+            case INSERT:
+                s = "INSERT MODE";
+                break;
+            case REPLACE:
+                s = "REPLACE MODE";
+                break;
+            default:
+                s = NULL;
+        }
+        if (s && win->w_ncols > 20) {
+            strncpy(slp->s_line + win->w_ncols - 20, s, strlen(s));
         }
     }
 
@@ -310,13 +310,13 @@ static void do_sline() {
     colour = is_readonly(curbuf) ? VSCroscolour : VSCstatuscolour;
     for (colindex = win->w_ncols - SPARE_COLS - 1; colindex >= 0;
 							--colindex) {
-	slp->s_colour[colindex] = colour;
+        slp->s_colour[colindex] = colour;
     }
 
     slp->s_used = win->w_ncols - SPARE_COLS;
     slp->s_flags = S_MESSAGE;
     if (is_readonly(curbuf)) {
-	slp->s_flags |= S_READONLY;
+        slp->s_flags |= S_READONLY;
     }
     xvMarkDirty((int) win->w_cmdline);
 }
@@ -331,7 +331,7 @@ void update_cline() {
     Sline	*clp;
     size_t	cont, width, maxwidth;
     int		colindex, start, col;
-    char *cbuf = flexgetstr(&(curwin->w_statusline));
+    char    *cbuf = flexgetstr(&(curwin->w_statusline));
     int		pos = get_pos();	/* Position of cursor within line */
 
     clp = win->w_vs->pv_int_lines + win->w_cmdline;
@@ -342,19 +342,20 @@ void update_cline() {
     col = (pos > maxwidth) ? (pos - start) + 1 : pos;
 
     if (width > maxwidth) {
-	width = maxwidth;
+        width = maxwidth;
     }
 
     if (start) {
-	clp->s_line[cont++] = '<';
+        clp->s_line[cont++] = '<';
     }
 
     (void) strncpy(clp->s_line+cont, cbuf+start, width);
     clp->s_used = width+cont;
     clp->s_line[width+cont] = '\0';
     clp->s_flags = (S_COMMAND | S_DIRTY);
+
     if (is_readonly(curbuf)) {
-	clp->s_flags |= S_READONLY;
+        clp->s_flags |= S_READONLY;
     }
 
     /*
@@ -365,7 +366,7 @@ void update_cline() {
     clp->s_colour[0] = is_readonly(curbuf) ?
 					VSCroscolour : VSCstatuscolour;
     for (colindex = clp->s_used - 1; colindex >= 1; --colindex) {
-	clp->s_colour[colindex] = VSCcolour;
+        clp->s_colour[colindex] = VSCcolour;
     }
 
     /*
@@ -398,29 +399,29 @@ void updateline(bool_t flag) {
     /* Loop curwin through all the windows */
     savecurwin = curwin;
     do {
-	Xviwin *w = curwin;	/* local temp for faster/smaller code */
+        Xviwin *w = curwin;	/* local temp for faster/smaller code */
 
-	if (w->w_buffer == savecurwin->w_buffer &&
-		!earlier(currline, w->w_topline) &&
-		!later(currline, w->w_botline)) {
-	    /*
-	     * Find out which screen line the cursor line starts on.
-	     * This is not necessarily the same as window->w_row,
-	     * because longlines are different.
-	     */
-	    curs_row = (int) cntplines(w->w_topline, currline);
+        if (w->w_buffer == savecurwin->w_buffer &&
+            !earlier(currline, w->w_topline) &&
+            !later(currline, w->w_botline)) {
+            /*
+             * Find out which screen line the cursor line starts on.
+             * This is not necessarily the same as window->w_row,
+             * because longlines are different.
+             */
+            curs_row = (int) cntplines(w->w_topline, currline);
 
-	    nlines = line_to_new(currline,
-				 (int) (curs_row + w->w_winpos),
-				 (long) lineno(currline));
-	    if (flag) {
-		nlines = w->w_nrows - curs_row - 1;
-		file_to_new();
-	    }
+            nlines = line_to_new(currline,
+                     (int) (curs_row + w->w_winpos),
+                     (long) lineno(currline));
+            if (flag) {
+                nlines = w->w_nrows - curs_row - 1;
+                file_to_new();
+            }
 
-	    xvUpdateScr((int) (curs_row + w->w_winpos), nlines);
-	}
-	set_curwin(xvNextDisplayedWindow(w));
+            xvUpdateScr((int) (curs_row + w->w_winpos), nlines);
+        }
+        set_curwin(xvNextDisplayedWindow(w));
     } while (curwin != savecurwin);
 }
 
@@ -431,15 +432,15 @@ void updateline(bool_t flag) {
  */
 void redraw_window(bool_t flag) {
     if (curwin == NULL || curwin->w_nrows == 0) {
-	return;
+        return;
     }
     if (flag) {
-	xvClear();
-	update_sline();
+        xvClear();
+        update_sline();
     }
     if (curwin->w_nrows > 1) {
-	file_to_new();
-	xvUpdateScr( (int) curwin->w_winpos, (int) curwin->w_nrows);
+        file_to_new();
+        xvUpdateScr( (int) curwin->w_winpos, (int) curwin->w_nrows);
     }
 }
 
@@ -451,20 +452,20 @@ void redraw_all(bool_t clrflag) {
     VirtScr	*vs = curwin->w_vs;
 
     if ((VSrows(vs) < Pn(P_minrows)) || (VScols(vs) == 0)) {
-	return;
+        return;
     }
 
     if (clrflag) {
-	xvClear();
+        xvClear();
     }
 
     savecurwin = curwin;
     do {
-	if (curwin->w_nrows > 0) {
-	    if (curwin->w_nrows >= Pn(P_minrows))
-		file_to_new();
-	    do_sline();
-	}
+        if (curwin->w_nrows > 0) {
+            if (curwin->w_nrows >= Pn(P_minrows))
+            file_to_new();
+            do_sline();
+        }
         set_curwin(xvNextDisplayedWindow(curwin));
     } while (curwin != savecurwin);
 
@@ -486,27 +487,31 @@ void redraw_all(bool_t clrflag) {
  * s_ins(row, nlines) - insert 'nlines' lines at 'row'
  */
 void s_ins(int row, int nlines) {
+
     Xviwin		*win = curwin;
     int	from, to;
     int			count;
     int			bottomline;
-    enum
-    {
-	cant_do_it,
-	do_cmdline,
-	do_as_requested
-    }			strategy;
+
+    enum {
+        cant_do_it,
+        do_cmdline,
+        do_as_requested
+    } strategy;
+
     VirtScr		*vs;
 
-    if (!(echo & e_SCROLL))
-	return;
+    if (!(echo & e_SCROLL)) {
+        return;
+    }
 
     /*
      * There's no point in scrolling more lines than there are
      * (below row) in the window, or in scrolling 0 lines.
      */
-    if (nlines == 0 || nlines + row >= win->w_nrows - 1)
-	return;
+    if (nlines == 0 || nlines + row >= win->w_nrows - 1) {
+        return;
+    }
 
     /*
      * The row specified is relative to the top of the window;
@@ -523,7 +528,7 @@ void s_ins(int row, int nlines) {
      * update{line,screen}.
      */
     if (nlines == 1 && row == bottomline) {
-	return;
+        return;
     }
 
     vs = win->w_vs;
@@ -534,58 +539,58 @@ void s_ins(int row, int nlines) {
 			do_cmdline : cant_do_it);
 
     switch (strategy) {
-    case do_cmdline:
-	/*
-	 * Can't scroll what we were asked to - try scrolling
-	 * the whole window including the status line.
-	 */
-	bottomline++;
-	VSclear_line(vs, bottomline, 0);
-	xvClearLine(bottomline);
-	/*FALLTHROUGH*/
+        case do_cmdline:
+            /*
+             * Can't scroll what we were asked to - try scrolling
+             * the whole window including the status line.
+             */
+            bottomline++;
+            VSclear_line(vs, bottomline, 0);
+            xvClearLine(bottomline);
+            /*FALLTHROUGH*/
 
-    case do_as_requested:
-	if (!VSscroll(vs, row, bottomline, -nlines)) {
-	    /*
-	     * Failed.
-	     */
-	    return;
-	}
-	/*
-	 * Update the stored screen image so it matches what has
-	 * happened on the screen.
-	 */
+        case do_as_requested:
+            if (!VSscroll(vs, row, bottomline, -nlines)) {
+                /*
+                 * Failed.
+                 */
+                return;
+            }
+            /*
+             * Update the stored screen image so it matches what has
+             * happened on the screen.
+             */
 
-	/*
-	 * Move section of text down to the bottom.
-	 *
-	 * We do this by rearranging the pointers within the Slines,
-	 * rather than copying the characters.
-	 */
-	for (to = win->w_cmdline - 1, from = to - nlines; from >= row;
-						    --from, --to) {
-	    Sline	*lpfrom;
-	    Sline	*lpto;
-	    char	*temp;
+            /*
+             * Move section of text down to the bottom.
+             *
+             * We do this by rearranging the pointers within the Slines,
+             * rather than copying the characters.
+             */
+            for (to = win->w_cmdline - 1, from = to - nlines; from >= row;
+                                    --from, --to) {
+                Sline	*lpfrom;
+                Sline	*lpto;
+                char	*temp;
 
-	    lpfrom = &vs->pv_ext_lines[from];
-	    lpto = &vs->pv_ext_lines[to];
+                lpfrom = &vs->pv_ext_lines[from];
+                lpto = &vs->pv_ext_lines[to];
 
-	    temp = lpto->s_line;
-	    lpto->s_line = lpfrom->s_line;
-	    lpfrom->s_line = temp;
-	    lpto->s_used = lpfrom->s_used;
-	}
+                temp = lpto->s_line;
+                lpto->s_line = lpfrom->s_line;
+                lpfrom->s_line = temp;
+                lpto->s_used = lpfrom->s_used;
+            }
 
-	/*
-	 * Clear the newly inserted lines.
-	 */
-	for (count = row; count < row + nlines; count++) {
-	    xvClearLine((unsigned) count);
-	}
+            /*
+             * Clear the newly inserted lines.
+             */
+            for (count = row; count < row + nlines; count++) {
+                xvClearLine((unsigned) count);
+            }
 
-    case cant_do_it:
-	break;
+        case cant_do_it:
+            break;
     }
 }
 
@@ -596,23 +601,25 @@ void s_del(int row, int nlines) {
     int	from, to;
     int			count;
     int			bottomline;
-    enum
-    {
-	cant_do_it,
-	do_cmdline,
-	do_as_requested
-    }			strategy;
+    enum {
+        cant_do_it,
+        do_cmdline,
+        do_as_requested
+    } strategy;
+
     VirtScr		*vs;
 
-    if (!(echo & e_SCROLL))
-	return;
+    if (!(echo & e_SCROLL)) {
+        return;
+    }
 
     /*
      * There's no point in scrolling more lines than there are
      * (below row) in the window, or in scrolling 0 lines.
      */
-    if (nlines == 0 || nlines + row >= curwin->w_nrows - 1)
-	return;
+    if (nlines == 0 || nlines + row >= curwin->w_nrows - 1) {
+    	return;
+    }
 
     /*
      * The row specified is relative to the top of the window;
@@ -628,7 +635,7 @@ void s_del(int row, int nlines) {
      * (termcap) DO to scroll the region.
      */
     if (nlines == 1 && row == bottomline) {
-	return;
+        return;
     }
 
     vs = curwin->w_vs;
@@ -712,16 +719,14 @@ void s_inschar(int newchar) {
     unsigned		curcol;
     unsigned		columns;
 
-    debug("*1 %8x %8x\n",curwin,curwin->w_vs);
+    //debug("*1 %8x %8x\n",curwin,curwin->w_vs);
+
     vs = curwin->w_vs;
 
-    debug("*1 2 %8x\n", vs);
     if (vs->v_insert == NOFUNC) {
-        debug("*1 3\n");
         return;
     }
 
-    debug("*2\n");
 
     if (!(echo & e_CHARUPDATE)) {
         return;

@@ -57,6 +57,9 @@ typedef struct {
 #define OPT_CURSOR_ON                   1
 #define OP_TCURSOR_OFF                  2
 #define OPT_CURSOR_POS                  3
+
+#define OPT_CONSOLE_ECHO                0
+
 #define SCREEN_OPT_POS                  5
 #define SCREEN_OPT_CLEAR                6
 #define SCREEN_OPT_SCROLL               7
@@ -92,6 +95,7 @@ static void     fb_write                (ConsoleDevice* screen, uint8_t chr);
 static void     adjust_view_to_pos      (ConsoleDevice* console);
 static void     get_pos                 (ConsoleDevice* device, int *x, int *y);
 static void     set_pos                 (ConsoleDevice* device, int x, int y);
+static void     setopt                  (Device* device, uint32_t option, void* params);
 
 static DeviceType DEVICE_TYPE;
 
@@ -136,6 +140,7 @@ static Device* instantiate(DeviceType* device_type, uint8_t device_number){
     DEVICE(device)->kind = TERM;
     DEVICE(device)->async = 1;
     DEVICE(device)->mmapped = 0;
+    DEVICE(device)->setopt = setopt;
 
     CHAR_DEVICE(device)->read_async = console_read_async;
     CHAR_DEVICE(device)->write = console_write;
@@ -566,4 +571,9 @@ void fb_write (ConsoleDevice* console, uint8_t chr){
 
 static void adjust_view_to_pos(ConsoleDevice* console){
     device_setopt(console->screen, SCREEN_OPT_SCROLL,NULL);
+}
+static void setopt (Device* device, uint32_t option, void* params){
+    if (option == OPT_CONSOLE_ECHO){
+        CONSOLE_DEVICE(device)->console_status.echo = (uint32_t) params;
+    }
 }

@@ -25,8 +25,7 @@ include ../../Make.defs
 
 LIBDIR=		$(LIB)
 PHARLAP=	d:\osu\pharlap
-CDEFS=		-DMINIOS -D__STDC__=1
-SYSDEFS=	-DPOSIX 
+SYSDEFS=	-DPOSIX -DMINIOS
 CFLAGS+=	$(SYSDEFS)
 TARGET=		vi
 

@@ -24,7 +24,7 @@
 
 extern	VirtScr	defscr;
 
-int main(int argc, char* argv) {
+int main(int argc, char* argv[]) {
     defscr_main(argc, argv);
     return(0);
 }

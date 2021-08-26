@@ -146,7 +146,7 @@ bool_t	force;
 	extern	int	kill P((int, int));
 	extern	int	getpid P((void));
 #   endif	/* not POSIX */
-	extern volatile bool_t win_size_changed;
+	extern bool_t win_size_changed;
 
 	if (!force) {
 	    xvAutoWriteAll();

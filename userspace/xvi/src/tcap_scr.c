@@ -263,7 +263,7 @@ static int	s_top = 0, s_bottom = 0;
 static	int	old_colour = NO_COLOUR;	/* Screen's current drawing colour */
 static	int	new_colour = NO_COLOUR;	/* The colour they asked for last */
 
-extern	volatile bool_t	win_size_changed;
+extern	bool_t	win_size_changed;
 
 /*ARGSUSED*/
 static void

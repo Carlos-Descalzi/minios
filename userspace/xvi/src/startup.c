@@ -50,7 +50,7 @@ unsigned	echo;		/*
 int		indentchars;	/* number of chars used to indent current line */
 int		next_indent;	/* auto-indent (in columns) for the next line */
 
-volatile unsigned char
+unsigned char
 		kbdintr;	/*
 				 * global flag set when a keyboard interrupt
 				 * is received

@@ -636,7 +636,7 @@ enum mvtype {
 /*
  * Number of input characters since the last buffer preservation.
  */
-extern volatile int	keystrokes;
+extern int	keystrokes;
 
 /*
  * Minimum number of keystrokes after which we do an automatic
@@ -741,8 +741,8 @@ extern	Buffer		*curbuf;	/* current buffer */
  * Be careful when it is set to NULL, and to use (w) only once as it may
  * be a function call or have side-effects.
  */
+                //debug("set_curwin %s %d %x\n",__FILE__,__LINE__,w);
 #define set_curwin(w)	do { \
-                debug("set_curwin %s %d %x\n",__FILE__,__LINE__,w);\
 			    curwin=(w); \
 			    curbuf = curwin != NULL ? curwin->w_buffer : NULL; \
 			} while(0)
@@ -757,7 +757,7 @@ extern	char		Version[];	/* version string for :ve command */
 /*
  * This flag is set when a keyboard interrupt is received.
  */
-extern volatile unsigned char kbdintr;
+extern unsigned char kbdintr;
 
 /*
  * This input character sends a keyboard interrupt, usually CTRL('C').
@@ -774,17 +774,17 @@ extern	bool_t		imessage;
  * This flag is set when a keyboard-generated suspension request
  * has been generated, i.e. (on a UNIX system) the user hit ^Z.
  */
-extern volatile bool_t SIG_suspend_request;
+extern bool_t SIG_suspend_request;
 
 /*
  * This flag is set as a result of the user having disconnected.
  */
-extern volatile bool_t SIG_user_disconnected;
+extern bool_t SIG_user_disconnected;
 
 /*
  * This flag is set when a termination signal is received.
  */
-extern volatile bool_t SIG_terminate;
+extern bool_t SIG_terminate;
 
 /*
  * This variable (defined in main.c) is a bitmap which controls the

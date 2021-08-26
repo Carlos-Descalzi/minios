@@ -93,7 +93,7 @@ static void usemem(void* p, int nbytes)
  */
 static Reusable * ralloc() {
     Reusable *p;
-    debug("ralloc\n");
+    //debug("ralloc\n");
 
     if (reuselist == NULL) {
 	/*
@@ -115,7 +115,7 @@ static Reusable * ralloc() {
     if (reuselist) {
 	p = reuselist;
 	reuselist = p->ru_next;
-    debug("ralloc %x\n",p);
+    //debug("ralloc %x\n",p);
 	return p;
     }
     /*
@@ -123,7 +123,7 @@ static Reusable * ralloc() {
      * very badly fragmented, so we just try for a single Reusable.
      */
     p = alloc(sizeof(Reusable));
-    debug("ralloc 2 %x\n",p);
+    //debug("ralloc 2 %x\n",p);
     return p;
 }
 
@@ -140,7 +140,7 @@ void * alloc(size_t size) {
 	}
     }
 
-    debug("alloc %x\n",p);
+    //debug("alloc %x\n",p);
     return(p);
 }
 
@@ -152,7 +152,7 @@ void * re_alloc(void* ref, size_t size){
 	    show_error(out_of_memory);
 	}
     }
-    debug("re_alloc %x\n",p);
+    //debug("re_alloc %x\n",p);
     return(p);
 }
 
@@ -184,7 +184,7 @@ void * clr_alloc(size_t num, size_t size) {
 	}
     }
 #endif
-    debug("clr_alloc %x\n",p);
+    //debug("clr_alloc %x\n",p);
     return(p);
 }
 

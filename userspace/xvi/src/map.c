@@ -210,8 +210,7 @@ map_getc()
  * Process any characters in the canonical queue through the cmd_map/ins_map
  * lists into the mapped queue, whence characters go into the editor itself.
  */
-static void
-mapthrough(mp, map)
+static void mapthrough(mp, map)
 Mpos	*mp;
 Map	*map;
 {
@@ -233,8 +232,7 @@ Map	*map;
  * or FALSE if this attempt at mapping has terminated (either
  * due to success or definite failure).
  */
-static bool_t
-process_map(c, pos)
+static bool_t process_map(c, pos)
 int	c;
 Mpos	*pos;
 {
@@ -307,8 +305,7 @@ Mpos	*pos;
     return(FALSE);
 }
 
-void
-map_timeout()
+void map_timeout()
 {
     if (kpos.mp_map != NULL) {
 	map_failed(&kpos);
@@ -317,8 +314,7 @@ map_timeout()
     }
 }
 
-bool_t
-map_waiting()
+bool_t map_waiting()
 {
     return(kpos.mp_map != NULL || npos.mp_map != NULL);
 }
@@ -329,8 +325,7 @@ map_waiting()
  * the src flexbuf. This gives us a chance to retry maps which fail on
  * the first input character at the next input character.
  */
-static void
-map_failed(pos)
+static void map_failed(pos)
 Mpos	*pos;
 {
     char	*cp;
@@ -355,8 +350,7 @@ Mpos	*pos;
 /*
  * Insert the key map lhs as mapping into rhs.
  */
-void
-xvi_keymap(left, right)
+void xvi_keymap(left, right)
 char	*left;
 char	*right;
 {
@@ -382,8 +376,7 @@ char	*right;
  *
  * Return FALSE if we run out of dynamic memory.
  */
-static bool_t
-mapescape(lhsp, rhsp)
+static bool_t mapescape(lhsp, rhsp)
     char	      **lhsp,
 		      **rhsp;
 {
@@ -473,8 +466,7 @@ mapescape(lhsp, rhsp)
 /*
  * Insert the entry "lhs" as mapping into "rhs".
  */
-bool_t
-xvi_map(arg, exclam)
+bool_t xvi_map(arg, exclam)
     char      *arg;
     bool_t		exclam;
 {
@@ -511,8 +503,7 @@ xvi_map(arg, exclam)
     return(TRUE);
 }
 
-static void
-insert_map(maplist, lhs, rhs)
+static void insert_map(maplist, lhs, rhs)
 Map		**maplist;
 char		*lhs;
 char		*rhs;
@@ -588,8 +579,7 @@ char		*rhs;
     }
 }
 
-bool_t
-xvi_unmap(argc, argv, exclam)
+bool_t xvi_unmap(argc, argv, exclam)
 int	argc;
 char	*argv[];
 bool_t	exclam;
@@ -617,8 +607,7 @@ bool_t	exclam;
     return(TRUE);
 }
 
-static void
-delete_map(maplist, lhs)
+static void delete_map(maplist, lhs)
 Map	**maplist;
 char	*lhs;
 {
@@ -643,8 +632,7 @@ char	*lhs;
     }
 }
 
-static void
-calc_same(mptr)
+static void calc_same(mptr)
 Map	*mptr;
 {
     char	*a, *b;
@@ -657,9 +645,7 @@ Map	*mptr;
     }
 }
 
-static char *
-show_map()
-{
+static char * show_map() {
     static Flexbuf	buf;
 
     /*

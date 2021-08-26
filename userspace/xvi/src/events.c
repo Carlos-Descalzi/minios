@@ -26,7 +26,7 @@ static	bool_t	n_proc P((int));
 static	bool_t	c_proc P((int));
 static	bool_t	d_proc P((int));
 
-volatile int	keystrokes;
+int	keystrokes;
 
 /*
  * Should commands be chatty on the status line?

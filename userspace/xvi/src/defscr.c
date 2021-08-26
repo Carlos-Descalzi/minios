@@ -65,9 +65,7 @@ VirtScr	defscr = {
 };
 
 void
-defscr_main(argc, argv)
-int	argc;
-char	*argv[];
+defscr_main(int argc, char *argv[])
 {
     xvEvent	event;
     long	timeout = 0;
@@ -243,16 +241,16 @@ bool_t	doit;
 
 	if (can_scroll_area) {
 	    if (doit) {
-		scroll_down(start_row, end_row, nlines);
+            scroll_down(start_row, end_row, nlines);
 	    }
 	} else if (can_ins_line && end_row == Rows - 1) {
 	    if (doit) {
-		int	line;
+            int	line;
 
-		for (line = 0; line < nlines; line++) {
-		    tty_goto(start_row, 0);
-		    insert_a_line();
-		}
+            for (line = 0; line < nlines; line++) {
+                tty_goto(start_row, 0);
+                insert_a_line();
+            }
 	    }
 	} else {
 	    return(0);
@@ -263,7 +261,7 @@ bool_t	doit;
 	 */
 	if (can_scroll_area) {
 	    if (doit) {
-		scroll_up(start_row, end_row, nlines);
+            scroll_up(start_row, end_row, nlines);
 	    }
 	} else if (end_row == Rows - 1) {
 	    if (can_del_line) {
@@ -271,12 +269,12 @@ bool_t	doit;
 		    int	line;
 
 		    for (line = 0; line < nlines; line++) {
-			tty_goto(start_row, 0);
-			delete_a_line();
+                tty_goto(start_row, 0);
+                delete_a_line();
 		    }
 		}
 	    } else {
-		return(0);
+            return(0);
 	    }
 	} else {
 	    return(0);

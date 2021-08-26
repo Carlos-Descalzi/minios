@@ -26,9 +26,9 @@
 
 #include "xvi.h"
 
-volatile	bool_t	SIG_suspend_request;
-volatile	bool_t	SIG_user_disconnected;
-volatile	bool_t	SIG_terminate;
+bool_t	SIG_suspend_request;
+bool_t	SIG_user_disconnected;
+bool_t	SIG_terminate;
 
 static	void	setsigcatcher P((int sig, void (*vec)()));
 

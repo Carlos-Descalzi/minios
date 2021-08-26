@@ -21,13 +21,11 @@
 
 #include "xvi.h"
 
-#undef	min
-#define	min(a, b)	(((a) < (b)) ? (a) : (b))
 
-static	bool_t	alloc_window P((Xviwin *));
-static	void	dealloc_window P((Xviwin *));
-static	Xviwin	*add_window P((Xviwin *, Xviwin *));
-static	void	delete_window P((Xviwin *));
+static	bool_t	alloc_window    P((Xviwin *));
+static	void	dealloc_window  P((Xviwin *));
+static	Xviwin	*add_window     P((Xviwin *, Xviwin *));
+static	void	delete_window   P((Xviwin *));
 
 /*
  * Initialise the first window. This routine is called only once.
@@ -38,22 +36,21 @@ Xviwin * xvInitWindow( VirtScr	*vs) {
 
     newwin = add_window((Xviwin *) NULL, (Xviwin *) NULL);
     if (newwin == NULL) {
-	return(NULL);
+        return(NULL);
     }
 
-    debug("Init window %x\n",vs);
     newwin->w_vs = vs;
     newwin->w_vs->pv_window = newwin;
 
     if (alloc_window(newwin) == FALSE) {
-	free(newwin);
-	return(NULL);
+        free(newwin);
+        return(NULL);
     }
 
     if (!vs_init(vs)) {
-	dealloc_window(newwin);
-	free(newwin);
-	return(NULL);
+        dealloc_window(newwin);
+        free(newwin);
+        return(NULL);
     }
 
     newwin->w_winpos = 0;
@@ -84,39 +81,38 @@ Xviwin * xvOpenWindow( int	sizehint) {
      * a window, not just to have a zero-size one.
      */
     if (oldwin->w_nrows < (MINROWS * 2)) {
-	/*
-	 * Try to grow the current window to make room for the new one.
-	 */
-	xvResizeWindow((MINROWS * 2) - oldwin->w_nrows);
+        /*
+         * Try to grow the current window to make room for the new one.
+         */
+        xvResizeWindow((MINROWS * 2) - oldwin->w_nrows);
     }
     if (oldwin->w_nrows < (MINROWS * 2)) {
-	show_error("Not enough room!");
-	return(NULL);
+        show_error("Not enough room!");
+        return(NULL);
     }
 
     newwin = add_window(curwin, oldwin->w_next);
     if (newwin == NULL) {
-	show_error("No more windows!");
-	return(NULL);
+        show_error("No more windows!");
+        return(NULL);
     }
-    debug("Open window %x %x\n",oldwin,oldwin->w_vs);
 
     newwin->w_vs = oldwin->w_vs;
     newwin->w_vs->pv_window = (genptr *) newwin;
 
     if (alloc_window(newwin) == FALSE) {
-	show_error(out_of_memory);
-	free((genptr *) newwin);
-	return(NULL);
+        show_error(out_of_memory);
+        free((genptr *) newwin);
+        return(NULL);
     }
 
     /*
      * Calculate size and position of new and old windows.
      */
     if (sizehint != 0) {
-	newwin->w_nrows = oldwin->w_nrows - sizehint;
+        newwin->w_nrows = oldwin->w_nrows - sizehint;
     } else {
-	newwin->w_nrows = oldwin->w_nrows / 2;
+        newwin->w_nrows = oldwin->w_nrows / 2;
     }
     newwin->w_cmdline = oldwin->w_cmdline;
     newwin->w_winpos = (newwin->w_cmdline - newwin->w_nrows) + 1;
@@ -160,7 +156,6 @@ Xviwin * xvCloseWindow() {
 	/*
 	 * Closing last window onto this VirtScr.
 	 */
-        debug("Free win\n");
         vs_free(win->w_vs);
         return(NULL);
     } else {
@@ -771,7 +766,6 @@ add_window(last, next)
 Xviwin	*last, *next;
 {
     Xviwin	*newwin;
-    debug("ADD WINDOW\n");
 
     newwin = alloc(sizeof(Xviwin));
     if (newwin == NULL) {
@@ -823,7 +817,6 @@ Xviwin *
 xvNextWindow(window)
 Xviwin	*window;
 {
-    debug("xvNextWindow\n");
     if (window == NULL) {
         return(NULL);
     } else if (window->w_next != NULL) {

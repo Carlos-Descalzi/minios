@@ -1,4 +1,5 @@
 #include	"xvi.h"
+#include    <minios.h>
 
 static int	kb_nchars;
 static long current_timeout = DEF_TIMEOUT;
@@ -7,10 +8,10 @@ bool_t subshells = FALSE;
 bool_t can_scroll_area = FALSE;
 bool_t can_ins_line = FALSE;
 bool_t can_del_line = FALSE;
-volatile bool_t SIG_terminate = FALSE;
-volatile bool_t SIG_suspend_request = FALSE;
-volatile bool_t SIG_user_disconnected = FALSE;
-volatile bool_t win_size_changed = FALSE;
+bool_t SIG_terminate = FALSE;
+bool_t SIG_suspend_request = FALSE;
+bool_t SIG_user_disconnected = FALSE;
+bool_t win_size_changed = FALSE;
 
 static int kbgetc();
 unsigned	Rows = 25, Columns = 80;
@@ -79,7 +80,7 @@ char * fexpand(char *name, bool_t do_completion)
 	}
     }
     return retval;*/
-    return NULL;
+    return name;
 }
 
 static int kbgetc()
@@ -92,40 +93,14 @@ static int kbgetc()
 
     if (kb_nchars <= 0) {
         int nread;
-        /*
-        fd_set rfds;
-        struct timeval tv;
-        int retval;
 
-        FD_ZERO(&rfds);
-        FD_SET(0, &rfds);
-        while (1) {
-	    tv.tv_sec = (long) (current_timeout / 1000);
-	    tv.tv_usec = ((long) current_timeout * 1000) % (long) 1000000;
-            retval = select(1, &rfds, NULL, NULL, &tv);
-            if (retval > 0)
-                 break;
-            if (retval == 0 || kbdintr)
-                return EOF;
-        }*/
-
-	if ((nread = read(0, (char *) kbuf, sizeof kbuf)) <= 0) {
-	    //SIG_user_disconnected = TRUE;
-	    return EOF;
-	} else {
-	    kb_nchars = nread;
-	    kbp = kbuf;
-	}
+        if ((nread = read(0, (char *) kbuf, sizeof kbuf)) <= 0) {
+            return EOF;
+        } else {
+            kb_nchars = nread;
+            kbp = kbuf;
+        }
     }
-    //if (win_size_changed) {
-	/*
-	 * On some systems, a signal arriving will not cause the read() above
-	 * to return EOF as the call will be restarted. So if we read chars from
-	 * the input but a window size change has occurred, we should return EOF
-	 * and hold off the characters until it has been processed.
-	 */
-	//return(EOF);
-   // }
     --kb_nchars;
     return(*kbp++);
 }
@@ -141,11 +116,11 @@ void alert(){
 }
 
 void flush_output(){
-    debug("flush_output\n");
+    //debug("flush_output\n");
 }
 
 void sys_endv(){
-    debug("sys_endv\n");
+    //debug("sys_endv\n");
 }
 
 void scroll_down(unsigned int start, unsigned int end, unsigned int lines){
@@ -164,35 +139,36 @@ void outstr(char* str){
 void outchar(int chr){
     putc(chr,stdout);
 }
-void call_shell(char* x){
+int call_shell(char* x){
     //printf("call_shell\n");
+    return 0;
 }
 void sys_pipe(char* command, int a,int b){
     //printf("sys_pipe\n");
 }
-void call_system(char*x){
+int  call_system(char*x){
     //printf("call_system\n");
+    return 0;
 }
 char* tempfname(char* x){
     return NULL;
 }
 void sys_init(){
-    debug("sys_init\n");
-    //printf("sys_init\n");
+    ioctl(0, 0, 0);
 }
 void inschar(int c){
     putc(c, stdout);
 }
-int inchar(){
+int inchar(int timeout){
     return getc(stdin);
 }
-void insert_a_line(char* str){
-    puts(str);
+void insert_a_line(){
+    //puts(str);
 }
 void catch_signals(){
 }
 void delete_a_line(){
-    printf("delete_a_line\n");
+    //debug("delete_a_line\n");
 }
 void sys_exit(int val){
     exit(val);

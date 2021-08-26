@@ -204,10 +204,7 @@ Line	*pend;
 /*
  * plines(lp) - return the number of physical screen lines taken by line 'lp'.
  */
-long
-plines( lp)
-Line	*lp;
-{
+long plines( Line* lp) {
     long	col;
     char	*s;
 
