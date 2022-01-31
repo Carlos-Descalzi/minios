@@ -32,20 +32,20 @@ So far these features are implemented (barely):
 * nasm
 * qemu
 
-## Build it
+## Build
 Run ```make```
 
-## Test it
+## Test
 Run ```make test```
 
-## Debug it
+## Debug
 Run ```make debug```
 From another console, you can connect with gdb at port 1234 of localhost.
 
 ## Debug messages
 Port 0x08 (COM1) of guest is used for debugging purposes, it is sent to host console (on test target), or to file minios.log (on debug target).
 
-## Using it
+## Using
 So far the very first thing the kernel executes on user space is a shell interface.
 
 ### Shell
