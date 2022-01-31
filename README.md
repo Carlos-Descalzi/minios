@@ -1,6 +1,6 @@
 # minios
 A very simple operating system for i386 with its own bootloader, just for self learning.
-So far these features are implemented (barely):
+So far these features are implemented:
 * bootloader with available memory detection.
 * Basic chipset and buses: PCI, PIC, PIT, Serial, PS/2 in progress.
 * Text console and QEMU-compatible graphics mode.
@@ -15,8 +15,8 @@ So far these features are implemented (barely):
 * Basic IPC by using message passing.
 * Process loading and execution.
 * Loadable kernel modules, used for device drivers.
-* Simple userspace C library.
-* Minimall command line interface.
+* Minimal userspace C library.
+* Minimal command line interface.
 * System calls for:
   * Open/close/read files, directories and stream handling.
   * Exit current process.
